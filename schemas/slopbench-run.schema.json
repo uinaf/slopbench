@@ -144,6 +144,37 @@
       "title": "ModelPin",
       "type": "object"
     },
+    "RetryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "max_attempts": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "retryable_reasons": {
+          "items": {
+            "$ref": "#/$defs/RetryableReason"
+          },
+          "title": "Retryable Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "max_attempts"
+      ],
+      "title": "RetryPolicy",
+      "type": "object"
+    },
+    "RetryableReason": {
+      "enum": [
+        "provider_rate_limit",
+        "environment_start_timeout"
+      ],
+      "title": "RetryableReason",
+      "type": "string"
+    },
     "RunLimits": {
       "additionalProperties": false,
       "properties": {
@@ -262,6 +293,11 @@
           "title": "Contract Sha256",
           "type": "string"
         },
+        "harbor_task_checksum": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Harbor Task Checksum",
+          "type": "string"
+        },
         "task_digest": {
           "pattern": "^[0-9a-f]{64}$",
           "title": "Task Digest",
@@ -282,7 +318,8 @@
         "contract_sha256",
         "task_digest",
         "task_id",
-        "task_version"
+        "task_version",
+        "harbor_task_checksum"
       ],
       "title": "TaskBinding",
       "type": "object"
@@ -353,8 +390,24 @@
     "agent": {
       "$ref": "#/$defs/AgentConfiguration"
     },
+    "attack_fixture_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attack Fixture Id"
+    },
     "limits": {
       "$ref": "#/$defs/RunLimits"
+    },
+    "retry_policy": {
+      "$ref": "#/$defs/RetryPolicy"
     },
     "run_id": {
       "pattern": "^[a-z0-9][a-z0-9._:-]*$",
@@ -383,7 +436,8 @@
     "agent",
     "runtime",
     "limits",
-    "trial"
+    "trial",
+    "retry_policy"
   ],
   "title": "RunManifest",
   "type": "object"

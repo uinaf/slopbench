@@ -9,7 +9,9 @@
       "gate": "requested_behavior",
       "passed": true,
       "command": "python tests/check.py",
-      "exit_code": 0
+      "exit_code": 0,
+      "log_path": "test-requested-contract.txt",
+      "log_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     }
   ]
 }

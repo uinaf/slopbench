@@ -9,7 +9,8 @@
   ],
   "environment": {
     "harbor_task_path": ".",
-    "verifier_isolation": "shared",
+    "verifier_isolation": "separate",
+    "base_revision": "dddddddddddddddddddddddddddddddddddddddd",
     "cpus": 2,
     "memory_mb": 2048,
     "storage_mb": 4096
@@ -26,6 +27,8 @@
     "tests": true,
     "tools": ["git", "python"],
     "network": "model-only",
+    "network_allowed_hosts": ["cursor.com"],
+    "environment": ["SLOPBENCH_VARIANT"],
     "external_writes": "none",
     "live_credentials": false
   },

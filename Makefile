@@ -1,4 +1,4 @@
-.PHONY: tracer verify
+.PHONY: hardening tracer verify
 
 verify:
 	uv sync --locked --all-groups
@@ -15,3 +15,6 @@ verify:
 
 tracer:
 	sh scripts/run-tracer-matrix.sh
+
+hardening:
+	uv run python scripts/run-hardening-matrix.py

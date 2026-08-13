@@ -27,8 +27,8 @@ make tracer
 ```
 
 The command prints the artifact root. Every trial contains its pinned run manifest, generated
-Harbor config, Harbor evidence, agent receipt when present, verifier evidence, and
-`slopbench.result.v1` bundle.
+Harbor config, read-only task snapshot, Harbor evidence, agent receipt when present, verifier
+evidence, and `slopbench.result.v1` bundle.
 
 Run one manifest directly when debugging:
 
@@ -42,6 +42,16 @@ uv run slopbench run \
 Exit `0` is a valid pass, `1` is a valid agent failure, and `2` is an invalid run, benchmark
 defect, infrastructure failure, or rejected boundary input.
 
+Run the sealed clean-room attacks separately from the baseline tracer matrix:
+
+```sh
+make hardening
+```
+
+The matrix exercises verifier and test tampering, hidden-material access, protected dependency
+changes, hardcoded output, behavior bypass, fabricated receipts, unauthorized network use, and
+grader exploitation. It uses the zero-cost Oracle harness.
+
 ## Verify
 
 ```sh
@@ -50,7 +60,7 @@ make verify
 
 This checks formatting, lint, strict types, branch-aware coverage, the immutable task seal, every
 run manifest, and generated-schema drift. Docker is only required for the end-to-end tracer
-matrix.
+and hardening matrices.
 
 ## Contracts
 

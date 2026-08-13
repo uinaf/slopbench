@@ -1,9 +1,6 @@
-FROM python:3.13.15-slim-bookworm@sha256:00faa2debb87529f9f0764e9491d8ba400a3678976616c3bd7cb193745ac20d1
+FROM python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && useradd --uid 10001 --create-home --shell /usr/sbin/nologin slopbench \
-    && rm -rf /var/lib/apt/lists/*
+RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin slopbench
 
 WORKDIR /baseline
 COPY baseline/ /baseline/

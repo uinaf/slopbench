@@ -99,6 +99,11 @@
   },
   "additionalProperties": false,
   "properties": {
+    "base_revision": {
+      "pattern": "^[0-9a-f]{40,64}$",
+      "title": "Base Revision",
+      "type": "string"
+    },
     "claims": {
       "items": {
         "$ref": "#/$defs/Claim"
@@ -123,6 +128,11 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "task_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Task Digest",
+      "type": "string"
+    },
     "uncertainty": {
       "items": {
         "$ref": "#/$defs/Uncertainty"
@@ -133,6 +143,8 @@
   },
   "required": [
     "schema_version",
+    "task_digest",
+    "base_revision",
     "claims",
     "commands",
     "uncertainty",

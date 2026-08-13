@@ -76,6 +76,8 @@ def task_input_paths(task_dir: Path) -> list[Path]:
             raise ContractError(f"task input must not be a symlink: {path}")
         if path.is_file():
             paths.append(path)
+        elif not path.is_dir():
+            raise ContractError(f"task input must be a regular file or directory: {path}")
     return sorted(paths, key=lambda path: path.relative_to(task_dir).as_posix())
 
 

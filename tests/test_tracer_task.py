@@ -29,7 +29,7 @@ def test_tracer_is_a_valid_sealed_harbor_task() -> None:
     assert task.version == "1.0.0"
     assert task.phase_mode.value == "single"
     assert task.environment.verifier_isolation == "separate"
-    assert len(task.immutable_inputs) == 34
+    assert len(task.immutable_inputs) == 37
 
 
 def test_tracer_manifests_are_bound_to_the_sealed_task() -> None:
@@ -56,6 +56,16 @@ def test_tracer_manifests_are_bound_to_the_sealed_task() -> None:
         assert not isinstance(artifact, str)
         assert artifact.source == "/app"
         assert artifact.exclude == [".git"]
+        assert config.environment.mounts == [
+            {
+                "type": "bind",
+                "source": (ROOT / "artifacts" / "test-config" / manifest.trial.id / "verifier")
+                .resolve()
+                .as_posix(),
+                "target": "/logs/verifier",
+                "read_only": True,
+            }
+        ]
 
 
 def test_trusted_and_fixture_revision_algorithms_are_identical() -> None:
@@ -130,9 +140,11 @@ def test_tracer_variants_have_expected_public_and_hidden_results(
 @pytest.mark.parametrize("variant", ["oracle", "alternate", "invalid"])
 def test_tracer_variants_emit_valid_revision_bound_receipts(tmp_path: Path, variant: str) -> None:
     fixture = initialize_fixture(tmp_path, variant)
+    _, _, task_digest = validate_task(TASK_DIR)
     completed = subprocess.run(
         ["python", "tools/write_slopbench_report.py"],
         cwd=fixture,
+        env={**os.environ, "SLOPBENCH_TASK_DIGEST": task_digest},
         check=False,
         capture_output=True,
         text=True,
@@ -154,10 +166,12 @@ def test_valid_implementations_are_materially_different() -> None:
 def test_receipt_helper_marks_untracked_authority_violation(tmp_path: Path) -> None:
     fixture = initialize_fixture(tmp_path, "oracle")
     (fixture / "outside.txt").write_text("outside authority\n")
+    _, _, task_digest = validate_task(TASK_DIR)
 
     completed = subprocess.run(
         ["python", "tools/write_slopbench_report.py"],
         cwd=fixture,
+        env={**os.environ, "SLOPBENCH_TASK_DIGEST": task_digest},
         check=False,
         capture_output=True,
         text=True,
@@ -172,10 +186,12 @@ def test_receipt_helper_marks_untracked_authority_violation(tmp_path: Path) -> N
 def test_receipt_helper_records_deleted_tracked_file(tmp_path: Path) -> None:
     fixture = initialize_fixture(tmp_path, "oracle")
     (fixture / "src" / "eventlog.py").unlink()
+    _, _, task_digest = validate_task(TASK_DIR)
 
     completed = subprocess.run(
         ["python", "tools/write_slopbench_report.py"],
         cwd=fixture,
+        env={**os.environ, "SLOPBENCH_TASK_DIGEST": task_digest},
         check=False,
         capture_output=True,
         text=True,

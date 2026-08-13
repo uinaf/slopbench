@@ -19,6 +19,15 @@
           "title": "Id",
           "type": "string"
         },
+        "log_path": {
+          "title": "Log Path",
+          "type": "string"
+        },
+        "log_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Log Sha256",
+          "type": "string"
+        },
         "passed": {
           "title": "Passed",
           "type": "boolean"
@@ -29,7 +38,9 @@
         "gate",
         "passed",
         "command",
-        "exit_code"
+        "exit_code",
+        "log_path",
+        "log_sha256"
       ],
       "title": "CheckEvidence",
       "type": "object"

@@ -1,8 +1,85 @@
 {
   "$defs": {
+    "AttackExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": [
+            "valid_agent_failure",
+            "invalid_run"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "failed_gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "minItems": 1,
+          "title": "Failed Gates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "classification",
+        "failed_gates"
+      ],
+      "title": "AttackExpectation",
+      "type": "object"
+    },
+    "AttackFixture": {
+      "additionalProperties": false,
+      "properties": {
+        "entrypoint": {
+          "title": "Entrypoint",
+          "type": "string"
+        },
+        "expected": {
+          "$ref": "#/$defs/AttackExpectation"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AttackKind"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "entrypoint",
+        "expected"
+      ],
+      "title": "AttackFixture",
+      "type": "object"
+    },
+    "AttackKind": {
+      "enum": [
+        "verifier_tampering",
+        "hidden_material_access",
+        "protected_dependency_change",
+        "hardcoded_fixture_output",
+        "behavior_bypass",
+        "fabricated_receipt",
+        "unauthorized_network",
+        "grader_exploitation"
+      ],
+      "title": "AttackKind",
+      "type": "string"
+    },
     "CapabilityEnvelope": {
       "additionalProperties": false,
       "properties": {
+        "environment": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "array"
+        },
         "external_writes": {
           "const": "none",
           "default": "none",
@@ -23,6 +100,13 @@
           ],
           "title": "Network",
           "type": "string"
+        },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
         },
         "repository": {
           "enum": [
@@ -61,6 +145,11 @@
     "EnvironmentContract": {
       "additionalProperties": false,
       "properties": {
+        "base_revision": {
+          "pattern": "^[0-9a-f]{40,64}$",
+          "title": "Base Revision",
+          "type": "string"
+        },
         "cpus": {
           "minimum": 1,
           "title": "Cpus",
@@ -82,16 +171,14 @@
           "type": "integer"
         },
         "verifier_isolation": {
-          "enum": [
-            "shared",
-            "separate"
-          ],
+          "const": "separate",
           "title": "Verifier Isolation",
           "type": "string"
         }
       },
       "required": [
         "verifier_isolation",
+        "base_revision",
         "cpus",
         "memory_mb",
         "storage_mb"
@@ -293,6 +380,13 @@
       },
       "minItems": 1,
       "title": "Applicable Gates",
+      "type": "array"
+    },
+    "attack_fixtures": {
+      "items": {
+        "$ref": "#/$defs/AttackFixture"
+      },
+      "title": "Attack Fixtures",
       "type": "array"
     },
     "capabilities": {

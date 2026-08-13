@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 from pathlib import Path
 
 from revision import worktree_revision
@@ -15,7 +17,15 @@ GATES = {
     "verifier_integrity",
     "evidence_receipt",
 }
-TOP_LEVEL = {"schema_version", "claims", "commands", "uncertainty", "final_revision"}
+TOP_LEVEL = {
+    "schema_version",
+    "task_digest",
+    "base_revision",
+    "claims",
+    "commands",
+    "uncertainty",
+    "final_revision",
+}
 
 if not REPORT.is_file():
     raise SystemExit("slopbench-report.json is missing")
@@ -27,6 +37,17 @@ if not isinstance(report, dict) or set(report) != TOP_LEVEL:
     raise SystemExit("report has an invalid top-level shape")
 if report["schema_version"] != "slopbench.report.v1":
     raise SystemExit("report schema_version is invalid")
+if report["task_digest"] != os.environ.get("SLOPBENCH_TASK_DIGEST"):
+    raise SystemExit("report task_digest does not match the verifier")
+base_revision = subprocess.run(
+    ["git", "rev-parse", "HEAD"],
+    cwd=Path("/app"),
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout.strip()
+if report["base_revision"] != base_revision:
+    raise SystemExit("report base_revision does not match the repository")
 if report["final_revision"] != worktree_revision(Path("/app")):
     raise SystemExit("report final_revision does not match the repository")
 claims = report["claims"]

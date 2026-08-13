@@ -1,4 +1,5 @@
 {
+  "attack_fixture_id": null,
   "schema_version": "slopbench.run.v1",
   "run_id": "tracer-oracle",
   "task": {
@@ -6,7 +7,8 @@
     "contract_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "task_id": "slopbench/tracer/example",
-    "task_version": "1.0.0"
+    "task_version": "1.0.0",
+    "harbor_task_checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "agent": {
     "harness": "oracle",
@@ -46,5 +48,6 @@
     "max_tokens": null,
     "max_cost_usd": 0.0
   },
+  "retry_policy": {"max_attempts": 1, "retryable_reasons": []},
   "trial": {"id": "tracer-oracle", "attempt": 1, "seed": 7}
 }

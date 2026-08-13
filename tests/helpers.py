@@ -56,7 +56,8 @@ def task_payload(*, sealed: bool = True, sequential: bool = False) -> dict[str, 
         "phases": phases,
         "environment": {
             "harbor_task_path": ".",
-            "verifier_isolation": "shared",
+            "verifier_isolation": "separate",
+            "base_revision": GIT_REVISION,
             "cpus": 2,
             "memory_mb": 2048,
             "storage_mb": 4096,
@@ -73,6 +74,8 @@ def task_payload(*, sealed: bool = True, sequential: bool = False) -> dict[str, 
             "tests": True,
             "tools": ["git", "python"],
             "network": "model-only",
+            "network_allowed_hosts": ["cursor.com"],
+            "environment": ["SLOPBENCH_VARIANT"],
             "external_writes": "none",
             "live_credentials": False,
         },
@@ -110,6 +113,7 @@ def run_payload(*, harness: str = "oracle", variant: str = "oracle") -> dict[str
             "task_digest": SHA_B,
             "task_id": "slopbench/tracer/example",
             "task_version": "1.0.0",
+            "harbor_task_checksum": SHA_A,
         },
         "agent": {
             "harness": harness,
@@ -146,6 +150,8 @@ def run_payload(*, harness: str = "oracle", variant: str = "oracle") -> dict[str
             "max_cost_usd": 0.0,
         },
         "trial": {"id": f"tracer-{variant}", "attempt": 1, "seed": 7},
+        "retry_policy": {"max_attempts": 1, "retryable_reasons": []},
+        "attack_fixture_id": None,
     }
 
 
@@ -157,6 +163,8 @@ def report_payload(*, public_passed: bool = True) -> dict[str, Any]:
     status = "passed" if public_passed else "failed"
     return {
         "schema_version": "slopbench.report.v1",
+        "task_digest": SHA_B,
+        "base_revision": GIT_REVISION,
         "claims": [
             {
                 "gate": "requested_behavior",
@@ -240,6 +248,8 @@ def verification_payload(*, requested_passed: bool = True) -> dict[str, Any]:
                 "passed": passed,
                 "command": commands[gate],
                 "exit_code": 0 if passed else 1,
+                "log_path": f"test-{ids[gate]}.txt",
+                "log_sha256": SHA_A,
             }
         )
     return {
@@ -257,13 +267,25 @@ def verification_evidence(**kwargs: bool) -> VerificationEvidence:
 
 def result_payload(*, classification: str = "valid_pass") -> dict[str, Any]:
     passed = classification == "valid_pass"
+    infrastructure = classification == "infrastructure_failure"
     return {
         "schema_version": "slopbench.result.v1",
         "run_id": "tracer-oracle",
         "task_digest": SHA_B,
         "run_manifest_sha256": SHA_A,
         "classification": classification,
+        "failure_reason": (
+            "none" if passed else ("harbor_process_failure" if infrastructure else "gate_failure")
+        ),
         "completed": passed,
+        "attempt": 1,
+        "retry": {
+            "eligible": False,
+            "decision": (
+                "reason_not_allowed" if infrastructure else "classification_not_retryable"
+            ),
+            "remaining_attempts": 0,
+        },
         "outcomes": [
             {
                 "gate": gate.value,

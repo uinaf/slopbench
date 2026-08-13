@@ -20,21 +20,49 @@ flowchart LR
 
 | Input | Trust | Enforcement |
 |---|---|---|
-| Task files | Authored benchmark input | `slopbench task seal` records every file digest; each run validates the seal |
-| Run manifest | Requested configuration | Strict schema, secret-name rejection, task binding, image digest pins, and runtime version checks |
-| Agent receipt | Untrusted claim | Strict schema; claims, command evidence, uncertainty, and final revision are reconciled with verifier evidence |
-| Harbor output | Execution evidence | Pinned Harbor version; result, config, task checksum, and any trajectory are hashed into the bundle |
-| Verifier output | Trusted task evidence | Separate agent/verifier containers, task-digest binding, explicit checks and exits, and reward-vector parity |
+| Task files | Authored benchmark input | `slopbench task seal` records every regular file digest; each run revalidates a read-only snapshot |
+| Run manifest | Requested configuration | Strict schema, secret-name rejection, capability binding, image digest pins, retry policy, and runtime version checks |
+| Agent receipt | Untrusted claim | Task, base, and final revisions plus exact gate evidence and command claims are reconciled with verifier evidence |
+| Harbor output | Execution evidence | Pinned Harbor version and exact task checksum; result, config, trajectory, and bundle artifacts are hashed |
+| Verifier output | Trusted task evidence | Separate offline container, task and base bindings, per-check log digests, explicit exits, and reward-file parity |
 
-The child Harbor process receives an environment allowlist plus only the credential variables
-named by the run manifest. Credential values never enter a manifest or result bundle.
+The child Harbor process receives a host-environment allowlist plus only model-transport credential
+variables named by the run manifest. No target-service credential is permitted, and verifiers
+receive no credentials. SlopBench never serializes credential values into a manifest, task
+snapshot, log, or result bundle; adapter-level redaction remains required before a credentialed
+harness can be admitted as an official profile.
+
+## Official execution boundary
+
+Official v1 runs use Harbor's Docker provider with a fresh agent environment and a separate fresh
+verifier environment. The environment baseline and verifier are offline. The agent phase is either
+offline or restricted to the task contract's exact hostname allowlist. Harbor task metadata,
+resources, workdir, network plan, tools, environment variables, and task checksum must match the
+sealed SlopBench contracts before execution starts.
+
+Harbor mounts its verifier output directory into both environments. SlopBench overlays that mount
+read-only in the agent environment while leaving it writable only in the separate verifier. A
+sealed probe must fail to prepopulate verifier output before every task format can be admitted.
+
+SlopBench copies the sealed task into the run bundle, revalidates all three task identifiers, makes
+the snapshot read-only, and points Harbor at that snapshot. Task-authored Compose files, MCP
+servers, environment inputs, and extra artifact mounts are outside the v1 boundary. Dependencies,
+documentation, fixtures, and emulators therefore have to be present in digest-pinned task images
+before the runtime phase.
+
+Local Docker is the v1 reference venue. A bounded Cloudflare Containers spike could start a
+rootless Docker daemon and pull an image, but the current runtime denied the network-namespace
+operation needed to start the inner container. Cloudflare remains suitable for non-Docker sandbox
+work and a future Harbor-compatible provider; nested Docker is not an official SlopBench venue
+until that canary passes.
 
 ## Contract flow
 
-1. `validate_task` checks every current task input against `immutable_inputs` and derives a task
-   digest from canonical contract JSON.
+1. `validate_task` checks every current regular task input against `immutable_inputs` and derives a
+   task digest from canonical contract JSON.
 2. The runner binds that digest and contract hash to the run manifest. It also checks task
-   identity, resources, Harbor version, and every Docker `FROM` digest.
+   identity, base revision, Harbor checksum, resources, network plan, capabilities, Harbor version,
+   and every Docker `FROM` digest.
 3. SlopBench renders the smallest Harbor `TrialConfig` needed for the selected agent,
    environment, verifier, and receipt artifact.
 4. The deterministic verifier emits one check per applicable gate and a matching Harbor reward
@@ -42,8 +70,9 @@ named by the run manifest. Credential values never enter a manifest or result bu
    snapshot excludes its Git metadata; the verifier restores a sealed baseline index so edits,
    additions, and deletions remain observable without trusting agent-controlled repository state.
    Non-applicable gates remain explicit in the result.
-5. The finalizer reconciles receipt claims and final revision with verifier evidence, validates
-   reward parity, classifies the run, and hashes its evidence artifacts.
+5. The finalizer reconciles task, base, and final revisions plus exact receipt claims with verifier
+   evidence; validates each captured log and reward artifact; classifies the run; and hashes every
+   evidence artifact without following symlinks.
 
 Single-phase tasks and multi-phase tasks with a fresh context for every phase share the same task
 contract. The tracer uses one phase; later tasks can declare ordered fresh-context phases without
@@ -79,8 +108,32 @@ A task marks only relevant gates applicable. The result keeps every other gate a
 Only `valid_pass` sets `completed: true`. Classifications remain separate from the gate vector so
 infrastructure and benchmark defects cannot be mistaken for model failures.
 
+Every non-pass also records a stable failure reason. A run manifest permits at most three attempts
+and may allow retries only for `provider_rate_limit` or `environment_start_timeout`. The result
+records the decision and remaining attempt budget. Gate failures, agent exits or timeouts, agent
+setup failures, invalid receipts, and benchmark defects are never retryable. Agent setup failures
+are infrastructure failures and remain outside the agent-failure denominator.
+
+## Known-invalid fixtures
+
+Each task format can declare sealed attack fixtures with an expected classification and exact
+failed-gate set. The tracer carries all v1 categories:
+
+| Category | Boundary exercised |
+|---|---|
+| Verifier tampering | Separate protected verifier files and logs |
+| Hidden-material access | Agent cannot rely on verifier-only inputs |
+| Protected dependency change | Restored baseline Git state and authority gate |
+| Hardcoded fixture output | Hidden requested-behavior cases and receipt reconciliation |
+| Behavior bypass | Independent tests plus authority and receipt gates |
+| Fabricated receipt | Task, base, final revision, command, and evidence bindings |
+| Unauthorized network | Declared agent allowlist and verifier network canary |
+| Grader exploitation | Untrusted execution user and protected verifier paths |
+
 ## Tracer proof
 
-`scripts/run-tracer-matrix.sh` exercises the current end-to-end contract without model spend. It
+`scripts/run-tracer-matrix.sh` exercises the baseline end-to-end contract without model spend. It
 requires two oracle runs to emit identical receipts and verifier evidence, accepts a materially
 different valid implementation, rejects a known-invalid implementation, and rejects the no-op.
+`scripts/run-hardening-matrix.py` derives one zero-cost run per sealed attack fixture and requires
+the declared classification, exact failed gates, and a non-retryable decision.

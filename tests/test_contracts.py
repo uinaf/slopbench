@@ -10,6 +10,7 @@ from slopbench.contracts import (
     ResultBundle,
     RunManifest,
     TaskContract,
+    VerificationEvidence,
     validate_relative_path,
 )
 from tests.helpers import report_payload, result_payload, run_payload, task_payload
@@ -69,7 +70,7 @@ def test_relative_path_accepts_canonical_path() -> None:
         ),
         (
             lambda value: value["capabilities"]["tools"].append("git"),
-            "tools must be unique",
+            "capability values must be unique",
         ),
     ],
 )
@@ -95,7 +96,85 @@ def test_verifier_output_paths_must_be_absolute(field: str) -> None:
     payload = task_payload()
     payload["verifier"][field] = "logs/output.json"
 
-    with pytest.raises(ValidationError, match="absolute and canonical"):
+    with pytest.raises(ValidationError, match="canonical file below"):
+        validate(TaskContract, payload)
+
+
+def test_verifier_outputs_must_be_distinct() -> None:
+    payload = task_payload()
+    payload["verifier"]["reward_path"] = payload["verifier"]["evidence_path"]
+
+    with pytest.raises(ValidationError, match="must be distinct"):
+        validate(TaskContract, payload)
+
+
+@pytest.mark.parametrize(
+    ("hosts", "network", "message"),
+    [
+        (["cursor.com", "cursor.com"], "model-only", "must be unique"),
+        (["https://cursor.com"], "model-only", "invalid network host"),
+        (["cursor.com."], "model-only", "invalid network host"),
+        (["cursor.com"], "none", "must be empty"),
+        ([], "model-only", "is required"),
+    ],
+)
+def test_capability_network_policy_is_canonical(
+    hosts: list[str], network: str, message: str
+) -> None:
+    payload = task_payload()
+    payload["capabilities"]["network_allowed_hosts"] = hosts
+    payload["capabilities"]["network"] = network
+
+    with pytest.raises(ValidationError, match=message):
+        validate(TaskContract, payload)
+
+
+def test_official_task_requires_separate_verifier() -> None:
+    payload = task_payload()
+    payload["environment"]["verifier_isolation"] = "shared"
+
+    with pytest.raises(ValidationError, match="literal_error"):
+        validate(TaskContract, payload)
+
+
+def attack_task_payload() -> dict[str, object]:
+    payload = task_payload()
+    payload["attack_fixtures"] = [
+        {
+            "id": "tamper",
+            "kind": "verifier_tampering",
+            "entrypoint": "solution/attack.py",
+            "expected": {
+                "classification": "valid_agent_failure",
+                "failed_gates": ["authority"],
+            },
+        }
+    ]
+    payload["immutable_inputs"].append({"path": "solution/attack.py", "sha256": "f" * 64})
+    return payload
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("duplicate-id", "ids must be unique"),
+        ("duplicate-gate", "failed_gates must be unique"),
+        ("non-applicable", "expects non-applicable gates"),
+    ],
+)
+def test_attack_fixture_contract_rejects_ambiguous_expectations(
+    mutation: str, message: str
+) -> None:
+    payload = attack_task_payload()
+    fixtures = payload["attack_fixtures"]
+    if mutation == "duplicate-id":
+        fixtures.append(fixtures[0].copy())
+    elif mutation == "duplicate-gate":
+        fixtures[0]["expected"]["failed_gates"] = ["authority", "authority"]
+    else:
+        fixtures[0]["expected"]["failed_gates"] = ["safety_type_escapes"]
+
+    with pytest.raises(ValidationError, match=message):
         validate(TaskContract, payload)
 
 
@@ -115,6 +194,14 @@ def test_agent_configuration_accepts_a_pinned_model() -> None:
     manifest = validate(RunManifest, payload)
 
     assert manifest.agent.model.harbor_name == "cursor/composer-2.5"
+
+
+def test_agent_configuration_rejects_runner_reserved_environment() -> None:
+    payload = run_payload()
+    payload["agent"]["environment"] = {"SLOPBENCH_TASK_DIGEST": "forged"}
+
+    with pytest.raises(ValidationError, match="runner-reserved"):
+        validate(RunManifest, payload)
 
 
 @pytest.mark.parametrize(
@@ -174,6 +261,21 @@ def test_run_and_trial_identity_must_match() -> None:
         validate(RunManifest, payload)
 
 
+def test_retry_policy_bounds_attempts_and_reasons() -> None:
+    exhausted = run_payload()
+    exhausted["trial"]["attempt"] = 2
+    duplicate = run_payload()
+    duplicate["retry_policy"] = {
+        "max_attempts": 2,
+        "retryable_reasons": ["provider_rate_limit", "provider_rate_limit"],
+    }
+
+    with pytest.raises(ValidationError, match="exceeds retry_policy"):
+        validate(RunManifest, exhausted)
+    with pytest.raises(ValidationError, match="retryable_reasons must be unique"):
+        validate(RunManifest, duplicate)
+
+
 def test_image_references_must_be_digest_pinned() -> None:
     payload = run_payload()
     payload["runtime"]["images"][0]["reference"] = "python:3.13"
@@ -194,6 +296,41 @@ def test_agent_report_rejects_duplicate_claims_and_commands() -> None:
         validate(AgentReport, commands)
 
 
+def test_agent_report_rejects_duplicate_claim_evidence() -> None:
+    payload = report_payload()
+    payload["claims"][0]["evidence_ids"].append("requested-contract")
+
+    with pytest.raises(ValidationError, match="claim evidence_ids must be unique"):
+        validate(AgentReport, payload)
+
+
+def test_verification_rejects_duplicate_log_paths() -> None:
+    payload = {
+        "schema_version": "slopbench.verification.v1",
+        "task_digest": "b" * 64,
+        "base_revision": "d" * 40,
+        "final_revision": f"sha256:{'c' * 64}",
+        "checks": [
+            {
+                "id": identifier,
+                "gate": gate,
+                "passed": True,
+                "command": "true",
+                "exit_code": 0,
+                "log_path": "same.txt",
+                "log_sha256": "a" * 64,
+            }
+            for identifier, gate in (
+                ("first", "requested_behavior"),
+                ("second", "regressions"),
+            )
+        ],
+    }
+
+    with pytest.raises(ValidationError, match="log paths must be unique"):
+        validate(VerificationEvidence, payload)
+
+
 def test_result_requires_every_gate_once() -> None:
     missing = result_payload()
     missing["outcomes"].pop()
@@ -211,3 +348,19 @@ def test_result_completion_must_match_classification() -> None:
 
     with pytest.raises(ValidationError, match="completed must be true"):
         validate(ResultBundle, payload)
+
+
+def test_result_rejects_inconsistent_failure_and_retry_state() -> None:
+    reason = result_payload()
+    reason["failure_reason"] = "gate_failure"
+    retry = result_payload(classification="valid_agent_failure")
+    retry["retry"] = {
+        "eligible": True,
+        "decision": "retry_allowed",
+        "remaining_attempts": 1,
+    }
+
+    with pytest.raises(ValidationError, match="failure_reason must be none"):
+        validate(ResultBundle, reason)
+    with pytest.raises(ValidationError, match="retry eligibility is inconsistent"):
+        validate(ResultBundle, retry)

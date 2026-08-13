@@ -77,6 +77,59 @@ class GateName(StrEnum):
     EVIDENCE_RECEIPT = "evidence_receipt"
 
 
+class FailureClassification(StrEnum):
+    VALID_PASS = "valid_pass"
+    VALID_AGENT_FAILURE = "valid_agent_failure"
+    BENCHMARK_DEFECT = "benchmark_defect"
+    INFRASTRUCTURE_FAILURE = "infrastructure_failure"
+    INVALID_RUN = "invalid_run"
+
+
+class FailureReason(StrEnum):
+    NONE = "none"
+    GATE_FAILURE = "gate_failure"
+    RECEIPT_MISSING = "receipt_missing"
+    RECEIPT_INVALID = "receipt_invalid"
+    AGENT_TIMEOUT = "agent_timeout"
+    AGENT_SETUP_TIMEOUT = "agent_setup_timeout"
+    AGENT_EXIT = "agent_exit"
+    PROVIDER_RATE_LIMIT = "provider_rate_limit"
+    PROVIDER_USAGE_LIMIT = "provider_usage_limit"
+    ENVIRONMENT_START_TIMEOUT = "environment_start_timeout"
+    VERIFIER_TIMEOUT = "verifier_timeout"
+    VERIFIER_EVIDENCE_MISSING = "verifier_evidence_missing"
+    VERIFIER_EVIDENCE_INVALID = "verifier_evidence_invalid"
+    VERIFIER_CONTRACT_MISMATCH = "verifier_contract_mismatch"
+    HARBOR_TASK_MISMATCH = "harbor_task_mismatch"
+    REWARD_MISMATCH = "reward_mismatch"
+    HARBOR_PROCESS_FAILURE = "harbor_process_failure"
+    HARBOR_RESULT_INVALID = "harbor_result_invalid"
+    HARBOR_EXCEPTION = "harbor_exception"
+
+
+class RetryableReason(StrEnum):
+    PROVIDER_RATE_LIMIT = "provider_rate_limit"
+    ENVIRONMENT_START_TIMEOUT = "environment_start_timeout"
+
+
+class RetryDecision(StrEnum):
+    RETRY_ALLOWED = "retry_allowed"
+    CLASSIFICATION_NOT_RETRYABLE = "classification_not_retryable"
+    REASON_NOT_ALLOWED = "reason_not_allowed"
+    ATTEMPTS_EXHAUSTED = "attempts_exhausted"
+
+
+class AttackKind(StrEnum):
+    VERIFIER_TAMPERING = "verifier_tampering"
+    HIDDEN_MATERIAL_ACCESS = "hidden_material_access"
+    PROTECTED_DEPENDENCY_CHANGE = "protected_dependency_change"
+    HARDCODED_FIXTURE_OUTPUT = "hardcoded_fixture_output"
+    BEHAVIOR_BYPASS = "behavior_bypass"
+    FABRICATED_RECEIPT = "fabricated_receipt"
+    UNAUTHORIZED_NETWORK = "unauthorized_network"
+    GRADER_EXPLOITATION = "grader_exploitation"
+
+
 class TaskKind(StrEnum):
     PATCH = "patch"
     REVIEW = "review"
@@ -108,20 +161,53 @@ class CapabilityEnvelope(ContractModel):
     tests: bool
     tools: list[Identifier] = Field(default_factory=list)
     network: Literal["none", "model-only", "declared"]
+    network_allowed_hosts: list[str] = Field(default_factory=list)
+    environment: list[EnvName] = Field(default_factory=list)
     external_writes: Literal["none"] = "none"
     live_credentials: Literal[False] = False
 
-    @field_validator("tools")
+    @field_validator("tools", "environment")
     @classmethod
-    def unique_tools(cls, value: list[str]) -> list[str]:
+    def unique_values(cls, value: list[str]) -> list[str]:
         if len(value) != len(set(value)):
-            raise ValueError("tools must be unique")
+            raise ValueError("capability values must be unique")
         return value
+
+    @field_validator("network_allowed_hosts")
+    @classmethod
+    def valid_network_hosts(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("network_allowed_hosts must be unique")
+        for host in value:
+            candidate = host[2:] if host.startswith("*.") else host
+            if (
+                not candidate
+                or candidate != candidate.lower().rstrip(".")
+                or "://" in candidate
+                or "/" in candidate
+                or ":" in candidate
+                or "*" in candidate
+                or any(
+                    re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) is None
+                    for label in candidate.split(".")
+                )
+            ):
+                raise ValueError(f"invalid network host pattern: {host}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_network(self) -> Self:
+        if self.network == "none" and self.network_allowed_hosts:
+            raise ValueError("network_allowed_hosts must be empty when network is none")
+        if self.network != "none" and not self.network_allowed_hosts:
+            raise ValueError("network_allowed_hosts is required for network access")
+        return self
 
 
 class EnvironmentContract(ContractModel):
     harbor_task_path: str = "."
-    verifier_isolation: Literal["shared", "separate"]
+    verifier_isolation: Literal["separate"]
+    base_revision: GitRevision
     cpus: int = Field(ge=1)
     memory_mb: int = Field(ge=128)
     storage_mb: int = Field(ge=256)
@@ -145,9 +231,21 @@ class VerifierContract(ContractModel):
     @field_validator("evidence_path", "reward_path")
     @classmethod
     def absolute_container_path(cls, value: str) -> str:
-        if not value.startswith("/") or ".." in PurePosixPath(value).parts:
-            raise ValueError("container output path must be absolute and canonical")
+        candidate = PurePosixPath(value)
+        if (
+            not candidate.is_absolute()
+            or candidate.as_posix() != value
+            or ".." in candidate.parts
+            or candidate.parent != PurePosixPath("/logs/verifier")
+        ):
+            raise ValueError("container output path must be a canonical file below /logs/verifier")
         return value
+
+    @model_validator(mode="after")
+    def distinct_outputs(self) -> Self:
+        if self.evidence_path == self.reward_path:
+            raise ValueError("verifier evidence and reward paths must be distinct")
+        return self
 
 
 class Provenance(ContractModel):
@@ -163,6 +261,27 @@ class LicenseContract(ContractModel):
     holder: str
 
 
+class AttackExpectation(ContractModel):
+    classification: Literal["valid_agent_failure", "invalid_run"]
+    failed_gates: list[GateName] = Field(min_length=1)
+
+    @field_validator("failed_gates")
+    @classmethod
+    def unique_failed_gates(cls, value: list[GateName]) -> list[GateName]:
+        if len(value) != len(set(value)):
+            raise ValueError("failed_gates must be unique")
+        return value
+
+
+class AttackFixture(ContractModel):
+    id: Identifier
+    kind: AttackKind
+    entrypoint: str
+    expected: AttackExpectation
+
+    _entrypoint = field_validator("entrypoint")(validate_relative_path)
+
+
 class TaskContract(ContractModel):
     schema_version: Literal["slopbench.task.v1"]
     task_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$")]
@@ -176,6 +295,7 @@ class TaskContract(ContractModel):
     applicable_gates: list[GateName] = Field(min_length=1)
     provenance: Provenance
     license: LicenseContract
+    attack_fixtures: list[AttackFixture] = Field(default_factory=list)
     immutable_inputs: list[FileDigest] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -197,10 +317,21 @@ class TaskContract(ContractModel):
         required_paths = {
             self.verifier.entrypoint,
             *(phase.instruction_path for phase in self.phases),
+            *(fixture.entrypoint for fixture in self.attack_fixtures),
         }
         missing = required_paths - declared_paths
         if self.immutable_inputs and missing:
             raise ValueError(f"immutable_inputs is missing required paths: {sorted(missing)}")
+        fixture_ids = [fixture.id for fixture in self.attack_fixtures]
+        if len(fixture_ids) != len(set(fixture_ids)):
+            raise ValueError("attack fixture ids must be unique")
+        for fixture in self.attack_fixtures:
+            unexpected = set(fixture.expected.failed_gates) - set(self.applicable_gates)
+            if unexpected:
+                raise ValueError(
+                    f"attack fixture {fixture.id} expects non-applicable gates: "
+                    f"{sorted(gate.value for gate in unexpected)}"
+                )
         return self
 
 
@@ -210,6 +341,7 @@ class TaskBinding(ContractModel):
     task_digest: Sha256Hex
     task_id: str
     task_version: Version
+    harbor_task_checksum: Sha256Hex
 
     _contract_path = field_validator("contract_path")(validate_relative_path)
 
@@ -276,6 +408,9 @@ class AgentConfiguration(ContractModel):
             raise ValueError("model is required for non-utility harnesses")
         if len(self.credential_env) != len(set(self.credential_env)):
             raise ValueError("credential_env values must be unique")
+        reserved = {"SLOPBENCH_TASK_DIGEST", "SLOPBENCH_ATTACK_FIXTURE"}
+        if reserved & self.environment.keys():
+            raise ValueError("agent.environment contains runner-reserved values")
         tool_names = [tool.name for tool in self.tools]
         if len(tool_names) != len(set(tool_names)):
             raise ValueError("tool names must be unique")
@@ -314,6 +449,18 @@ class TrialIdentity(ContractModel):
     seed: int | None = None
 
 
+class RetryPolicy(ContractModel):
+    max_attempts: int = Field(ge=1, le=3)
+    retryable_reasons: list[RetryableReason] = Field(default_factory=list)
+
+    @field_validator("retryable_reasons")
+    @classmethod
+    def unique_retryable_reasons(cls, value: list[RetryableReason]) -> list[RetryableReason]:
+        if len(value) != len(set(value)):
+            raise ValueError("retryable_reasons must be unique")
+        return value
+
+
 class RunManifest(ContractModel):
     schema_version: Literal["slopbench.run.v1"]
     run_id: Identifier
@@ -322,11 +469,15 @@ class RunManifest(ContractModel):
     runtime: RuntimeConfiguration
     limits: RunLimits
     trial: TrialIdentity
+    retry_policy: RetryPolicy
+    attack_fixture_id: Identifier | None = None
 
     @model_validator(mode="after")
     def matching_identity(self) -> Self:
         if self.run_id != self.trial.id:
             raise ValueError("run_id and trial.id must match")
+        if self.trial.attempt > self.retry_policy.max_attempts:
+            raise ValueError("trial.attempt exceeds retry_policy.max_attempts")
         return self
 
 
@@ -355,6 +506,8 @@ class Uncertainty(ContractModel):
 
 class AgentReport(ContractModel):
     schema_version: Literal["slopbench.report.v1"]
+    task_digest: Sha256Hex
+    base_revision: GitRevision
     claims: list[Claim]
     commands: list[CommandClaim]
     uncertainty: list[Uncertainty]
@@ -368,6 +521,9 @@ class AgentReport(ContractModel):
         command_ids = [command.id for command in self.commands]
         if len(command_ids) != len(set(command_ids)):
             raise ValueError("command ids must be unique")
+        for claim in self.claims:
+            if len(claim.evidence_ids) != len(set(claim.evidence_ids)):
+                raise ValueError("claim evidence_ids must be unique")
         return self
 
 
@@ -377,6 +533,10 @@ class CheckEvidence(ContractModel):
     passed: bool
     command: str
     exit_code: int
+    log_path: str
+    log_sha256: Sha256Hex
+
+    _log_path = field_validator("log_path")(validate_relative_path)
 
 
 class VerificationEvidence(ContractModel):
@@ -391,6 +551,9 @@ class VerificationEvidence(ContractModel):
         check_ids = [check.id for check in self.checks]
         if len(check_ids) != len(set(check_ids)):
             raise ValueError("verification check ids must be unique")
+        log_paths = [check.log_path for check in self.checks]
+        if len(log_paths) != len(set(log_paths)):
+            raise ValueError("verification check log paths must be unique")
         return self
 
 
@@ -404,14 +567,6 @@ class GateOutcome(ContractModel):
     gate: GateName
     status: OutcomeStatus
     check_ids: list[Identifier]
-
-
-class FailureClassification(StrEnum):
-    VALID_PASS = "valid_pass"
-    VALID_AGENT_FAILURE = "valid_agent_failure"
-    BENCHMARK_DEFECT = "benchmark_defect"
-    INFRASTRUCTURE_FAILURE = "infrastructure_failure"
-    INVALID_RUN = "invalid_run"
 
 
 class ReceiptValidation(ContractModel):
@@ -449,13 +604,22 @@ class HarborEvidence(ContractModel):
     trajectory_sha256: Sha256Hex | None
 
 
+class RetryDisposition(ContractModel):
+    eligible: bool
+    decision: RetryDecision
+    remaining_attempts: int = Field(ge=0)
+
+
 class ResultBundle(ContractModel):
     schema_version: Literal["slopbench.result.v1"]
     run_id: Identifier
     task_digest: Sha256Hex
     run_manifest_sha256: Sha256Hex
     classification: FailureClassification
+    failure_reason: FailureReason
     completed: bool
+    attempt: int = Field(ge=1)
+    retry: RetryDisposition
     outcomes: list[GateOutcome]
     receipt: ReceiptValidation
     usage: UsageMetrics
@@ -470,4 +634,13 @@ class ResultBundle(ContractModel):
             raise ValueError("outcomes must contain exactly one entry per gate")
         if self.completed != (self.classification == FailureClassification.VALID_PASS):
             raise ValueError("completed must be true exactly for valid_pass")
+        if (self.failure_reason == FailureReason.NONE) != (
+            self.classification == FailureClassification.VALID_PASS
+        ):
+            raise ValueError("failure_reason must be none exactly for valid_pass")
+        if self.retry.eligible != (
+            self.classification == FailureClassification.INFRASTRUCTURE_FAILURE
+            and self.retry.decision == RetryDecision.RETRY_ALLOWED
+        ):
+            raise ValueError("retry eligibility is inconsistent with classification and decision")
         return self

@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+if [ -n "${SLOPBENCH_ATTACK_FIXTURE:-}" ]; then
+  exec python /solution/attack.py
+fi
+
 case "${SLOPBENCH_VARIANT:-oracle}" in
   oracle)
     implementation=/solution/implementation_oracle.py
