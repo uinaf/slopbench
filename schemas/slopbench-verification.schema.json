@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "CheckEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "gate": {
+          "$ref": "#/$defs/GateName"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "gate",
+        "passed",
+        "command",
+        "exit_code"
+      ],
+      "title": "CheckEvidence",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base_revision": {
+      "pattern": "^[0-9a-f]{40,64}$",
+      "title": "Base Revision",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/CheckEvidence"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "final_revision": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Final Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.verification.v1",
+      "default": "slopbench.verification.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Task Digest",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_digest",
+    "base_revision",
+    "final_revision",
+    "checks"
+  ],
+  "title": "VerificationEvidence",
+  "type": "object"
+}

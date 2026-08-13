@@ -1,0 +1,58 @@
+{
+  "schema_version": "slopbench.task.v1",
+  "task_id": "slopbench/tracer/example",
+  "version": "1.0.0",
+  "kind": "patch",
+  "phase_mode": "single",
+  "phases": [
+    {"name": "implement", "instruction_path": "instruction.md", "context": "fresh"}
+  ],
+  "environment": {
+    "harbor_task_path": ".",
+    "verifier_isolation": "shared",
+    "cpus": 2,
+    "memory_mb": 2048,
+    "storage_mb": 4096
+  },
+  "verifier": {
+    "kind": "deterministic",
+    "entrypoint": "tests/test.sh",
+    "evidence_path": "/logs/verifier/slopbench-verification.json",
+    "reward_path": "/logs/verifier/reward.json"
+  },
+  "capabilities": {
+    "repository": "read-write",
+    "shell": true,
+    "tests": true,
+    "tools": ["git", "python"],
+    "network": "model-only",
+    "external_writes": "none",
+    "live_credentials": false
+  },
+  "applicable_gates": [
+    "requested_behavior",
+    "regressions",
+    "build_and_types",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "provenance": {
+    "origin": "slopbench-authored",
+    "source_url": null,
+    "source_revision": null,
+    "transformed": false,
+    "ai_assistance": null
+  },
+  "license": {"spdx": "MIT", "holder": "uinaf contributors"},
+  "immutable_inputs": [
+    {
+      "path": "instruction.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "path": "tests/test.sh",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

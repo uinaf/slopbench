@@ -1,0 +1,56 @@
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9"]
+build-backend = "uv_build"
+
+[project]
+name = "slopbench"
+version = "0.1.0"
+description = "Deterministic evaluation of coding-agent software judgment"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = "MIT"
+authors = [{ name = "Altay" }]
+dependencies = [
+  "harbor==0.16.1",
+  "pydantic>=2.12.5,<3",
+]
+
+[project.scripts]
+slopbench = "slopbench.cli:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.18.2,<2",
+  "pytest>=9.0.2,<10",
+  "pytest-cov>=7.0.0,<8",
+  "ruff>=0.14.10,<0.15",
+]
+
+[tool.pytest.ini_options]
+addopts = ["--strict-config", "--strict-markers", "-ra"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["harbor.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["slopbench"]
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+skip_covered = true

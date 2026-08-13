@@ -1,0 +1,15 @@
+{
+  "schema_version": "slopbench.report.v1",
+  "claims": [
+    {
+      "gate": "requested_behavior",
+      "status": "passed",
+      "evidence_ids": ["requested-contract"]
+    }
+  ],
+  "commands": [
+    {"id": "requested-contract", "command": "python tests/check.py", "exit_code": 0}
+  ],
+  "uncertainty": [],
+  "final_revision": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

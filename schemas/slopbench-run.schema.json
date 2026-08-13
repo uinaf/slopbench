@@ -1,0 +1,390 @@
+{
+  "$defs": {
+    "AgentConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Harness",
+          "type": "string"
+        },
+        "harness_version": {
+          "title": "Harness Version",
+          "type": "string"
+        },
+        "instruction_layers": {
+          "items": {
+            "$ref": "#/$defs/InstructionLayer"
+          },
+          "title": "Instruction Layers",
+          "type": "array"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "harness",
+        "harness_version",
+        "model",
+        "effort_tier"
+      ],
+      "title": "AgentConfiguration",
+      "type": "object"
+    },
+    "ImagePin": {
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "pattern": "^.+@sha256:[0-9a-f]{64}$",
+          "title": "Reference",
+          "type": "string"
+        },
+        "role": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "reference"
+      ],
+      "title": "ImagePin",
+      "type": "object"
+    },
+    "InstructionLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "sha256"
+      ],
+      "title": "InstructionLayer",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "RunLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_setup_timeout_sec": {
+          "minimum": 1,
+          "title": "Agent Setup Timeout Sec",
+          "type": "integer"
+        },
+        "agent_timeout_sec": {
+          "minimum": 1,
+          "title": "Agent Timeout Sec",
+          "type": "integer"
+        },
+        "max_cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Cost Usd"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "verifier_timeout_sec": {
+          "minimum": 1,
+          "title": "Verifier Timeout Sec",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_timeout_sec",
+        "agent_setup_timeout_sec",
+        "verifier_timeout_sec"
+      ],
+      "title": "RunLimits",
+      "type": "object"
+    },
+    "RuntimeConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "cpus": {
+          "minimum": 1,
+          "title": "Cpus",
+          "type": "integer"
+        },
+        "environment_provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Environment Provider",
+          "type": "string"
+        },
+        "environment_provider_version": {
+          "title": "Environment Provider Version",
+          "type": "string"
+        },
+        "harbor_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Harbor Version",
+          "type": "string"
+        },
+        "images": {
+          "items": {
+            "$ref": "#/$defs/ImagePin"
+          },
+          "minItems": 1,
+          "title": "Images",
+          "type": "array"
+        },
+        "memory_mb": {
+          "minimum": 128,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "storage_mb": {
+          "minimum": 256,
+          "title": "Storage Mb",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "harbor_version",
+        "environment_provider",
+        "environment_provider_version",
+        "images",
+        "cpus",
+        "memory_mb",
+        "storage_mb"
+      ],
+      "title": "RuntimeConfiguration",
+      "type": "object"
+    },
+    "TaskBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "contract_path": {
+          "title": "Contract Path",
+          "type": "string"
+        },
+        "contract_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Contract Sha256",
+          "type": "string"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_path",
+        "contract_sha256",
+        "task_digest",
+        "task_id",
+        "task_version"
+      ],
+      "title": "TaskBinding",
+      "type": "object"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    },
+    "TrialIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "required": [
+        "id",
+        "attempt"
+      ],
+      "title": "TrialIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "$ref": "#/$defs/AgentConfiguration"
+    },
+    "limits": {
+      "$ref": "#/$defs/RunLimits"
+    },
+    "run_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "runtime": {
+      "$ref": "#/$defs/RuntimeConfiguration"
+    },
+    "schema_version": {
+      "const": "slopbench.run.v1",
+      "default": "slopbench.run.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task": {
+      "$ref": "#/$defs/TaskBinding"
+    },
+    "trial": {
+      "$ref": "#/$defs/TrialIdentity"
+    }
+  },
+  "required": [
+    "run_id",
+    "task",
+    "agent",
+    "runtime",
+    "limits",
+    "trial"
+  ],
+  "title": "RunManifest",
+  "type": "object"
+}

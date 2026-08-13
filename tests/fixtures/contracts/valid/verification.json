@@ -1,0 +1,15 @@
+{
+  "schema_version": "slopbench.verification.v1",
+  "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "base_revision": "dddddddddddddddddddddddddddddddddddddddd",
+  "final_revision": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "checks": [
+    {
+      "id": "requested-contract",
+      "gate": "requested_behavior",
+      "passed": true,
+      "command": "python tests/check.py",
+      "exit_code": 0
+    }
+  ]
+}
