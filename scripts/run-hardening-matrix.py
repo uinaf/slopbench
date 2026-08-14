@@ -22,7 +22,7 @@ def assert_boundary_probe(bundle: Path, run_id: str, fixture_id: str) -> None:
             result = path.read_text().strip()
         except OSError as exc:
             raise SystemExit(f"{fixture_id}: missing grader boundary proof: {exc}") from exc
-        if not result.startswith("blocked:"):
+        if result != "blocked:PermissionError":
             raise SystemExit(f"{fixture_id}: invalid grader boundary proof: {result!r}")
         return
     expected_keys = {

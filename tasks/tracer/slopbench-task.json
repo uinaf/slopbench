@@ -253,7 +253,7 @@
     },
     {
       "path": "tests/check_grader.py",
-      "sha256": "49f2b6e3045905cceb2e9365fa5f3b9cc37c89cf185c1d4096d31d203b4c195b"
+      "sha256": "b92b77152c327f2d41ed4a49f2158b6fccdb8eafd4b2460f830a8eab44260344"
     },
     {
       "path": "tests/check_integrity.py",

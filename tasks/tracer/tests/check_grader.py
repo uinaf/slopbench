@@ -32,7 +32,7 @@ if (
     or not isinstance(payload["outcome"], str)
 ):
     raise SystemExit("grader boundary probe has an invalid shape")
-if payload["outcome"] == "succeeded":
-    raise SystemExit("agent implementation executed with verifier authority")
+if payload["outcome"] != "PermissionError":
+    raise SystemExit(f"grader exploit had an unexpected outcome: {payload['outcome']}")
 print(f"blocked:{payload['outcome']}")
 raise SystemExit(1)

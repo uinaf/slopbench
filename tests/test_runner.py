@@ -890,6 +890,22 @@ def test_finalize_refuses_symlinked_receipt(tmp_path: Path) -> None:
     assert result.receipt.errors == ["slopbench-report.json must be a regular file, not a symlink"]
 
 
+def test_finalize_treats_agent_base_revision_rewrite_as_invalid_run(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    report_path = (
+        bundle / "harbor" / manifest.trial.id / "artifacts" / "app" / "slopbench-report.json"
+    )
+    report = json.loads(report_path.read_text())
+    report["base_revision"] = "9" * 40
+    write_json(report_path, report)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.INVALID_RUN
+    assert result.failure_reason == FailureReason.RECEIPT_INVALID
+    assert result.receipt.errors == ["base_revision does not match verifier evidence"]
+
+
 @pytest.mark.parametrize(
     ("verification_mode", "reward_mode"),
     [("missing", "valid"), ("wrong-digest", "valid"), ("valid", "mismatch")],
