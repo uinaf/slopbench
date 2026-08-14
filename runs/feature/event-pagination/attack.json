@@ -67,9 +67,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/feature/event-pagination/slopbench-task.json",
-    "contract_sha256": "9f575261081319c0f6c493f6254b57b8e6d3cd8bdd3c081495a9c0cc3a7de246",
-    "harbor_task_checksum": "4afe928c0d2a857db829dfd08bbe250e2727b7da274ef70fb2feaa8647704140",
-    "task_digest": "15b54f2594590c35bf9e79e384b4f9395a2d1c7e8d4ec7aa7d7e56b74d4e627a",
+    "contract_sha256": "5d39251568ff0bcc994dd4c81fe728afaf6b5f6049a2ded1264efbd45024a697",
+    "harbor_task_checksum": "ffc0eff68eefd78dce930cb81910f1ba2afd4f87b50134974ddc8a656975c332",
+    "task_digest": "c2821f128a35875020bf5b05b99af047c2f22d71b92d818e9bf41f84a7cf2c3f",
     "task_id": "slopbench/feature/event-pagination",
     "task_version": "1.1.0"
   },

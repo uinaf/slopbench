@@ -256,7 +256,7 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "15b54f2594590c35bf9e79e384b4f9395a2d1c7e8d4ec7aa7d7e56b74d4e627a",
+      "task_digest": "c2821f128a35875020bf5b05b99af047c2f22d71b92d818e9bf41f84a7cf2c3f",
       "task_id": "slopbench/feature/event-pagination",
       "task_version": "1.1.0"
     },
@@ -608,7 +608,7 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "63f25fe3af8f94df5f38398ede4287d9cb90289d62e8c208c1682e7fd9928903",
+      "task_digest": "f0187ef04ff70fcb35973573b057906cd0db934ee17da0001c1eab24af03ca73",
       "task_id": "slopbench/state/watch-subscription",
       "task_version": "1.1.0"
     }

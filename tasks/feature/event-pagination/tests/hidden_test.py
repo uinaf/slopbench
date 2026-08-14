@@ -53,13 +53,24 @@ class ReviewContract(ImplementContract):
 
 class IntegrateContract(ReviewContract):
     def test_verification_is_owned_by_the_typed_task_graph(self) -> None:
-        from src.task_graph import TASK_GRAPH, resolve_tasks
+        from src.task_graph import TASK_GRAPH, TaskNode, resolve_tasks
 
         nodes = resolve_tasks("verify")
-        self.assertEqual([node.name for node in nodes], ["tests", "types", "verify"])
-        self.assertEqual(nodes[-1].command, ())
-        self.assertEqual(nodes[-1].needs, ("tests", "types"))
-        self.assertEqual([node.name for node in TASK_GRAPH], ["tests", "types", "verify"])
+        self.assertEqual(
+            nodes,
+            (
+                TaskNode(
+                    "tests",
+                    ("python", "-m", "unittest", "discover", "-s", "tests", "-v"),
+                ),
+                TaskNode(
+                    "types",
+                    ("python", "-m", "compileall", "-q", "src", "tests", "tools"),
+                ),
+                TaskNode("verify", (), ("tests", "types")),
+            ),
+        )
+        self.assertEqual(TASK_GRAPH, nodes)
 
     def test_parallel_shell_owner_is_removed(self) -> None:
         self.assertEqual(list(Path("scripts").glob("*.sh")), [])

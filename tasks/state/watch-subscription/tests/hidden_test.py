@@ -117,45 +117,48 @@ class HardenContract(ReviewContract):
     def test_retryable_failures_are_bounded(self) -> None:
         from src.watch import BoundaryEvent
 
-        connecting = WatchState("connecting", "orders", 7, 2)
-        waiting, effects = transition(
-            connecting,
-            {
-                "kind": "connection_failed",
-                "generation": 7,
-                "error_kind": "rate_limit",
-            },
-        )
-        self.assertEqual(waiting, WatchState("waiting", "orders", 7, 3))
-        self.assertEqual(effects, (Effect("schedule_retry", 7, "orders", 4),))
+        for error_kind in ("rate_limit", "transient"):
+            with self.subTest(error_kind=error_kind, exhausted=False):
+                connecting = WatchState("connecting", "orders", 7, 2)
+                waiting, effects = transition(
+                    connecting,
+                    {
+                        "kind": "connection_failed",
+                        "generation": 7,
+                        "error_kind": error_kind,
+                    },
+                )
+                self.assertEqual(waiting, WatchState("waiting", "orders", 7, 3))
+                self.assertEqual(effects, (Effect("schedule_retry", 7, "orders", 4),))
 
-        exhausted = WatchState("connecting", "orders", 11, 5)
-        failed, effects = transition(
-            exhausted,
-            {
-                "kind": "connection_failed",
-                "generation": 11,
-                "error_kind": "transient",
-            },
-        )
-        self.assertEqual(failed, WatchState("failed", "orders", 11, 5, "transient"))
-        self.assertEqual(
-            effects,
-            (
-                Effect(
-                    "emit_event",
-                    11,
-                    "orders",
-                    event=BoundaryEvent(
-                        event="watch_failed",
-                        operation="watch.connect",
-                        resource_id="orders",
-                        outcome="failed",
-                        error_kind="transient",
+            with self.subTest(error_kind=error_kind, exhausted=True):
+                exhausted = WatchState("connecting", "orders", 11, 5)
+                failed, effects = transition(
+                    exhausted,
+                    {
+                        "kind": "connection_failed",
+                        "generation": 11,
+                        "error_kind": error_kind,
+                    },
+                )
+                self.assertEqual(failed, WatchState("failed", "orders", 11, 5, error_kind))
+                self.assertEqual(
+                    effects,
+                    (
+                        Effect(
+                            "emit_event",
+                            11,
+                            "orders",
+                            event=BoundaryEvent(
+                                event="watch_failed",
+                                operation="watch.connect",
+                                resource_id="orders",
+                                outcome="failed",
+                                error_kind=error_kind,
+                            ),
+                        ),
                     ),
-                ),
-            ),
-        )
+                )
 
     def test_only_rate_limit_and_transient_failures_retry(self) -> None:
         from src.watch import BoundaryEvent

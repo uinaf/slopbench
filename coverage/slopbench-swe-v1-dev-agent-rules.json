@@ -354,7 +354,7 @@
   "source_revision": "487784abdd8c88eec52ffabd59a21801b98d3345e7c9dcc60a618c50aca23c2f",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "38fd6df719c18210e0b40c2935d0196c3957451b15d936f856587df2f22c6170",
+    "sha256": "3a4f8af1856f712336ad7d7e2cc085f7e2f7cea16e0d6959595b68609850fd31",
     "version": "0.2.0"
   },
   "version": "0.2.0"

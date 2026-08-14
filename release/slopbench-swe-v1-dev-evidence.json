@@ -48,7 +48,7 @@
     },
     {
       "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
-      "sha256": "b94fc2e2bf92724a979bea9d832bef7b628f98f93f3d64608c9900547af579f4"
+      "sha256": "ab1d1f4c654e795b67b81663d310c103bd7d268ba8305b4bf61fc30ad946e238"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -179,7 +179,7 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "6e265b14c25ced485ff3006d9d13dea374c91f6e97f9ca615d4ff9e478b344f0"
+    "sha256": "561168ebbc0ef944e60777199ba3708ed8589b444b5d16528ac397b31ee32f0a"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",
