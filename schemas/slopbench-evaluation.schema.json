@@ -173,12 +173,32 @@
             }
           ]
         },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "slopbench.reference-configuration.v1",
+          "default": "slopbench.reference-configuration.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
         "settings": {
           "additionalProperties": {
             "$ref": "#/$defs/JsonValue"
           },
           "title": "Settings",
           "type": "object"
+        },
+        "setup_network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Setup Network Allowed Hosts",
+          "type": "array"
         },
         "tools": {
           "items": {

@@ -1,4 +1,6 @@
-.PHONY: corpus hardening issue7-corpus profiles review-corpus task-set tracer verify
+.PHONY: \
+	corpus hardening issue7-corpus profiles reference-configurations \
+	release-candidate review-corpus task-set tracer verify
 
 SWE_V1_TASKS = \
 	tasks/diagnosis/lease-expiry \
@@ -29,6 +31,9 @@ verify:
 	@for profile in profiles/*.json; do \
 		uv run slopbench validate profile "$$profile"; \
 	done
+	@for configuration in reference-configurations/*.json; do \
+		uv run slopbench validate reference-configuration "$$configuration"; \
+	done
 	@task_set="$$(mktemp)"; \
 	trap 'rm -f "$$task_set"' EXIT; \
 	uv run python scripts/generate-task-set.py \
@@ -42,6 +47,18 @@ verify:
 	trap 'rm -rf "$$schema_dir"' EXIT; \
 	uv run slopbench schema export "$$schema_dir"; \
 	diff -ru schemas "$$schema_dir"
+	@release_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$release_dir"' EXIT; \
+	uv run python scripts/generate-release-evidence.py \
+		"$$release_dir/slopbench-swe-v1-dev-evidence.json"; \
+	uv run slopbench release audit \
+		--manifest "$$release_dir/slopbench-swe-v1-dev-evidence.json" \
+		--project-root . \
+		--output "$$release_dir/slopbench-swe-v1-dev-readiness.json"; \
+	diff -u release/slopbench-swe-v1-dev-evidence.json \
+		"$$release_dir/slopbench-swe-v1-dev-evidence.json"; \
+	diff -u release/slopbench-swe-v1-dev-readiness.json \
+		"$$release_dir/slopbench-swe-v1-dev-readiness.json"
 
 task-set:
 	uv run python scripts/generate-task-set.py \
@@ -55,6 +72,19 @@ profiles:
 	@for profile in profiles/*.json; do \
 		uv run slopbench validate profile "$$profile"; \
 	done
+
+reference-configurations:
+	@for configuration in reference-configurations/*.json; do \
+		uv run slopbench validate reference-configuration "$$configuration"; \
+	done
+
+release-candidate:
+	uv run python scripts/generate-release-evidence.py \
+		release/slopbench-swe-v1-dev-evidence.json
+	uv run slopbench release audit \
+		--manifest release/slopbench-swe-v1-dev-evidence.json \
+		--project-root . \
+		--output release/slopbench-swe-v1-dev-readiness.json
 
 tracer:
 	sh scripts/run-tracer-matrix.sh

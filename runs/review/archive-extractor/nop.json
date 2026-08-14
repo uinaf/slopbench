@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
@@ -13,7 +14,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": []
   },
   "attack_fixture_id": null,

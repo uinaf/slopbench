@@ -1,0 +1,321 @@
+{
+  "$defs": {
+    "ComponentPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "ReferenceConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/ToolPin"
+        },
+        "configuration_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "slopbench.reference-configuration.v1",
+          "default": "slopbench.reference-configuration.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "setup_network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Setup Network Allowed Hosts",
+          "type": "array"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "version",
+        "harness",
+        "adapter",
+        "model",
+        "effort_tier"
+      ],
+      "title": "ReferenceConfiguration",
+      "type": "object"
+    },
+    "RegressionFlag": {
+      "additionalProperties": false,
+      "properties": {
+        "critical_gate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GateName"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failed_pair_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Failed Pair Indices",
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/RegressionKind"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "task_id",
+        "task_digest",
+        "failed_pair_indices"
+      ],
+      "title": "RegressionFlag",
+      "type": "object"
+    },
+    "RegressionKind": {
+      "enum": [
+        "reliability",
+        "critical_gate"
+      ],
+      "title": "RegressionKind",
+      "type": "string"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "after_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "After Result Sha256",
+      "type": "string"
+    },
+    "automatic_release_blocking": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Release Blocking",
+      "type": "boolean"
+    },
+    "before_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Before Result Sha256",
+      "type": "string"
+    },
+    "configuration": {
+      "$ref": "#/$defs/ReferenceConfiguration"
+    },
+    "flags": {
+      "items": {
+        "$ref": "#/$defs/RegressionFlag"
+      },
+      "title": "Flags",
+      "type": "array"
+    },
+    "paired_trials": {
+      "const": 5,
+      "default": 5,
+      "title": "Paired Trials",
+      "type": "integer"
+    },
+    "profile": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "schema_version": {
+      "const": "slopbench.regression.v1",
+      "default": "slopbench.regression.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    }
+  },
+  "required": [
+    "before_result_sha256",
+    "after_result_sha256",
+    "task_set",
+    "profile",
+    "configuration",
+    "flags"
+  ],
+  "title": "RegressionReport",
+  "type": "object"
+}

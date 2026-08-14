@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "AttackKind": {
+      "enum": [
+        "verifier_tampering",
+        "hidden_material_access",
+        "protected_dependency_change",
+        "hardcoded_fixture_output",
+        "behavior_bypass",
+        "fabricated_receipt",
+        "unauthorized_network",
+        "grader_exploitation"
+      ],
+      "title": "AttackKind",
+      "type": "string"
+    },
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "CorpusSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "attack_kind_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/AttackKind"
+          },
+          "title": "Attack Kind Counts",
+          "type": "object"
+        },
+        "category_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/CapabilityCategory"
+          },
+          "title": "Category Counts",
+          "type": "object"
+        },
+        "expert_category_count": {
+          "minimum": 0,
+          "title": "Expert Category Count",
+          "type": "integer"
+        },
+        "independently_reviewed_task_count": {
+          "minimum": 0,
+          "title": "Independently Reviewed Task Count",
+          "type": "integer"
+        },
+        "machine_admitted_task_count": {
+          "minimum": 0,
+          "title": "Machine Admitted Task Count",
+          "type": "integer"
+        },
+        "owner_approved_task_count": {
+          "minimum": 0,
+          "title": "Owner Approved Task Count",
+          "type": "integer"
+        },
+        "patch_task_count": {
+          "minimum": 0,
+          "title": "Patch Task Count",
+          "type": "integer"
+        },
+        "sequential_patch_bps": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Sequential Patch Bps",
+          "type": "integer"
+        },
+        "sequential_patch_task_count": {
+          "minimum": 0,
+          "title": "Sequential Patch Task Count",
+          "type": "integer"
+        },
+        "task_count": {
+          "minimum": 0,
+          "title": "Task Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "task_count",
+        "category_counts",
+        "patch_task_count",
+        "sequential_patch_task_count",
+        "sequential_patch_bps",
+        "machine_admitted_task_count",
+        "owner_approved_task_count",
+        "independently_reviewed_task_count",
+        "expert_category_count",
+        "attack_kind_counts"
+      ],
+      "title": "CorpusSnapshot",
+      "type": "object"
+    },
+    "GateAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        },
+        "gate": {
+          "$ref": "#/$defs/ReleaseGate"
+        },
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        }
+      },
+      "required": [
+        "gate",
+        "status",
+        "detail"
+      ],
+      "title": "GateAssessment",
+      "type": "object"
+    },
+    "GateStatus": {
+      "enum": [
+        "passed",
+        "pending",
+        "failed"
+      ],
+      "title": "GateStatus",
+      "type": "string"
+    },
+    "ReleaseGate": {
+      "enum": [
+        "corpus_balance",
+        "sequential_coverage",
+        "machine_admission",
+        "owner_approval",
+        "independent_human_review",
+        "expert_calibration",
+        "adversarial_coverage",
+        "reference_configurations",
+        "common_harness_decision",
+        "reference_comparisons",
+        "signed_references",
+        "license_provenance",
+        "release_audits",
+        "public_materials",
+        "held_out",
+        "cross_version_discipline"
+      ],
+      "title": "ReleaseGate",
+      "type": "string"
+    },
+    "ReleaseStage": {
+      "enum": [
+        "provisional",
+        "stable"
+      ],
+      "title": "ReleaseStage",
+      "type": "string"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/ReleaseGate"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "corpus": {
+      "$ref": "#/$defs/CorpusSnapshot"
+    },
+    "evidence_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Manifest Sha256",
+      "type": "string"
+    },
+    "gates": {
+      "items": {
+        "$ref": "#/$defs/GateAssessment"
+      },
+      "title": "Gates",
+      "type": "array"
+    },
+    "primary_configuration_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Primary Configuration Id",
+      "type": "string"
+    },
+    "profiles": {
+      "items": {
+        "$ref": "#/$defs/VersionBinding"
+      },
+      "title": "Profiles",
+      "type": "array"
+    },
+    "reference_configurations": {
+      "items": {
+        "$ref": "#/$defs/VersionBinding"
+      },
+      "title": "Reference Configurations",
+      "type": "array"
+    },
+    "release_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.release-readiness.v1",
+      "default": "slopbench.release-readiness.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stable_eligible": {
+      "title": "Stable Eligible",
+      "type": "boolean"
+    },
+    "stage": {
+      "$ref": "#/$defs/ReleaseStage"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "release_id",
+    "version",
+    "stage",
+    "evidence_manifest_sha256",
+    "task_set",
+    "profiles",
+    "reference_configurations",
+    "primary_configuration_id",
+    "corpus",
+    "gates",
+    "blockers",
+    "stable_eligible"
+  ],
+  "title": "ReleaseReadinessReport",
+  "type": "object"
+}

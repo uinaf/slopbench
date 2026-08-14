@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
@@ -13,7 +14,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": [
       {
         "name": "python",
@@ -52,9 +55,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/domain/pricing-adjustments/slopbench-task.json",
-    "contract_sha256": "bcc27e358b47abf60c665afbb95d20eb6336c697b1154ff7454f7bc1047459e4",
-    "harbor_task_checksum": "467a75c3732d22fd4cf6769ae932976945b182a91e96b4e6c69900e21eeccd45",
-    "task_digest": "1f81dbdd177d7a208e2a4fcf0263f77f7611a0a03ec9c1cadfdc908a7f633ce1",
+    "contract_sha256": "c3c5f82b6c1342ce1c83623dfeae7d1ccc0fee46edb4181ac84535bf0e157056",
+    "harbor_task_checksum": "0cc831709da156ffddf13e9517b844a18972d0bc35a860f8fd1ab97487b4b3e9",
+    "task_digest": "4b3eb23675d66669dbe09a729263c9281b160d3d380c15ea8f120f2ba809226e",
     "task_id": "slopbench/domain/pricing-adjustments",
     "task_version": "1.0.0"
   },

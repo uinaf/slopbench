@@ -1,0 +1,178 @@
+{
+  "blockers": [
+    "owner_approval",
+    "independent_human_review",
+    "expert_calibration",
+    "reference_comparisons",
+    "signed_references",
+    "release_audits",
+    "held_out"
+  ],
+  "corpus": {
+    "attack_kind_counts": {
+      "behavior_bypass": 13,
+      "fabricated_receipt": 1,
+      "grader_exploitation": 9,
+      "hardcoded_fixture_output": 1,
+      "hidden_material_access": 1,
+      "protected_dependency_change": 5,
+      "unauthorized_network": 1,
+      "verifier_tampering": 1
+    },
+    "category_counts": {
+      "code_review": 2,
+      "composition_domain_evolution": 2,
+      "diagnosis_repair": 2,
+      "feature": 2,
+      "restraint": 2,
+      "state_effects": 2,
+      "tracer": 0
+    },
+    "expert_category_count": 0,
+    "independently_reviewed_task_count": 0,
+    "machine_admitted_task_count": 12,
+    "owner_approved_task_count": 0,
+    "patch_task_count": 10,
+    "sequential_patch_bps": 4000,
+    "sequential_patch_task_count": 4,
+    "task_count": 12
+  },
+  "evidence_manifest_sha256": "a6fb98e657c608af112fdbc0b96c4af3a0c80d1b7a12a8200b2c28a6421d4f2b",
+  "gates": [
+    {
+      "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
+      "gate": "corpus_balance",
+      "status": "passed"
+    },
+    {
+      "detail": "4/10 patch tasks use fresh sequential phases",
+      "gate": "sequential_coverage",
+      "status": "passed"
+    },
+    {
+      "detail": "12/12 tasks have complete machine admission evidence",
+      "gate": "machine_admission",
+      "status": "passed"
+    },
+    {
+      "detail": "0/12 task contracts carry owner approval",
+      "gate": "owner_approval",
+      "status": "pending"
+    },
+    {
+      "detail": "0/12 tasks have accepted independent review",
+      "gate": "independent_human_review",
+      "status": "pending"
+    },
+    {
+      "detail": "expert runs cover 0/6 categories",
+      "gate": "expert_calibration",
+      "status": "pending"
+    },
+    {
+      "detail": "attack fixtures cover 8/8 kinds",
+      "gate": "adversarial_coverage",
+      "status": "passed"
+    },
+    {
+      "detail": "pinned harnesses are ['claude-code', 'codex', 'cursor-cli']; primary is cursor-cli",
+      "gate": "reference_configurations",
+      "status": "passed"
+    },
+    {
+      "detail": "No minimal common or open harness has yet passed the same pinned installation, evidence, and five-trial reproducibility gates.",
+      "gate": "common_harness_decision",
+      "status": "passed"
+    },
+    {
+      "detail": "0/3 configurations have five-trial comparisons",
+      "gate": "reference_comparisons",
+      "status": "pending"
+    },
+    {
+      "detail": "0/3 comparison results have verified maintainer signatures",
+      "gate": "signed_references",
+      "status": "pending"
+    },
+    {
+      "detail": "12/12 tasks declare MIT licensing and provenance",
+      "gate": "license_provenance",
+      "status": "passed"
+    },
+    {
+      "detail": "0/5 independent release audits are recorded",
+      "gate": "release_audits",
+      "status": "pending"
+    },
+    {
+      "detail": "license, methodology, schemas, profiles, limitations, and reproduction materials are present",
+      "gate": "public_materials",
+      "status": "passed"
+    },
+    {
+      "detail": "held-out status is not_available",
+      "gate": "held_out",
+      "status": "pending"
+    },
+    {
+      "detail": "0 cross-version claims each bind a bridge report",
+      "gate": "cross_version_discipline",
+      "status": "passed"
+    }
+  ],
+  "primary_configuration_id": "cursor-grok-4.6-medium",
+  "profiles": [
+    {
+      "id": "altay",
+      "sha256": "5f78ac1a712fe586e4e84a337389bcd357288df3b4c0816c3c22f952edd3c561",
+      "version": "0.1.0"
+    },
+    {
+      "id": "balanced",
+      "sha256": "101548764bd7538c3ed53ff8d77122344d01e89c522b74a0ee2e9e2d058c77ce",
+      "version": "0.1.0"
+    },
+    {
+      "id": "cost-aware",
+      "sha256": "7d4fef39dd126828e4a2c7796ab04d0a4249ee5b43626f9d68e16db1bb98a36b",
+      "version": "0.1.0"
+    },
+    {
+      "id": "fast-feedback",
+      "sha256": "4e9156cb52482f59ca24bc0f60beff75d14d463b3258ce57cd0eae461390bb2c",
+      "version": "0.1.0"
+    },
+    {
+      "id": "reliability-first",
+      "sha256": "c45a3a9fc16f43f9663ff2e3be31d94d036c05edbd42de5aaf459fdcbd279432",
+      "version": "0.1.0"
+    }
+  ],
+  "reference_configurations": [
+    {
+      "id": "claude-code-sonnet-medium",
+      "sha256": "62525e692db1ecb48754af086e6af770f6090dd87cf6af520da222879359e4ab",
+      "version": "0.1.0"
+    },
+    {
+      "id": "codex-terra-medium",
+      "sha256": "c7fdeedc138b6d3ddd4f968c8293f7906e1d899b2334c7cd535c7cbd59c781b9",
+      "version": "0.1.0"
+    },
+    {
+      "id": "cursor-grok-4.6-medium",
+      "sha256": "0f44c86f354013ac79543f6a093f136bf17d5182f82e97b4ff976fb009d9e79a",
+      "version": "0.1.0"
+    }
+  ],
+  "release_id": "slopbench-swe-v1-dev",
+  "schema_version": "slopbench.release-readiness.v1",
+  "stable_eligible": false,
+  "stage": "provisional",
+  "task_set": {
+    "id": "slopbench-swe-v1-dev",
+    "sha256": "2cb2fb133825b3f510e36a9a74c5a6896a090f9079ef4aac1dc3259643d62013",
+    "version": "0.1.0"
+  },
+  "version": "0.1.0"
+}

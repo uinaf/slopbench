@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "ComponentPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adapter": {
+      "$ref": "#/$defs/ToolPin"
+    },
+    "configuration_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Configuration Id",
+      "type": "string"
+    },
+    "credential_env": {
+      "items": {
+        "pattern": "^[A-Z][A-Z0-9_]*$",
+        "type": "string"
+      },
+      "title": "Credential Env",
+      "type": "array"
+    },
+    "effort_tier": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Effort Tier",
+      "type": "string"
+    },
+    "environment": {
+      "patternProperties": {
+        "^[A-Z][A-Z0-9_]*$": {
+          "type": "string"
+        }
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "harness": {
+      "$ref": "#/$defs/ComponentPin"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelPin"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "network_allowed_hosts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Network Allowed Hosts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "slopbench.reference-configuration.v1",
+      "default": "slopbench.reference-configuration.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "settings": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Settings",
+      "type": "object"
+    },
+    "setup_network_allowed_hosts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Setup Network Allowed Hosts",
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/ToolPin"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "configuration_id",
+    "version",
+    "harness",
+    "adapter",
+    "model",
+    "effort_tier"
+  ],
+  "title": "ReferenceConfiguration",
+  "type": "object"
+}

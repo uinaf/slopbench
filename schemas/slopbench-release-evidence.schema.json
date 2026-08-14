@@ -1,0 +1,497 @@
+{
+  "$defs": {
+    "AuditKind": {
+      "enum": [
+        "classification",
+        "license_provenance",
+        "privacy_leakage",
+        "anti_cheat",
+        "clean_reproduction",
+        "held_out_execution"
+      ],
+      "title": "AuditKind",
+      "type": "string"
+    },
+    "AuditStatus": {
+      "enum": [
+        "passed",
+        "failed"
+      ],
+      "title": "AuditStatus",
+      "type": "string"
+    },
+    "BoundDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "BoundDocument",
+      "type": "object"
+    },
+    "CommonHarnessDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Configuration Id"
+        },
+        "disposition": {
+          "$ref": "#/$defs/CommonHarnessDisposition"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "rationale"
+      ],
+      "title": "CommonHarnessDecision",
+      "type": "object"
+    },
+    "CommonHarnessDisposition": {
+      "enum": [
+        "included",
+        "omitted_unstable"
+      ],
+      "title": "CommonHarnessDisposition",
+      "type": "string"
+    },
+    "CrossVersionClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "after_result": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "after_task_set": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "before_result": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "before_task_set": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "bridge": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "claim_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Claim Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "before_task_set",
+        "after_task_set",
+        "before_result",
+        "after_result",
+        "bridge"
+      ],
+      "title": "CrossVersionClaim",
+      "type": "object"
+    },
+    "ExpertCalibrationRun": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/ReviewDecision"
+        },
+        "evidence": {
+          "$ref": "#/$defs/ExternalEvidence"
+        },
+        "expert": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Expert",
+          "type": "string"
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/TaskEvidenceIdentity"
+          },
+          "minItems": 1,
+          "title": "Tasks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "expert",
+        "tasks",
+        "decision",
+        "evidence"
+      ],
+      "title": "ExpertCalibrationRun",
+      "type": "object"
+    },
+    "ExternalEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "url": {
+          "pattern": "^https://[^\\s]+$",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "sha256"
+      ],
+      "title": "ExternalEvidence",
+      "type": "object"
+    },
+    "HeldOutEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "audit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "disclosure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoundDocument"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/HeldOutStatus"
+        },
+        "task_set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionBinding"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "HeldOutEvidence",
+      "type": "object"
+    },
+    "HeldOutStatus": {
+      "enum": [
+        "not_available",
+        "active_private"
+      ],
+      "title": "HeldOutStatus",
+      "type": "string"
+    },
+    "HumanTaskReview": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/ReviewDecision"
+        },
+        "evidence": {
+          "$ref": "#/$defs/ExternalEvidence"
+        },
+        "reviewer": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "task": {
+          "$ref": "#/$defs/TaskEvidenceIdentity"
+        }
+      },
+      "required": [
+        "task",
+        "reviewer",
+        "decision",
+        "evidence"
+      ],
+      "title": "HumanTaskReview",
+      "type": "object"
+    },
+    "ReferenceComparisonRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_signers": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "attestation": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "configuration_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "evaluation": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "result": {
+          "$ref": "#/$defs/BoundDocument"
+        },
+        "verification": {
+          "$ref": "#/$defs/BoundDocument"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "evaluation",
+        "result",
+        "attestation",
+        "allowed_signers",
+        "verification"
+      ],
+      "title": "ReferenceComparisonRecord",
+      "type": "object"
+    },
+    "ReleaseAudit": {
+      "additionalProperties": false,
+      "properties": {
+        "auditor": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Auditor",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/ExternalEvidence"
+        },
+        "independent": {
+          "title": "Independent",
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/AuditKind"
+        },
+        "status": {
+          "$ref": "#/$defs/AuditStatus"
+        }
+      },
+      "required": [
+        "kind",
+        "auditor",
+        "independent",
+        "status",
+        "evidence"
+      ],
+      "title": "ReleaseAudit",
+      "type": "object"
+    },
+    "ReleaseStage": {
+      "enum": [
+        "provisional",
+        "stable"
+      ],
+      "title": "ReleaseStage",
+      "type": "string"
+    },
+    "ReviewDecision": {
+      "enum": [
+        "accepted",
+        "changes_requested"
+      ],
+      "title": "ReviewDecision",
+      "type": "string"
+    },
+    "TaskEvidenceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_digest"
+      ],
+      "title": "TaskEvidenceIdentity",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audits": {
+      "items": {
+        "$ref": "#/$defs/ReleaseAudit"
+      },
+      "title": "Audits",
+      "type": "array"
+    },
+    "common_harness": {
+      "$ref": "#/$defs/CommonHarnessDecision"
+    },
+    "cross_version_claims": {
+      "items": {
+        "$ref": "#/$defs/CrossVersionClaim"
+      },
+      "title": "Cross Version Claims",
+      "type": "array"
+    },
+    "expert_runs": {
+      "items": {
+        "$ref": "#/$defs/ExpertCalibrationRun"
+      },
+      "title": "Expert Runs",
+      "type": "array"
+    },
+    "held_out": {
+      "$ref": "#/$defs/HeldOutEvidence"
+    },
+    "human_reviews": {
+      "items": {
+        "$ref": "#/$defs/HumanTaskReview"
+      },
+      "title": "Human Reviews",
+      "type": "array"
+    },
+    "primary_configuration_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Primary Configuration Id",
+      "type": "string"
+    },
+    "profiles": {
+      "items": {
+        "$ref": "#/$defs/BoundDocument"
+      },
+      "minItems": 1,
+      "title": "Profiles",
+      "type": "array"
+    },
+    "public_materials": {
+      "items": {
+        "$ref": "#/$defs/BoundDocument"
+      },
+      "minItems": 1,
+      "title": "Public Materials",
+      "type": "array"
+    },
+    "reference_comparisons": {
+      "items": {
+        "$ref": "#/$defs/ReferenceComparisonRecord"
+      },
+      "title": "Reference Comparisons",
+      "type": "array"
+    },
+    "reference_configurations": {
+      "items": {
+        "$ref": "#/$defs/BoundDocument"
+      },
+      "minItems": 1,
+      "title": "Reference Configurations",
+      "type": "array"
+    },
+    "release_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.release-evidence.v1",
+      "default": "slopbench.release-evidence.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "$ref": "#/$defs/ReleaseStage"
+    },
+    "task_set": {
+      "$ref": "#/$defs/BoundDocument"
+    },
+    "tracer_task": {
+      "$ref": "#/$defs/BoundDocument"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "release_id",
+    "version",
+    "stage",
+    "task_set",
+    "tracer_task",
+    "profiles",
+    "reference_configurations",
+    "public_materials",
+    "primary_configuration_id",
+    "common_harness",
+    "held_out"
+  ],
+  "title": "ReleaseEvidenceManifest",
+  "type": "object"
+}

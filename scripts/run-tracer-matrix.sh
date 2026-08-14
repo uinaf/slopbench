@@ -27,8 +27,11 @@ run_expected 0 runs/tracer/alternate.json "$output/alternate"
 run_expected 1 runs/tracer/invalid.json "$output/invalid"
 run_expected 1 runs/tracer/nop.json "$output/nop"
 
-oracle_a="$output/oracle-a/tracer-oracle/harbor/tracer-oracle"
-oracle_b="$output/oracle-b/tracer-oracle/harbor/tracer-oracle"
+oracle_run_id=$(uv run python -c \
+  'import json, sys; print(json.load(open(sys.argv[1]))["run_id"])' \
+  runs/tracer/oracle.json)
+oracle_a="$output/oracle-a/$oracle_run_id/harbor/$oracle_run_id"
+oracle_b="$output/oracle-b/$oracle_run_id/harbor/$oracle_run_id"
 cmp "$oracle_a/artifacts/app/slopbench-report.json" \
   "$oracle_b/artifacts/app/slopbench-report.json"
 cmp "$oracle_a/verifier/slopbench-verification.json" \

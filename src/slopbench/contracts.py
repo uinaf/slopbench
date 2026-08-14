@@ -77,6 +77,27 @@ def _reject_sensitive_values(value: JsonValue, location: str = "settings") -> No
             _reject_sensitive_values(child, f"{location}[{index}]")
 
 
+def validate_network_hosts(value: list[str]) -> list[str]:
+    if len(value) != len(set(value)):
+        raise ValueError("network_allowed_hosts must be unique")
+    for host in value:
+        candidate = host[2:] if host.startswith("*.") else host
+        if (
+            not candidate
+            or candidate != candidate.lower().rstrip(".")
+            or "://" in candidate
+            or "/" in candidate
+            or ":" in candidate
+            or "*" in candidate
+            or any(
+                re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) is None
+                for label in candidate.split(".")
+            )
+        ):
+            raise ValueError(f"invalid network host pattern: {host}")
+    return value
+
+
 class GateName(StrEnum):
     REQUESTED_BEHAVIOR = "requested_behavior"
     REGRESSIONS = "regressions"
@@ -110,6 +131,7 @@ class FailureReason(StrEnum):
     VERIFIER_EVIDENCE_MISSING = "verifier_evidence_missing"
     VERIFIER_EVIDENCE_INVALID = "verifier_evidence_invalid"
     VERIFIER_CONTRACT_MISMATCH = "verifier_contract_mismatch"
+    HARNESS_IDENTITY_MISMATCH = "harness_identity_mismatch"
     HARBOR_TASK_MISMATCH = "harbor_task_mismatch"
     REWARD_MISMATCH = "reward_mismatch"
     HARBOR_PROCESS_FAILURE = "harbor_process_failure"
@@ -213,24 +235,7 @@ class CapabilityEnvelope(ContractModel):
     @field_validator("network_allowed_hosts")
     @classmethod
     def valid_network_hosts(cls, value: list[str]) -> list[str]:
-        if len(value) != len(set(value)):
-            raise ValueError("network_allowed_hosts must be unique")
-        for host in value:
-            candidate = host[2:] if host.startswith("*.") else host
-            if (
-                not candidate
-                or candidate != candidate.lower().rstrip(".")
-                or "://" in candidate
-                or "/" in candidate
-                or ":" in candidate
-                or "*" in candidate
-                or any(
-                    re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) is None
-                    for label in candidate.split(".")
-                )
-            ):
-                raise ValueError(f"invalid network host pattern: {host}")
-        return value
+        return validate_network_hosts(value)
 
     @model_validator(mode="after")
     def validate_network(self) -> Self:
@@ -578,6 +583,8 @@ class AgentConfiguration(ContractModel):
     effort_tier: Identifier
     settings: dict[str, JsonValue] = Field(default_factory=dict)
     environment: dict[EnvName, str] = Field(default_factory=dict)
+    setup_network_allowed_hosts: list[str] = Field(default_factory=list)
+    network_allowed_hosts: list[str] = Field(default_factory=list)
     tools: list[ToolPin] = Field(default_factory=list)
     instruction_layers: list[InstructionLayer] = Field(default_factory=list)
     credential_env: list[EnvName] = Field(default_factory=list)
@@ -598,10 +605,23 @@ class AgentConfiguration(ContractModel):
                 )
         return value
 
+    _network_allowed_hosts = field_validator(
+        "setup_network_allowed_hosts", "network_allowed_hosts"
+    )(validate_network_hosts)
+
     @model_validator(mode="after")
     def validate_agent(self) -> Self:
         if self.harness not in {"oracle", "nop"} and self.model is None:
             raise ValueError("model is required for non-utility harnesses")
+        if self.harness in {"oracle", "nop"} and (
+            self.setup_network_allowed_hosts or self.network_allowed_hosts
+        ):
+            raise ValueError("utility harnesses cannot receive network access")
+        configured_version = self.settings.get("version")
+        if configured_version is not None and configured_version != self.harness_version:
+            raise ValueError("agent.settings.version must match harness_version")
+        if self.harness == "cursor-cli" and configured_version is not None:
+            raise ValueError("cursor-cli version must be observed instead of configured")
         if len(self.credential_env) != len(set(self.credential_env)):
             raise ValueError("credential_env values must be unique")
         reserved = {
@@ -829,9 +849,31 @@ class ArtifactDigest(ContractModel):
     _path = field_validator("path")(validate_relative_path)
 
 
+class ObservedModelEvidence(ContractModel):
+    name: str
+    provider: str | None
+
+
+class ObservedAgentEvidence(ContractModel):
+    name: str
+    version: str
+    model: ObservedModelEvidence | None
+
+    def matches(self, expected: AgentConfiguration) -> bool:
+        if self.name != expected.harness or self.version != expected.harness_version:
+            return False
+        if expected.model is None:
+            return self.model is None
+        return self.model is not None and (
+            self.model.provider == expected.model.provider
+            and self.model.name == expected.model.name
+        )
+
+
 class HarborEvidence(ContractModel):
     version: Version
     task_checksum: str | None
+    agent: ObservedAgentEvidence | None
     result_sha256: Sha256Hex | None
     config_sha256: Sha256Hex | None
     trajectory_sha256: Sha256Hex | None

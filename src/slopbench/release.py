@@ -47,6 +47,7 @@ from slopbench.contracts import (
     UsageMetrics,
     Version,
     _reject_sensitive_values,
+    validate_network_hosts,
     validate_relative_path,
 )
 from slopbench.hashing import (
@@ -61,6 +62,9 @@ from slopbench.hashing import (
 
 TASK_SET_SCHEMA_VERSION: Literal["slopbench.task-set.v1"] = "slopbench.task-set.v1"
 PROFILE_SCHEMA_VERSION: Literal["slopbench.profile.v1"] = "slopbench.profile.v1"
+REFERENCE_CONFIGURATION_SCHEMA_VERSION: Literal["slopbench.reference-configuration.v1"] = (
+    "slopbench.reference-configuration.v1"
+)
 EVALUATION_SCHEMA_VERSION: Literal["slopbench.evaluation.v1"] = "slopbench.evaluation.v1"
 EVALUATION_RESULT_SCHEMA_VERSION: Literal["slopbench.evaluation-result.v1"] = (
     "slopbench.evaluation-result.v1"
@@ -228,6 +232,9 @@ class ProfileDefinition(ContractModel):
 
 
 class ReferenceConfiguration(ContractModel):
+    schema_version: Literal["slopbench.reference-configuration.v1"] = (
+        REFERENCE_CONFIGURATION_SCHEMA_VERSION
+    )
     configuration_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
     harness: ComponentPin
@@ -236,6 +243,8 @@ class ReferenceConfiguration(ContractModel):
     effort_tier: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     settings: dict[str, JsonValue] = Field(default_factory=dict)
     environment: dict[EnvName, str] = Field(default_factory=dict)
+    setup_network_allowed_hosts: list[str] = Field(default_factory=list)
+    network_allowed_hosts: list[str] = Field(default_factory=list)
     tools: list[ToolPin] = Field(default_factory=list)
     credential_env: list[EnvName] = Field(default_factory=list)
 
@@ -255,6 +264,10 @@ class ReferenceConfiguration(ContractModel):
                 )
         return value
 
+    _network_allowed_hosts = field_validator(
+        "setup_network_allowed_hosts", "network_allowed_hosts"
+    )(validate_network_hosts)
+
     @model_validator(mode="after")
     def unique_tools(self) -> Self:
         names = [tool.name for tool in self.tools]
@@ -262,6 +275,11 @@ class ReferenceConfiguration(ContractModel):
             raise ValueError("reference configuration tool names must be unique")
         if len(self.credential_env) != len(set(self.credential_env)):
             raise ValueError("reference configuration credential_env values must be unique")
+        configured_version = self.settings.get("version")
+        if configured_version is not None and configured_version != self.harness.version:
+            raise ValueError("configuration.settings.version must match harness.version")
+        if self.harness.name == "cursor-cli" and configured_version is not None:
+            raise ValueError("cursor-cli version must be observed instead of configured")
         return self
 
 
@@ -375,6 +393,8 @@ class RawTrialOutcome(ContractModel):
         if self.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS:
             if self.harbor.task_checksum != self.task.harbor_task_checksum:
                 raise ValueError("raw Harbor task checksum is missing or mismatched")
+            if self.harbor.agent is None or not self.harbor.agent.matches(self.agent):
+                raise ValueError("raw observed agent identity is missing or mismatched")
         elif self.harbor.task_checksum is not None and (
             self.harbor.task_checksum != self.task.harbor_task_checksum
         ):
@@ -488,6 +508,14 @@ class EvaluationResult(ContractModel):
                 "effort_tier": (self.configuration.effort_tier, trial.agent.effort_tier),
                 "settings": (self.configuration.settings, trial.agent.settings),
                 "environment": (self.configuration.environment, trial.agent.environment),
+                "setup_network_allowed_hosts": (
+                    self.configuration.setup_network_allowed_hosts,
+                    trial.agent.setup_network_allowed_hosts,
+                ),
+                "network_allowed_hosts": (
+                    self.configuration.network_allowed_hosts,
+                    trial.agent.network_allowed_hosts,
+                ),
                 "tools": (self.configuration.tools, trial.agent.tools),
                 "credential_env": (
                     self.configuration.credential_env,
@@ -717,6 +745,14 @@ def profile_binding(profile: ProfileDefinition) -> VersionBinding:
     )
 
 
+def reference_configuration_binding(configuration: ReferenceConfiguration) -> VersionBinding:
+    return VersionBinding(
+        id=configuration.configuration_id,
+        version=configuration.version,
+        sha256=contract_digest(REFERENCE_CONFIGURATION_SCHEMA_VERSION, configuration),
+    )
+
+
 def _resolved_file(root: Path, relative: str) -> Path:
     root = root.resolve()
     candidate = root.joinpath(*PurePosixPath(relative).parts)
@@ -767,6 +803,14 @@ def _configuration_mismatches(configuration: ReferenceConfiguration, run: RunMan
         "effort_tier": (configuration.effort_tier, run.agent.effort_tier),
         "settings": (configuration.settings, run.agent.settings),
         "environment": (configuration.environment, run.agent.environment),
+        "setup_network_allowed_hosts": (
+            configuration.setup_network_allowed_hosts,
+            run.agent.setup_network_allowed_hosts,
+        ),
+        "network_allowed_hosts": (
+            configuration.network_allowed_hosts,
+            run.agent.network_allowed_hosts,
+        ),
         "tools": (configuration.tools, run.agent.tools),
         "credential_env": (configuration.credential_env, run.agent.credential_env),
     }
@@ -914,6 +958,10 @@ def compute_evaluation(
             or (
                 result.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
                 and result.harbor.task_checksum != run.task.harbor_task_checksum
+            )
+            or (
+                result.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+                and (result.harbor.agent is None or not result.harbor.agent.matches(run.agent))
             )
             or (
                 result.classification not in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS

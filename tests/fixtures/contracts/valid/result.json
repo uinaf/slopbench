@@ -37,6 +37,7 @@
   "harbor": {
     "version": "0.16.1",
     "task_checksum": "checksum",
+    "agent": {"name": "oracle", "version": "1.0.0", "model": null},
     "result_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "trajectory_sha256": null

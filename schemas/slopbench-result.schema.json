@@ -47,6 +47,7 @@
         "verifier_evidence_missing",
         "verifier_evidence_invalid",
         "verifier_contract_mismatch",
+        "harness_identity_mismatch",
         "harbor_task_mismatch",
         "reward_mismatch",
         "harbor_process_failure",
@@ -98,6 +99,16 @@
     "HarborEvidence": {
       "additionalProperties": false,
       "properties": {
+        "agent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservedAgentEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "config_sha256": {
           "anyOf": [
             {
@@ -154,11 +165,68 @@
       "required": [
         "version",
         "task_checksum",
+        "agent",
         "result_sha256",
         "config_sha256",
         "trajectory_sha256"
       ],
       "title": "HarborEvidence",
+      "type": "object"
+    },
+    "ObservedAgentEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservedModelEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "model"
+      ],
+      "title": "ObservedAgentEvidence",
+      "type": "object"
+    },
+    "ObservedModelEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider"
+        }
+      },
+      "required": [
+        "name",
+        "provider"
+      ],
+      "title": "ObservedModelEvidence",
       "type": "object"
     },
     "OutcomeStatus": {

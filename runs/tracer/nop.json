@@ -1,6 +1,6 @@
 {
-  "attack_fixture_id": null,
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
@@ -8,15 +8,18 @@
     "harness_version": "1.0.0",
     "instruction_layers": [
       {
-        "name": "task",
+        "name": "implement",
         "path": "tasks/tracer/instruction.md",
         "sha256": "33d1c57d934fe83f07f29ceb91e5e07c9d7e30b606eb9850b48c2536300080a9"
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": []
   },
+  "attack_fixture_id": null,
   "limits": {
     "agent_setup_timeout_sec": 120,
     "agent_timeout_sec": 300,
@@ -24,8 +27,11 @@
     "max_tokens": null,
     "verifier_timeout_sec": 120
   },
-  "retry_policy": {"max_attempts": 1, "retryable_reasons": []},
-  "run_id": "tracer-nop",
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "tracer-event-summary-nop",
   "runtime": {
     "cpus": 2,
     "environment_provider": "docker",
@@ -43,11 +49,15 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/tracer/slopbench-task.json",
-    "contract_sha256": "6b6f9a6c6ff1603366f3676a1e1cb4405068afdf74a309e790e236537aa5cc29",
-    "harbor_task_checksum": "68f65b23dae5b88bd7203a6e986415da8c9bb8df022bf1402acf8b0eb9e190dd",
-    "task_digest": "c541ffbf7f4397b17e14473c961bdae2a85fc1648f1a62ab33a00fe4926ebb94",
+    "contract_sha256": "ddb808249205741365980be40967e0d7f3ee1e7ec773399f94f83d7d5a567825",
+    "harbor_task_checksum": "588c633a1253c2bc1b16199bacafb03d042cbbd60515b8e20269b4c94449b9fe",
+    "task_digest": "266a958464a843b3b7cd3f8779688470d25d029b6a50ee9b63d4400e59c2029d",
     "task_id": "slopbench/tracer/event-summary",
     "task_version": "1.0.0"
   },
-  "trial": {"attempt": 1, "id": "tracer-nop", "seed": 1}
+  "trial": {
+    "attempt": 1,
+    "id": "tracer-event-summary-nop",
+    "seed": 1
+  }
 }

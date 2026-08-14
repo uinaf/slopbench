@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
@@ -13,7 +14,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": [
       {
         "name": "python",
@@ -52,9 +55,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/feature/idempotency-registry/slopbench-task.json",
-    "contract_sha256": "070a9123f354c3e054443a617382c4586acd6f329d85cc29f5763ac151675448",
-    "harbor_task_checksum": "bdce06e6e10e6e5ad166790496721e401f6eb0a0ee2c83fb05c9ae71cd790684",
-    "task_digest": "6953e0f9062ee2253d83f6d727965de753a557deb132b6f225df1010a4dcbe12",
+    "contract_sha256": "3c5fbd2b05cd35f84164696194821a9fe2a8212f9789845de3ea7bf6d4ce6698",
+    "harbor_task_checksum": "aa89fd58745665a6ff88836c9db234d5b92d55d3e545be11bd97a95e6edd349a",
+    "task_digest": "b15875fe58553fe1bfc28ca76e8121321c554f04cd6c0b838c03b80aaba3d9bd",
     "task_id": "slopbench/feature/idempotency-registry",
     "task_version": "1.0.0"
   },

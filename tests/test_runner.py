@@ -136,15 +136,22 @@ def write_harbor_task(
                 f'[steps.verifier]\nenv = {{ SLOPBENCH_PHASE = "{name}" }}\n\n'
             )
     strategy = 'multi_step_reward_strategy = "final"\n\n' if sequential else ""
+    verifier_environment = (
+        '[verifier.environment]\nnetwork_mode = "no-network"\ncpus = 2\n'
+        'memory_mb = 2048\nstorage_mb = 4096\nworkdir = "/app"\n\n'
+        if isolation == "separate"
+        else ""
+    )
     (task_dir / "task.toml").write_text(
         'version = "1.3"\n\n'
         + strategy
         + steps
         + '[metadata]\nslopbench_task_id = "slopbench/tracer/example"\n'
         'slopbench_task_version = "1.0.0"\n\n'
-        '[agent]\nnetwork_mode = "allowlist"\nallowed_hosts = ["cursor.com"]\n\n'
+        '[agent]\nnetwork_mode = "no-network"\n\n'
         f'[verifier]\nenvironment_mode = "{isolation}"\nnetwork_mode = "no-network"\n\n'
-        '[environment]\nnetwork_mode = "no-network"\ncpus = 2\n'
+        + verifier_environment
+        + '[environment]\nnetwork_mode = "no-network"\ncpus = 2\n'
         'memory_mb = 2048\nstorage_mb = 4096\nworkdir = "/app"\n'
     )
 
@@ -192,8 +199,8 @@ def test_harbor_boundary_rejects_policy_drift(tmp_path: Path, mutation: str, mes
     elif mutation == "agent-network":
         task_toml.write_text(
             task_toml.read_text().replace(
-                'network_mode = "allowlist"\nallowed_hosts = ["cursor.com"]',
-                'network_mode = "public"',
+                '[agent]\nnetwork_mode = "no-network"',
+                '[agent]\nnetwork_mode = "public"',
             )
         )
         harbor_task = HarborTask(task_dir)
@@ -217,6 +224,28 @@ def test_harbor_boundary_accepts_bound_sequential_steps(tmp_path: Path) -> None:
 
     runner._validate_harbor_boundary(
         HarborTask(task_dir), run_manifest(), task_contract(sequential=True), task_dir
+    )
+
+
+def test_harbor_boundary_applies_only_run_specific_model_hosts(tmp_path: Path) -> None:
+    task_dir = tmp_path / "task"
+    task_dir.mkdir()
+    (task_dir / "instruction.md").write_text("instruction\n")
+    write_harbor_task(task_dir)
+    payload = run_payload()
+    payload["agent"].update(
+        {
+            "harness": "cursor-cli",
+            "model": {"provider": "cursor", "name": "composer-2.5"},
+            "network_allowed_hosts": ["cursor.com"],
+        }
+    )
+
+    runner._validate_harbor_boundary(
+        HarborTask(task_dir),
+        parse_json(RunManifest, payload),
+        task_contract(),
+        task_dir,
     )
 
 
@@ -320,6 +349,73 @@ def test_run_binding_rejects_wrong_contract_path(tmp_path: Path) -> None:
 
     with pytest.raises(ContractError, match="does not identify"):
         runner._validate_run_binding(manifest, task, SHA_A, SHA_B, task_dir)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "name", "version", "settings"])
+def test_run_binding_rejects_unbound_non_utility_adapter(tmp_path: Path, mutation: str) -> None:
+    payload = run_payload()
+    payload["agent"].update(
+        {
+            "harness": "cursor-cli",
+            "model": {"provider": "cursor", "name": "composer-2.5"},
+            "adapter": {
+                "name": "harbor-cursor-cli",
+                "version": payload["runtime"]["harbor_version"],
+                "settings": {},
+            },
+        }
+    )
+    if mutation == "missing":
+        payload["agent"]["adapter"] = None
+    elif mutation == "name":
+        payload["agent"]["adapter"]["name"] = "harbor-codex"
+    elif mutation == "version":
+        payload["agent"]["adapter"]["version"] = "0.15.0"
+    else:
+        payload["agent"]["adapter"]["settings"] = {"mode": "unbound"}
+
+    with pytest.raises(ContractError, match="adapter pin"):
+        runner._validate_run_binding(
+            parse_json(RunManifest, payload),
+            task_contract(),
+            SHA_A,
+            SHA_B,
+            tmp_path / "task",
+        )
+
+
+def test_run_binding_rejects_unexpected_official_credentials(tmp_path: Path) -> None:
+    payload = run_payload()
+    payload["agent"].update(
+        {
+            "harness": "cursor-cli",
+            "harness_version": "2026.08.11-e8db854",
+            "model": {"provider": "cursor", "name": "cursor-grok-4.6-medium"},
+            "adapter": {
+                "name": "harbor-cursor-cli",
+                "version": payload["runtime"]["harbor_version"],
+                "settings": {},
+            },
+            "setup_network_allowed_hosts": [
+                "cursor.com",
+                "*.cursor.com",
+                "*.cursor.sh",
+                "deb.debian.org",
+                "security.debian.org",
+            ],
+            "network_allowed_hosts": ["cursor.com", "*.cursor.com", "*.cursor.sh"],
+            "credential_env": ["ANTHROPIC_API_KEY"],
+        }
+    )
+
+    with pytest.raises(ContractError, match="credential pins"):
+        runner._validate_run_binding(
+            parse_json(RunManifest, payload),
+            task_contract(),
+            SHA_A,
+            SHA_B,
+            tmp_path / "task",
+        )
 
 
 def test_run_binding_rejects_harbor_isolation_drift(tmp_path: Path) -> None:
@@ -456,6 +552,7 @@ def task_with_attack_fixture() -> TaskContract:
     [
         ("environment", "environment exceeds"),
         ("tool", "tools exceed"),
+        ("network", "network exceeds"),
         ("utility-credential", "utility harnesses cannot"),
         ("unknown-attack", "unknown attack fixture"),
         ("paid-attack", "zero-cost oracle"),
@@ -468,6 +565,14 @@ def test_capability_binding_rejects_manifest_escalation(mutation: str, message: 
         payload["agent"]["environment"]["UNDECLARED"] = "value"
     elif mutation == "tool":
         payload["agent"]["tools"].append({"name": "node", "version": "1.0.0", "settings": {}})
+    elif mutation == "network":
+        payload["agent"].update(
+            {
+                "harness": "cursor-cli",
+                "model": {"provider": "cursor", "name": "composer-2.5"},
+                "network_allowed_hosts": ["unexpected.example"],
+            }
+        )
     elif mutation == "utility-credential":
         payload["agent"]["credential_env"] = ["CURSOR_API_KEY"]
     elif mutation == "unknown-attack":
@@ -1178,6 +1283,63 @@ def test_finalize_rejects_tampered_execution_evidence(
     assert result.failure_reason == reason
     if mutation == "symlinked-evidence":
         assert result.receipt.errors == ["trusted verifier evidence must not be a symlink"]
+
+
+@pytest.mark.parametrize("field", ["name", "version", "model"])
+def test_finalize_rejects_observed_agent_identity_drift(tmp_path: Path, field: str) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    result_path = bundle / "harbor" / manifest.trial.id / "result.json"
+    payload = json.loads(result_path.read_text())
+    if field == "name":
+        payload["agent_info"]["name"] = "nop"
+    elif field == "version":
+        payload["agent_info"]["version"] = "9.9.9"
+    else:
+        payload["agent_info"]["model_info"] = {
+            "provider": "cursor",
+            "name": "unexpected",
+        }
+    write_json(result_path, payload)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.BENCHMARK_DEFECT
+    assert result.failure_reason == FailureReason.HARNESS_IDENTITY_MISMATCH
+    assert result.harbor.agent is not None
+    assert not result.harbor.agent.matches(manifest.agent)
+
+
+@pytest.mark.parametrize(
+    ("exception_type", "classification", "reason"),
+    [
+        (
+            "AgentSetupTimeoutError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.AGENT_SETUP_TIMEOUT,
+        ),
+        (
+            "NonZeroAgentExitCodeError",
+            FailureClassification.BENCHMARK_DEFECT,
+            FailureReason.HARNESS_IDENTITY_MISMATCH,
+        ),
+    ],
+)
+def test_finalize_requires_identity_only_for_agent_attributable_exceptions(
+    tmp_path: Path,
+    exception_type: str,
+    classification: FailureClassification,
+    reason: FailureReason,
+) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path, exception_type=exception_type)
+    result_path = bundle / "harbor" / manifest.trial.id / "result.json"
+    payload = json.loads(result_path.read_text())
+    payload["agent_info"]["version"] = "unknown"
+    write_json(result_path, payload)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 1)
+
+    assert result.classification == classification
+    assert result.failure_reason == reason
 
 
 @pytest.mark.parametrize(
