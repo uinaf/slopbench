@@ -431,7 +431,7 @@
         "source_url": "https://github.com/uinaf/slopbench",
         "transformed": false
       },
-      "task_digest": "b1699844e7d2a7d6698a741c02bfb5b41428b555d065667e154b8a1c57a56822",
+      "task_digest": "bcd81e9c80bc80e997649f0623ce51c3efc0fab455d2b0cdb60cd64e86053562",
       "task_id": "slopbench/review/archive-extractor",
       "task_version": "1.0.0"
     },
@@ -475,7 +475,7 @@
         "source_url": "https://github.com/uinaf/slopbench",
         "transformed": false
       },
-      "task_digest": "834a1d55a91ef27b946e454b6deead97355790cf838cbaa2456968f9161dd27c",
+      "task_digest": "ceacd69d5a5162ab98a23d37a8eba08957f84c80dc10af318587b1c8b08ec899",
       "task_id": "slopbench/review/webhook-dispatch",
       "task_version": "1.0.0"
     },

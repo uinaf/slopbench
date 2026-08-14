@@ -285,7 +285,6 @@
     },
     "schema_version": {
       "const": "slopbench.evaluation.v1",
-      "default": "slopbench.evaluation.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -294,6 +293,7 @@
     }
   },
   "required": [
+    "schema_version",
     "evaluation_id",
     "task_set",
     "profile",

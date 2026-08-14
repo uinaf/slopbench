@@ -40,7 +40,6 @@
     },
     "schema_version": {
       "const": "slopbench.attestation-statement.v1",
-      "default": "slopbench.attestation-statement.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -53,6 +52,7 @@
     }
   },
   "required": [
+    "schema_version",
     "evaluation_id",
     "subjects"
   ],

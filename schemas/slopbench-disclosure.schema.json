@@ -350,7 +350,6 @@
     },
     "schema_version": {
       "const": "slopbench.disclosure.v1",
-      "default": "slopbench.disclosure.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -362,6 +361,7 @@
     }
   },
   "required": [
+    "schema_version",
     "task_set",
     "category_counts",
     "capability_requirements",

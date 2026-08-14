@@ -262,7 +262,6 @@
   "properties": {
     "schema_version": {
       "const": "slopbench.task-set.v1",
-      "default": "slopbench.task-set.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -289,6 +288,7 @@
     }
   },
   "required": [
+    "schema_version",
     "task_set_id",
     "version",
     "visibility",

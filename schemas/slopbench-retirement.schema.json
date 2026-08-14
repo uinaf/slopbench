@@ -217,12 +217,12 @@
     },
     "schema_version": {
       "const": "slopbench.retirement.v1",
-      "default": "slopbench.retirement.v1",
       "title": "Schema Version",
       "type": "string"
     }
   },
   "required": [
+    "schema_version",
     "before_task_set",
     "after_task_set",
     "bridge_sha256",

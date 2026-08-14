@@ -708,7 +708,6 @@
         },
         "schema_version": {
           "const": "slopbench.profile.v1",
-          "default": "slopbench.profile.v1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -742,6 +741,7 @@
         }
       },
       "required": [
+        "schema_version",
         "profile_id",
         "version",
         "label",
@@ -1298,7 +1298,6 @@
       "properties": {
         "schema_version": {
           "const": "slopbench.task-set.v1",
-          "default": "slopbench.task-set.v1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -1325,6 +1324,7 @@
         }
       },
       "required": [
+        "schema_version",
         "task_set_id",
         "version",
         "visibility",
@@ -1599,7 +1599,6 @@
     },
     "schema_version": {
       "const": "slopbench.evaluation-result.v1",
-      "default": "slopbench.evaluation-result.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -1619,6 +1618,7 @@
     }
   },
   "required": [
+    "schema_version",
     "evaluation_id",
     "task_set",
     "task_set_manifest",

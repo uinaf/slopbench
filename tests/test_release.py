@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from slopbench import cli
 from slopbench.contracts import (
@@ -40,12 +40,14 @@ from slopbench.release import (
     EvaluationPurpose,
     EvaluationResult,
     EvaluationRunBinding,
+    HeldOutDisclosure,
     ProfileBudget,
     ProfileDefinition,
     RawResultVector,
     RawTrialOutcome,
     ReferenceAttestation,
     ReferenceConfiguration,
+    ReferenceVerification,
     ResultOrigin,
     RetiredPublication,
     RetirementManifest,
@@ -82,9 +84,28 @@ from tests.helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 DATASET = ROOT / "datasets" / "slopbench-swe-v1-dev.json"
 
+VERSIONED_LIFECYCLE_MODELS: list[type[BaseModel]] = [
+    TaskSetManifest,
+    ProfileDefinition,
+    EvaluationManifest,
+    EvaluationResult,
+    HeldOutDisclosure,
+    BridgeReport,
+    RetirementManifest,
+    AttestationStatement,
+    ReferenceAttestation,
+    ReferenceVerification,
+]
+
 
 def digest(label: str) -> str:
     return sha256_bytes(label.encode())
+
+
+@pytest.mark.parametrize("model", VERSIONED_LIFECYCLE_MODELS)
+def test_lifecycle_schema_version_is_required(model: type[BaseModel]) -> None:
+    assert model.model_fields["schema_version"].is_required()
+    assert "schema_version" in model.model_json_schema()["required"]
 
 
 def rebuild[ModelT](model: ModelT, **updates: object) -> ModelT:
@@ -107,6 +128,7 @@ def one_task_set(
 ) -> TaskSetManifest:
     dataset, _ = validate_task_set(DATASET, ROOT)
     return TaskSetManifest(
+        schema_version="slopbench.task-set.v1",
         task_set_id=task_set_id,
         version=version,
         visibility=visibility,
@@ -262,6 +284,7 @@ def direct_result(
     ]
     vector = RawResultVector(trials=trials)
     return EvaluationResult(
+        schema_version="slopbench.evaluation-result.v1",
         evaluation_id=f"evaluation-{task_set.version.replace('.', '-')}",
         task_set=task_set_binding(task_set),
         task_set_manifest=task_set,
@@ -417,6 +440,7 @@ def materialize_evaluation(
             )
         )
     evaluation = EvaluationManifest(
+        schema_version="slopbench.evaluation.v1",
         evaluation_id="fixture-evaluation",
         task_set=task_set_binding(task_set),
         profile=profile_binding(scoring_profile),
@@ -513,6 +537,7 @@ def test_evaluation_manifest_enforces_trial_policy(purpose: EvaluationPurpose, c
     ]
 
     manifest = EvaluationManifest(
+        schema_version="slopbench.evaluation.v1",
         evaluation_id="trial-policy",
         task_set=task_set_binding(task_set),
         profile=profile_binding(scoring_profile),
@@ -553,6 +578,7 @@ def test_evaluation_bindings_reject_duplicates_and_partial_report_bindings() -> 
         )
 
     payload = {
+        "schema_version": "slopbench.evaluation.v1",
         "evaluation_id": "duplicates",
         "task_set": task_set_binding(task_set).model_dump(mode="json"),
         "profile": profile_binding(scoring_profile).model_dump(mode="json"),
@@ -961,12 +987,14 @@ def retirement_fixture() -> tuple[
     retired_entry = dataset.tasks[0]
     replacement_entry = dataset.tasks[1]
     before = TaskSetManifest(
+        schema_version="slopbench.task-set.v1",
         task_set_id="held-out-suite",
         version="0.1.0",
         visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
         tasks=[retired_entry],
     )
     after = TaskSetManifest(
+        schema_version="slopbench.task-set.v1",
         task_set_id="held-out-suite",
         version="0.2.0",
         visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
@@ -999,6 +1027,7 @@ def retirement_fixture() -> tuple[
         ),
     )
     retirement = RetirementManifest(
+        schema_version="slopbench.retirement.v1",
         before_task_set=task_set_binding(before),
         after_task_set=task_set_binding(after),
         bridge_sha256=digest("bridge"),
@@ -1255,12 +1284,14 @@ def test_bridge_rejects_execution_pin_drift_for_an_unchanged_task() -> None:
     dataset, _ = validate_task_set(DATASET, ROOT)
     shared, added = dataset.tasks[:2]
     before = TaskSetManifest(
+        schema_version="slopbench.task-set.v1",
         task_set_id="held-out-suite",
         version="0.1.0",
         visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
         tasks=[shared],
     )
     after = TaskSetManifest(
+        schema_version="slopbench.task-set.v1",
         task_set_id="held-out-suite",
         version="0.2.0",
         visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
@@ -1350,6 +1381,7 @@ def test_attestation_rejects_external_bad_and_mismatched_signatures(tmp_path: Pa
         (base64.b64encode(b"not an ssh signature").decode(), "armored SSH"),
     ]:
         attestation = ReferenceAttestation(
+            schema_version="slopbench.attestation.v1",
             statement=statement,
             signature=SshSignature(signer="maintainer@uinaf.dev", signature_base64=encoded),
         )
@@ -1365,6 +1397,7 @@ def test_attestation_rejects_external_bad_and_mismatched_signatures(tmp_path: Pa
 
     changed_statement = statement.model_copy(update={"evaluation_id": "different"})
     mismatched = ReferenceAttestation(
+        schema_version="slopbench.attestation.v1",
         statement=changed_statement,
         signature=SshSignature(
             signer="maintainer@uinaf.dev",
@@ -1593,6 +1626,7 @@ def materialize_evaluation_for_model(purpose: EvaluationPurpose) -> EvaluationMa
     }[purpose]
     entry = task_set.tasks[0]
     return EvaluationManifest(
+        schema_version="slopbench.evaluation.v1",
         evaluation_id="model-validation",
         task_set=task_set_binding(task_set),
         profile=profile_binding(scoring_profile),
@@ -1689,6 +1723,7 @@ def test_lifecycle_models_reject_invalid_counts_and_duplicate_records() -> None:
         RetirementManifest.model_validate_json(json.dumps(duplicate_replacement))
 
     statement = {
+        "schema_version": "slopbench.attestation-statement.v1",
         "evaluation_id": "invalid-statement",
         "subjects": [{"name": "evaluation-manifest", "sha256": digest("manifest")}],
     }

@@ -8,7 +8,6 @@
     },
     "schema_version": {
       "const": "slopbench.reference-verification.v1",
-      "default": "slopbench.reference-verification.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -29,6 +28,7 @@
     }
   },
   "required": [
+    "schema_version",
     "signer",
     "attestation_sha256",
     "statement_sha256"

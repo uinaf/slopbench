@@ -4,7 +4,12 @@ import argparse
 from pathlib import Path
 
 from slopbench.hashing import validate_task, write_model
-from slopbench.release import TaskSetEntry, TaskSetManifest, TaskSetVisibility
+from slopbench.release import (
+    TASK_SET_SCHEMA_VERSION,
+    TaskSetEntry,
+    TaskSetManifest,
+    TaskSetVisibility,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,6 +46,7 @@ def main() -> int:
             )
         )
     manifest = TaskSetManifest(
+        schema_version=TASK_SET_SCHEMA_VERSION,
         task_set_id=args.task_set_id,
         version=args.version,
         visibility=TaskSetVisibility(args.visibility),

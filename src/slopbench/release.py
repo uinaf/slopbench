@@ -163,7 +163,7 @@ class TaskSetEntry(ContractModel):
 
 
 class TaskSetManifest(ContractModel):
-    schema_version: Literal["slopbench.task-set.v1"] = TASK_SET_SCHEMA_VERSION
+    schema_version: Literal["slopbench.task-set.v1"]
     task_set_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
     visibility: TaskSetVisibility
@@ -193,7 +193,7 @@ class ProfileBudget(ContractModel):
 
 
 class ProfileDefinition(ContractModel):
-    schema_version: Literal["slopbench.profile.v1"] = PROFILE_SCHEMA_VERSION
+    schema_version: Literal["slopbench.profile.v1"]
     profile_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
     label: str = Field(min_length=1)
@@ -299,7 +299,7 @@ _TRIAL_COUNTS = {
 
 
 class EvaluationManifest(ContractModel):
-    schema_version: Literal["slopbench.evaluation.v1"] = EVALUATION_SCHEMA_VERSION
+    schema_version: Literal["slopbench.evaluation.v1"]
     evaluation_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     task_set: VersionBinding
     profile: VersionBinding
@@ -435,7 +435,7 @@ class AggregateMetrics(ContractModel):
 
 
 class EvaluationResult(ContractModel):
-    schema_version: Literal["slopbench.evaluation-result.v1"] = EVALUATION_RESULT_SCHEMA_VERSION
+    schema_version: Literal["slopbench.evaluation-result.v1"]
     evaluation_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     task_set: VersionBinding
     task_set_manifest: TaskSetManifest
@@ -578,7 +578,7 @@ class PublicAggregate(ContractModel):
 
 
 class HeldOutDisclosure(ContractModel):
-    schema_version: Literal["slopbench.disclosure.v1"] = DISCLOSURE_SCHEMA_VERSION
+    schema_version: Literal["slopbench.disclosure.v1"]
     task_set: VersionBinding
     category_counts: dict[CapabilityCategory, int]
     capability_requirements: list[PublicCapabilityRequirement]
@@ -600,7 +600,7 @@ class CoverageSnapshot(ContractModel):
 
 
 class BridgeReport(ContractModel):
-    schema_version: Literal["slopbench.bridge.v1"] = BRIDGE_SCHEMA_VERSION
+    schema_version: Literal["slopbench.bridge.v1"]
     before_task_set: VersionBinding
     after_task_set: VersionBinding
     profile: VersionBinding
@@ -636,7 +636,7 @@ class RetirementRecord(ContractModel):
 
 
 class RetirementManifest(ContractModel):
-    schema_version: Literal["slopbench.retirement.v1"] = RETIREMENT_SCHEMA_VERSION
+    schema_version: Literal["slopbench.retirement.v1"]
     before_task_set: VersionBinding
     after_task_set: VersionBinding
     bridge_sha256: Sha256Hex
@@ -659,9 +659,7 @@ class AttestationSubject(ContractModel):
 
 
 class AttestationStatement(ContractModel):
-    schema_version: Literal["slopbench.attestation-statement.v1"] = (
-        ATTESTATION_STATEMENT_SCHEMA_VERSION
-    )
+    schema_version: Literal["slopbench.attestation-statement.v1"]
     predicate_type: Literal["slopbench.maintainer-reference.v1"] = (
         "slopbench.maintainer-reference.v1"
     )
@@ -686,15 +684,13 @@ class SshSignature(ContractModel):
 
 
 class ReferenceAttestation(ContractModel):
-    schema_version: Literal["slopbench.attestation.v1"] = ATTESTATION_SCHEMA_VERSION
+    schema_version: Literal["slopbench.attestation.v1"]
     statement: AttestationStatement
     signature: SshSignature
 
 
 class ReferenceVerification(ContractModel):
-    schema_version: Literal["slopbench.reference-verification.v1"] = (
-        REFERENCE_VERIFICATION_SCHEMA_VERSION
-    )
+    schema_version: Literal["slopbench.reference-verification.v1"]
     status: Literal["official"] = "official"
     signer: str
     attestation_sha256: Sha256Hex
@@ -987,6 +983,7 @@ def compute_evaluation(
 
     vector = RawResultVector(trials=trials)
     return EvaluationResult(
+        schema_version=EVALUATION_RESULT_SCHEMA_VERSION,
         evaluation_id=evaluation.evaluation_id,
         task_set=expected_task_set,
         task_set_manifest=task_set,
@@ -1033,6 +1030,7 @@ def build_held_out_disclosure(
         capabilities[canonical_json_bytes(requirement)] = requirement
     metrics = result.metrics
     return HeldOutDisclosure(
+        schema_version=DISCLOSURE_SCHEMA_VERSION,
         task_set=result.task_set,
         category_counts={category: category_counts[category] for category in category_counts},
         capability_requirements=[capabilities[key] for key in sorted(capabilities)],
@@ -1131,6 +1129,7 @@ def build_bridge_report(
                 f"bridge task execution pins drift for unchanged task: {identity[0]}"
             )
     return BridgeReport(
+        schema_version=BRIDGE_SCHEMA_VERSION,
         before_task_set=before_result.task_set,
         after_task_set=after_result.task_set,
         profile=before_result.profile,
@@ -1281,6 +1280,7 @@ def build_attestation_statement(evaluation_path: Path, result_path: Path) -> Att
         raise ContractError("attestation result trials do not match evaluation run bindings")
     _validate_comparable_trials(result)
     return AttestationStatement(
+        schema_version=ATTESTATION_STATEMENT_SCHEMA_VERSION,
         evaluation_id=evaluation.evaluation_id,
         subjects=[
             AttestationSubject(name="evaluation-manifest", sha256=sha256_file(evaluation_path)),
@@ -1337,6 +1337,7 @@ def sign_reference_attestation(
     if not signature.startswith(b"-----BEGIN SSH SIGNATURE-----"):
         raise ContractError("ssh-keygen returned an invalid attestation signature")
     return ReferenceAttestation(
+        schema_version=ATTESTATION_SCHEMA_VERSION,
         statement=statement,
         signature=SshSignature(
             signer=signer,
@@ -1382,6 +1383,7 @@ def verify_reference_attestation(
         if process_runner(command, canonical_json_bytes(attestation.statement)) != 0:
             raise ContractError("maintainer reference attestation signature is not trusted")
     return ReferenceVerification(
+        schema_version=REFERENCE_VERIFICATION_SCHEMA_VERSION,
         signer=attestation.signature.signer,
         attestation_sha256=sha256_file(attestation_path),
         statement_sha256=contract_digest(

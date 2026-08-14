@@ -104,7 +104,6 @@
     },
     "schema_version": {
       "const": "slopbench.profile.v1",
-      "default": "slopbench.profile.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -138,6 +137,7 @@
     }
   },
   "required": [
+    "schema_version",
     "profile_id",
     "version",
     "label",

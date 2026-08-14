@@ -246,12 +246,12 @@
     },
     "schema_version": {
       "const": "slopbench.bridge.v1",
-      "default": "slopbench.bridge.v1",
       "title": "Schema Version",
       "type": "string"
     }
   },
   "required": [
+    "schema_version",
     "before_task_set",
     "after_task_set",
     "profile",
