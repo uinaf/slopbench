@@ -94,6 +94,7 @@ VERSIONED_LIFECYCLE_MODELS: list[type[BaseModel]] = [
     RetirementManifest,
     AttestationStatement,
     ReferenceAttestation,
+    ReferenceConfiguration,
     ReferenceVerification,
 ]
 
@@ -139,6 +140,7 @@ def one_task_set(
 def reference_configuration() -> ReferenceConfiguration:
     manifest = parse_json(RunManifest, run_payload())
     return ReferenceConfiguration(
+        schema_version="slopbench.reference-configuration.v1",
         configuration_id="oracle-reference",
         version="0.1.0",
         harness=ComponentPin(name=manifest.agent.harness, version=manifest.agent.harness_version),
@@ -186,6 +188,8 @@ def raw_trial(
             "effort_tier": configuration.effort_tier,
             "settings": configuration.settings,
             "environment": configuration.environment,
+            "setup_network_allowed_hosts": configuration.setup_network_allowed_hosts,
+            "network_allowed_hosts": configuration.network_allowed_hosts,
             "tools": configuration.tools,
             "credential_env": configuration.credential_env,
         }
@@ -219,6 +223,15 @@ def raw_trial(
     result_data["harbor"] = {
         "version": "0.16.1",
         "task_checksum": harbor_task_checksum,
+        "agent": {
+            "name": configuration.harness.name,
+            "version": configuration.harness.version,
+            "model": (
+                configuration.model.model_dump(mode="json")
+                if configuration.model is not None
+                else None
+            ),
+        },
         "result_sha256": digest(f"harbor-result-{run_id}"),
         "config_sha256": digest(f"harbor-config-{run_id}"),
         "trajectory_sha256": digest(f"trajectory-{run_id}"),
@@ -359,6 +372,8 @@ def materialize_evaluation(
                 "effort_tier": configuration.effort_tier,
                 "settings": configuration.settings,
                 "environment": configuration.environment,
+                "setup_network_allowed_hosts": configuration.setup_network_allowed_hosts,
+                "network_allowed_hosts": configuration.network_allowed_hosts,
                 "tools": [tool.model_dump(mode="json") for tool in configuration.tools],
                 "instruction_layers": instruction_layers,
                 "credential_env": configuration.credential_env,
@@ -410,6 +425,13 @@ def materialize_evaluation(
         result_data["harbor"] = {
             "version": run.runtime.harbor_version,
             "task_checksum": run.task.harbor_task_checksum,
+            "agent": {
+                "name": run.agent.harness,
+                "version": run.agent.harness_version,
+                "model": (
+                    run.agent.model.model_dump(mode="json") if run.agent.model is not None else None
+                ),
+            },
             "result_sha256": digest(f"harbor-result-{pair_index}"),
             "config_sha256": digest(f"harbor-config-{pair_index}"),
             "trajectory_sha256": digest(f"trajectory-{pair_index}"),
@@ -1668,7 +1690,7 @@ def test_raw_and_evaluation_result_models_reject_internal_drift() -> None:
     mutations: list[tuple[str, dict[str, Any], str]] = []
     payload = result.model_dump(mode="json")
     payload["trials"][0]["agent"]["harness_version"] = "different"
-    mutations.append(("configuration", payload, "configuration mismatch"))
+    mutations.append(("configuration", payload, "observed agent identity"))
     payload = result.model_dump(mode="json")
     payload["trials"] = payload["trials"][:-1]
     mutations.append(("count", payload, "requires 3 trial"))

@@ -20,13 +20,15 @@ sealed task contracts; `make verify` rejects drift.
 - the task-set ID, version, and canonical digest;
 - the profile ID, version, and canonical digest;
 - the harness pin and adapter name, version, and non-secret settings;
-- model, effort tier, non-secret settings, environment, tool pins, and credential variable names;
+- model, effort tier, non-secret settings, setup and model network allowlists, environment, tool
+  pins, and credential variable names;
 - every run manifest, raw result, optional agent report, and their SHA-256 digests; and
 - a unique trial identity and pair index.
 
 The evaluator rechecks every referenced file, live task seal, task digest, instruction-layer hash,
-agent configuration, container image digest, resource limit, Harbor version and task checksum,
-receipt digest, and run/result identity before producing
+agent configuration, Harbor-reported harness and selected-model metadata, installed CLI version,
+container image digest, resource limit, Harbor version and task checksum, receipt digest, and
+run/result identity before producing
 `slopbench.evaluation-result.v1`. The result embeds the exact task-set manifest and profile behind
 their bindings, so later validation can recompute metrics and reject task coverage, digest, or gate
 applicability drift without trusting the original evaluator process.
@@ -84,6 +86,38 @@ separate trust decision produced only by successful attestation verification.
 Cost and latency remain separate reported dimensions. A declared budget changes only eligibility;
 it is not folded into quality or reliability. Missing required usage produces `incomplete`, not a
 free pass. The Altay profile records its non-sensitive source priorities and is labeled subjective.
+
+## Release readiness and regression
+
+`slopbench.release-evidence.v1` binds the public task set, tracer, profiles, pinned reference
+configurations, methodology, schemas, human and expert decisions, independent audits, signed
+comparisons, held-out status, and any cross-version bridge claims. `slopbench release audit`
+resolves every file digest and emits an ordered `slopbench.release-readiness.v1` gate report. A
+provisional report may retain explicit blockers. Stable evidence is rejected unless every gate
+passes.
+
+Each cross-version claim binds the before and after task sets, the corresponding five-trial
+results, and the bridge report. The release audit reloads those inputs and reconstructs the bridge
+exactly, so a copied or stale bridge cannot support a release claim.
+
+Reference comparisons are accepted only when the signed evaluation and result agree on task set,
+profile, configuration, all five task/pair bindings, and trial seeds. Cursor is the primary
+configuration. Codex and Claude Code are pinned references; a common/open harness may be omitted
+only through an explicit stability decision.
+
+Compare two five-trial results with identical task set, profile, configuration, and task/pair seed
+schedule:
+
+```sh
+uv run slopbench regression \
+  --before release/baseline-result.json \
+  --after release/candidate-result.json \
+  --output release/regression.json
+```
+
+The report flags a prior five-of-five task with at least two new agent-attributable failures and a
+new authority or safety/type-escape failure on its first occurrence. It remains advisory:
+`automatic_release_blocking` is fixed to `false`.
 
 ## Active held-out disclosure
 

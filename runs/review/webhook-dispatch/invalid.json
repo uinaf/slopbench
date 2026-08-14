@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {
@@ -15,7 +16,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": [
       {
         "name": "python",
@@ -54,9 +57,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/review/webhook-dispatch/slopbench-task.json",
-    "contract_sha256": "1ee8ec463c5f2c9df210d91ff44e8156c138df522d062ecf8d04ad0e6790d502",
-    "harbor_task_checksum": "147beead931a407e77b0b4e91131039ad629e4161db8a7779a155e080c03de5c",
-    "task_digest": "ceacd69d5a5162ab98a23d37a8eba08957f84c80dc10af318587b1c8b08ec899",
+    "contract_sha256": "5469b9a7c90f0d7ca65a51ba5e17f74f70eb19f327799fb5c3dde87bdff5e136",
+    "harbor_task_checksum": "8fb2f1057b99454d878d7647e1d38495252dde955d14183321560e2dba122f4b",
+    "task_digest": "1e8242da261841a8ad424d7c119420ea9b02989b1515b8ee4aaa72641099d5b3",
     "task_id": "slopbench/review/webhook-dispatch",
     "task_version": "1.0.0"
   },

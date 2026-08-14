@@ -1,0 +1,38 @@
+{
+  "adapter": {
+    "name": "harbor-claude-code",
+    "settings": {},
+    "version": "0.16.1"
+  },
+  "configuration_id": "claude-code-sonnet-medium",
+  "credential_env": [
+    "CLAUDE_CODE_OAUTH_TOKEN",
+    "CLAUDE_FORCE_OAUTH"
+  ],
+  "effort_tier": "medium",
+  "environment": {},
+  "harness": {
+    "name": "claude-code",
+    "version": "2.1.231"
+  },
+  "model": {
+    "name": "claude-sonnet-4-6",
+    "provider": "anthropic"
+  },
+  "network_allowed_hosts": [
+    "api.anthropic.com"
+  ],
+  "schema_version": "slopbench.reference-configuration.v1",
+  "settings": {
+    "reasoning_effort": "medium",
+    "thinking": "adaptive",
+    "version": "2.1.231"
+  },
+  "setup_network_allowed_hosts": [
+    "deb.debian.org",
+    "security.debian.org",
+    "downloads.claude.ai"
+  ],
+  "tools": [],
+  "version": "0.1.0"
+}

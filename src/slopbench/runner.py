@@ -53,6 +53,8 @@ from slopbench.contracts import (
     GateName,
     GateOutcome,
     HarborEvidence,
+    ObservedAgentEvidence,
+    ObservedModelEvidence,
     OutcomeStatus,
     PhaseMode,
     ReceiptValidation,
@@ -109,6 +111,41 @@ _BENCHMARK_FAILURE_EXCEPTIONS = {
     "RewardFileNotFoundError",
     "VerifierOutputParseError",
     "VerifierTimeoutError",
+}
+_OFFICIAL_AGENT_NETWORKS: dict[str, tuple[str, list[str], list[str]]] = {
+    "cursor-cli": (
+        "cursor",
+        [
+            "cursor.com",
+            "*.cursor.com",
+            "*.cursor.sh",
+            "deb.debian.org",
+            "security.debian.org",
+        ],
+        ["cursor.com", "*.cursor.com", "*.cursor.sh"],
+    ),
+    "codex": (
+        "openai",
+        [
+            "deb.debian.org",
+            "security.debian.org",
+            "raw.githubusercontent.com",
+            "github.com",
+            "nodejs.org",
+            "registry.npmjs.org",
+        ],
+        ["chatgpt.com", "api.openai.com"],
+    ),
+    "claude-code": (
+        "anthropic",
+        ["deb.debian.org", "security.debian.org", "downloads.claude.ai"],
+        ["api.anthropic.com"],
+    ),
+}
+_OFFICIAL_AGENT_CREDENTIALS: dict[str, list[str]] = {
+    "cursor-cli": ["CURSOR_API_KEY"],
+    "codex": ["CODEX_AUTH_JSON_PATH"],
+    "claude-code": ["CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_FORCE_OAUTH"],
 }
 
 
@@ -242,11 +279,31 @@ def _validate_harbor_boundary(
     if (
         config.agent.user is not None
         or config.verifier.user is not None
-        or config.verifier.environment is not None
         or config.verifier.collect
         or config.source is not None
     ):
         raise ContractError("Harbor task declares an unapproved execution override")
+    verifier_environment = config.verifier.environment
+    if verifier_environment is None:
+        raise ContractError("official verifier requires an explicit offline environment")
+    if (
+        verifier_environment.network_mode != NetworkMode.NO_NETWORK
+        or verifier_environment.allowed_hosts
+        or verifier_environment.os != TaskOS.LINUX
+        or verifier_environment.cpus != task.environment.cpus
+        or verifier_environment.memory_mb != task.environment.memory_mb
+        or verifier_environment.storage_mb != task.environment.storage_mb
+        or verifier_environment.workdir != "/app"
+        or verifier_environment.env
+        or verifier_environment.mcp_servers
+        or verifier_environment.docker_image is not None
+        or verifier_environment.skills_dir is not None
+        or verifier_environment.healthcheck is not None
+        or verifier_environment.gpus is not None
+        or verifier_environment.gpu_types is not None
+        or verifier_environment.tpu is not None
+    ):
+        raise ContractError("Harbor verifier environment is not the sealed offline boundary")
 
     configured_steps = list(config.steps or [])
     if task.phase_mode == PhaseMode.SINGLE:
@@ -274,12 +331,12 @@ def _validate_harbor_boundary(
             if step.verifier.env != {"SLOPBENCH_PHASE": phase.name}:
                 raise ContractError("Harbor step verifier phase binding is invalid")
 
-    expected_agent_mode = (
-        NetworkMode.NO_NETWORK if task.capabilities.network == "none" else NetworkMode.ALLOWLIST
-    )
-    expected_agent_hosts = list(task.capabilities.network_allowed_hosts)
-    trial_agent = HarborAgentConfig()
-    trial_environment = HarborEnvironmentConfig()
+    expected_agent_hosts = list(manifest.agent.network_allowed_hosts)
+    expected_agent_mode = NetworkMode.ALLOWLIST if expected_agent_hosts else NetworkMode.NO_NETWORK
+    trial_agent = HarborAgentConfig(extra_allowed_hosts=expected_agent_hosts)
+    setup_hosts = list(manifest.agent.setup_network_allowed_hosts)
+    expected_setup_mode = NetworkMode.ALLOWLIST if setup_hosts else NetworkMode.NO_NETWORK
+    trial_environment = HarborEnvironmentConfig(extra_allowed_hosts=setup_hosts)
     steps = list(config.steps or [None])
     for index, step in enumerate(steps):
         plan = resolve_trial_network_plan(
@@ -294,8 +351,8 @@ def _validate_harbor_boundary(
             f"{suffix} agent baseline",
             plan.agent_env_baseline.network_mode,
             plan.agent_env_baseline.allowed_hosts,
-            NetworkMode.NO_NETWORK,
-            [],
+            expected_setup_mode,
+            setup_hosts,
         )
         _validate_policy(
             f"{suffix} agent phase",
@@ -333,6 +390,13 @@ def _validate_capability_binding(manifest: RunManifest, task: TaskContract) -> N
         raise ContractError(
             f"agent tools exceed the capability envelope: {sorted(unexpected_tools)}"
         )
+    unexpected_hosts = set(manifest.agent.network_allowed_hosts) - set(
+        task.capabilities.network_allowed_hosts
+    )
+    if unexpected_hosts:
+        raise ContractError(
+            f"agent network exceeds the capability envelope: {sorted(unexpected_hosts)}"
+        )
     if manifest.agent.harness in {"oracle", "nop"} and manifest.agent.credential_env:
         raise ContractError("utility harnesses cannot receive credential environment variables")
 
@@ -358,6 +422,32 @@ def _validate_run_binding(
     task_dir: Path,
 ) -> None:
     binding = manifest.task
+    if manifest.agent.harness not in {"oracle", "nop"}:
+        expected_adapter_name = f"harbor-{manifest.agent.harness}"
+        adapter = manifest.agent.adapter
+        if adapter is None:
+            raise ContractError("non-utility harnesses require an explicit Harbor adapter pin")
+        if (
+            adapter.name != expected_adapter_name
+            or adapter.version != manifest.runtime.harbor_version
+            or adapter.settings
+        ):
+            raise ContractError(
+                "Harbor adapter pin does not match the selected harness and runtime"
+            )
+        network = _OFFICIAL_AGENT_NETWORKS.get(manifest.agent.harness)
+        if network is None:
+            raise ContractError("non-utility harness is not admitted for official v1 runs")
+        provider, setup_hosts, model_hosts = network
+        if manifest.agent.model is None or manifest.agent.model.provider != provider:
+            raise ContractError("model provider does not match the selected harness")
+        if (
+            manifest.agent.setup_network_allowed_hosts != setup_hosts
+            or manifest.agent.network_allowed_hosts != model_hosts
+        ):
+            raise ContractError("agent network pins do not match the selected harness")
+        if manifest.agent.credential_env != _OFFICIAL_AGENT_CREDENTIALS[manifest.agent.harness]:
+            raise ContractError("agent credential pins do not match the selected harness")
     contract_relative = PurePosixPath(binding.contract_path)
     contract_path = (task_dir / "slopbench-task.json").resolve()
     try:
@@ -451,6 +541,7 @@ def _harbor_config(
             override_setup_timeout_sec=manifest.limits.agent_setup_timeout_sec,
             kwargs=manifest.agent.settings,
             env=agent_environment,
+            extra_allowed_hosts=manifest.agent.network_allowed_hosts,
             include_logs=["trajectory.json", "*.txt"],
         ),
         environment=HarborEnvironmentConfig(
@@ -462,6 +553,7 @@ def _harbor_config(
             override_cpus=manifest.runtime.cpus,
             override_memory_mb=manifest.runtime.memory_mb,
             override_storage_mb=manifest.runtime.storage_mb,
+            extra_allowed_hosts=manifest.agent.setup_network_allowed_hosts,
             mounts=[
                 ServiceVolumeConfig(
                     type="bind",
@@ -865,9 +957,22 @@ def _harbor_evidence(
     result_path = trial_dir / "result.json"
     config_path = trial_dir / "config.json"
     trajectory_path = output_dir / "agent" / "trajectory.json"
+    observed_agent = None
+    if result is not None:
+        model_info = result.agent_info.model_info
+        observed_agent = ObservedAgentEvidence(
+            name=result.agent_info.name,
+            version=result.agent_info.version,
+            model=(
+                ObservedModelEvidence(name=model_info.name, provider=model_info.provider)
+                if model_info is not None
+                else None
+            ),
+        )
     return HarborEvidence(
         version=_runtime_version(),
         task_checksum=result.task_checksum if result else None,
+        agent=observed_agent,
         result_sha256=sha256_file(result_path) if result_path.is_file() else None,
         config_sha256=sha256_file(config_path) if config_path.is_file() else None,
         trajectory_sha256=(sha256_file(trajectory_path) if trajectory_path.is_file() else None),
@@ -945,16 +1050,27 @@ def _finalize(
             duration_seconds=_duration_seconds(trial_result.started_at, trial_result.finished_at),
         )
         effective_exception_type = layout.exception_type
-        if trial_result.exception_info is not None:
-            classification, failure_reason = _classify_exception(
-                trial_result.exception_info.exception_type
-            )
-        elif layout.errors:
+        identity_matches = harbor.agent is not None and harbor.agent.matches(manifest.agent)
+        if layout.errors:
             classification = FailureClassification.BENCHMARK_DEFECT
             failure_reason = FailureReason.HARBOR_RESULT_INVALID
             receipt = receipt.model_copy(update={"errors": list(layout.errors)})
+        elif trial_result.exception_info is not None:
+            classification, failure_reason = _classify_exception(
+                trial_result.exception_info.exception_type
+            )
         elif effective_exception_type is not None:
             classification, failure_reason = _classify_exception(effective_exception_type)
+        elif not identity_matches:
+            classification = FailureClassification.BENCHMARK_DEFECT
+            failure_reason = FailureReason.HARNESS_IDENTITY_MISMATCH
+            receipt = receipt.model_copy(
+                update={
+                    "errors": [
+                        "Harbor observed agent identity does not match the pinned run configuration"
+                    ]
+                }
+            )
         else:
             if trial_result.task_checksum != manifest.task.harbor_task_checksum:
                 classification = FailureClassification.BENCHMARK_DEFECT
@@ -1064,6 +1180,17 @@ def _finalize(
                                     if not receipt.present
                                     else FailureReason.GATE_FAILURE
                                 )
+
+        if classification == FailureClassification.VALID_AGENT_FAILURE and not identity_matches:
+            classification = FailureClassification.BENCHMARK_DEFECT
+            failure_reason = FailureReason.HARNESS_IDENTITY_MISMATCH
+            receipt = receipt.model_copy(
+                update={
+                    "errors": [
+                        "Harbor observed agent identity does not match the pinned run configuration"
+                    ]
+                }
+            )
 
         if process_exit_code != 0 and effective_exception_type is None:
             classification = FailureClassification.INFRASTRUCTURE_FAILURE

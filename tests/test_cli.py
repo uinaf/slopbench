@@ -54,7 +54,11 @@ def test_schema_export_writes_every_versioned_boundary(tmp_path: Path) -> None:
         "slopbench-evaluation-result.schema.json",
         "slopbench-evaluation.schema.json",
         "slopbench-profile.schema.json",
+        "slopbench-reference-configuration.schema.json",
         "slopbench-reference-verification.schema.json",
+        "slopbench-regression.schema.json",
+        "slopbench-release-evidence.schema.json",
+        "slopbench-release-readiness.schema.json",
         "slopbench-report.schema.json",
         "slopbench-retirement.schema.json",
         "slopbench-review.schema.json",
@@ -166,6 +170,8 @@ def test_release_commands_dispatch_to_contract_operations(
     monkeypatch.setattr(cli, "build_attestation_statement", lambda *args: "statement")
     monkeypatch.setattr(cli, "sign_reference_attestation", lambda *args: "attestation")
     monkeypatch.setattr(cli, "verify_reference_attestation", lambda *args: "official")
+    monkeypatch.setattr(cli, "audit_release", lambda *args: "readiness")
+    monkeypatch.setattr(cli, "build_regression_report", lambda *args: "regression")
 
     assert cli.main(["task-set", "suite.json", "--root", str(tmp_path)]) == 0
     assert (
@@ -297,5 +303,34 @@ def test_release_commands_dispatch_to_contract_operations(
         )
         == 0
     )
+    assert (
+        cli.main(
+            [
+                "release",
+                "audit",
+                "--manifest",
+                "release-evidence.json",
+                "--project-root",
+                str(tmp_path),
+                "--output",
+                "readiness.json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        cli.main(
+            [
+                "regression",
+                "--before",
+                "before-result.json",
+                "--after",
+                "after-result.json",
+                "--output",
+                "regression.json",
+            ]
+        )
+        == 0
+    )
     assert any(name == "retirement" for name, _ in calls)
-    assert [name for name, _ in calls].count("write") == 6
+    assert [name for name, _ in calls].count("write") == 8

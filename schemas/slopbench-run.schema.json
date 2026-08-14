@@ -62,12 +62,26 @@
             }
           ]
         },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
+        },
         "settings": {
           "additionalProperties": {
             "$ref": "#/$defs/JsonValue"
           },
           "title": "Settings",
           "type": "object"
+        },
+        "setup_network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Setup Network Allowed Hosts",
+          "type": "array"
         },
         "tools": {
           "items": {

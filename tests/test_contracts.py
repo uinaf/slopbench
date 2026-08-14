@@ -371,6 +371,27 @@ def test_agent_configuration_accepts_a_pinned_model() -> None:
     assert manifest.agent.model.harbor_name == "cursor/composer-2.5"
 
 
+def test_agent_configuration_rejects_conflicting_install_version() -> None:
+    payload = run_payload()
+    payload["agent"]["settings"] = {"version": "9.9.9"}
+
+    with pytest.raises(ValidationError, match="must match harness_version"):
+        validate(RunManifest, payload)
+
+
+def test_agent_configuration_rejects_configured_cursor_version() -> None:
+    payload = run_payload()
+    payload["agent"].update(
+        harness="cursor-cli",
+        harness_version="2026.08.11-e8db854",
+        model={"provider": "cursor", "name": "cursor-grok-4.6-medium"},
+        settings={"version": "2026.08.11-e8db854"},
+    )
+
+    with pytest.raises(ValidationError, match="must be observed"):
+        validate(RunManifest, payload)
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -409,6 +430,16 @@ def test_run_manifest_rejects_secret_material(location: str) -> None:
     ("field", "value", "message"),
     [
         ("credential_env", ["CURSOR_API_KEY", "CURSOR_API_KEY"], "must be unique"),
+        (
+            "setup_network_allowed_hosts",
+            ["cursor.com", "cursor.com"],
+            "setup_network_allowed_hosts must be unique",
+        ),
+        (
+            "network_allowed_hosts",
+            ["cursor.com", "cursor.com"],
+            "network_allowed_hosts must be unique",
+        ),
         (
             "tools",
             [

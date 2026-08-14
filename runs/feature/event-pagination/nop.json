@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
@@ -18,7 +19,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": []
   },
   "attack_fixture_id": null,
@@ -51,9 +54,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/feature/event-pagination/slopbench-task.json",
-    "contract_sha256": "d270a1e8298737dcb30a25eeb91f3052cfcc2fe295fe06d5a7ac080b8c28081c",
-    "harbor_task_checksum": "77570f580642d0d060414d658ddc915a6af866afaf27a11d9d36f6103b0efba2",
-    "task_digest": "985f700a4c225fd2827fdd61b802a112b11111c67ff8b33820bc3db1f2ce5e46",
+    "contract_sha256": "55c87248eda69829b58cfc477fe6e773d594dd150e1b6369a9cd34b3d3d8b25e",
+    "harbor_task_checksum": "fb4c31125f45e0a4463788cd6302be172d813de8f74fe4d664ccecba98066881",
+    "task_digest": "8a72081a016bf7100eb678e8aab69450d225eea759a40b229e496e84d07b1152",
     "task_id": "slopbench/feature/event-pagination",
     "task_version": "1.0.0"
   },

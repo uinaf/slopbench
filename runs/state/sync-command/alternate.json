@@ -1,5 +1,6 @@
 {
   "agent": {
+    "adapter": null,
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {
@@ -15,7 +16,9 @@
       }
     ],
     "model": null,
+    "network_allowed_hosts": [],
     "settings": {},
+    "setup_network_allowed_hosts": [],
     "tools": [
       {
         "name": "python",
@@ -54,9 +57,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/state/sync-command/slopbench-task.json",
-    "contract_sha256": "91a6a6556876f356c764a00178890c7919db07d22cdf6cda9589fabb2167b478",
-    "harbor_task_checksum": "b8ee8c0326005c2e0e2dc847ded8144d6c4524324e848c4764c203f357834fcc",
-    "task_digest": "7c54bb512cb5b2d80195763f01629b0370f948cdb223449b0b4fd772039b1707",
+    "contract_sha256": "0b6f6bf3be91cbf5ebc8e669074105a920172d0b6a1d227816e08534cb1a0d22",
+    "harbor_task_checksum": "13bd23fde57102f61ec19e560f52d2c0bffa3f1f11a5c487fa1ecd423efa5105",
+    "task_digest": "5749df456161744e951617872998fde1cedcaf151c1b5b2d6f02fd5dfc35085a",
     "task_id": "slopbench/state/sync-command",
     "task_version": "1.0.0"
   },

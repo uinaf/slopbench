@@ -10,6 +10,13 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from slopbench.calibration import (
+    RegressionReport,
+    ReleaseEvidenceManifest,
+    ReleaseReadinessReport,
+    audit_release,
+    build_regression_report,
+)
 from slopbench.contracts import (
     AgentReport,
     FailureClassification,
@@ -35,6 +42,7 @@ from slopbench.release import (
     HeldOutDisclosure,
     ProfileDefinition,
     ReferenceAttestation,
+    ReferenceConfiguration,
     ReferenceVerification,
     RetirementManifest,
     TaskSetManifest,
@@ -57,7 +65,11 @@ _SCHEMAS: dict[str, type[BaseModel]] = {
     "evaluation": EvaluationManifest,
     "evaluation-result": EvaluationResult,
     "profile": ProfileDefinition,
+    "reference-configuration": ReferenceConfiguration,
     "reference-verification": ReferenceVerification,
+    "regression": RegressionReport,
+    "release-evidence": ReleaseEvidenceManifest,
+    "release-readiness": ReleaseReadinessReport,
     "report": AgentReport,
     "retirement": RetirementManifest,
     "review": ReviewSubmission,
@@ -156,6 +168,18 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("--evaluation", required=True, type=_path)
     verify.add_argument("--result", required=True, type=_path)
     verify.add_argument("--output", required=True, type=_path)
+
+    release = commands.add_parser("release", help="audit provisional or stable release evidence")
+    release_commands = release.add_subparsers(dest="release_command", required=True)
+    audit = release_commands.add_parser("audit")
+    audit.add_argument("--manifest", required=True, type=_path)
+    audit.add_argument("--project-root", default=Path("."), type=_path)
+    audit.add_argument("--output", required=True, type=_path)
+
+    regression = commands.add_parser("regression", help="compare paired five-trial results")
+    regression.add_argument("--before", required=True, type=_path)
+    regression.add_argument("--after", required=True, type=_path)
+    regression.add_argument("--output", required=True, type=_path)
     return parser
 
 
@@ -200,6 +224,24 @@ def _disclose(args: argparse.Namespace) -> None:
     profile = load_model(args.profile, ProfileDefinition)
     result = load_model(args.result, EvaluationResult)
     write_model(args.output, build_held_out_disclosure(task_set, profile, result))
+
+
+def _audit_release(args: argparse.Namespace) -> None:
+    write_model(args.output, audit_release(args.manifest, args.project_root))
+
+
+def _regression(args: argparse.Namespace) -> None:
+    before = load_model(args.before, EvaluationResult)
+    after = load_model(args.after, EvaluationResult)
+    write_model(
+        args.output,
+        build_regression_report(
+            before,
+            after,
+            sha256_file(args.before),
+            sha256_file(args.after),
+        ),
+    )
 
 
 def _bridge(args: argparse.Namespace) -> None:
@@ -260,6 +302,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             _evaluate(args)
         elif args.command == "disclose":
             _disclose(args)
+        elif args.command == "release":
+            _audit_release(args)
+        elif args.command == "regression":
+            _regression(args)
         elif args.command == "bridge":
             _bridge(args)
         elif args.command == "retirement":

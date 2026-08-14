@@ -1,0 +1,181 @@
+{
+  "audits": [],
+  "common_harness": {
+    "configuration_id": null,
+    "disposition": "omitted_unstable",
+    "rationale": "No minimal common or open harness has yet passed the same pinned installation, evidence, and five-trial reproducibility gates."
+  },
+  "cross_version_claims": [],
+  "expert_runs": [],
+  "held_out": {
+    "audit": null,
+    "disclosure": null,
+    "status": "not_available",
+    "task_set": null
+  },
+  "human_reviews": [],
+  "primary_configuration_id": "cursor-grok-4.6-medium",
+  "profiles": [
+    {
+      "path": "profiles/altay.json",
+      "sha256": "8e8e097bac3b87850306146bbc91bf60f94cd919447bd14fe86d9b73277b6b1c"
+    },
+    {
+      "path": "profiles/balanced.json",
+      "sha256": "69eb228788504690acadd463542233d4bbbfd9f505706064ae0e78c05a133730"
+    },
+    {
+      "path": "profiles/cost-aware.json",
+      "sha256": "693caa879da10a6e63b2b714ad1dfcc239c3f863e4c7635230852f58786d462c"
+    },
+    {
+      "path": "profiles/fast-feedback.json",
+      "sha256": "d99da5f2a99f7de1635b0da7e201936b132986304720f3ef45acdc828532ec30"
+    },
+    {
+      "path": "profiles/reliability-first.json",
+      "sha256": "652ff6c10ca8e2472359b9f116f7fe30b977a5216c7cf5d4660dd1581634925d"
+    }
+  ],
+  "public_materials": [
+    {
+      "path": "LICENSE",
+      "sha256": "7586ca7741bd1cf7efe81820468596bf16bf5efcce7f0d720d251f11dbc37c92"
+    },
+    {
+      "path": "README.md",
+      "sha256": "006865b724119d228b021398a0aeae9209b06d29b8dcf449dba8d4271c7861c1"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "58bd7968fd88e287b0a7c75cfe07b8443781b1000b757c2fd91dbf822b25198e"
+    },
+    {
+      "path": "docs/LIMITATIONS.md",
+      "sha256": "e057bfdc12969a26735b6f0bf0a83fa331086038bd362a211f7de61a2d639e11"
+    },
+    {
+      "path": "docs/METHODOLOGY.md",
+      "sha256": "64d7b65c19463e2e51119b9df49c6325b74d2878bc47191f2c540500f211976b"
+    },
+    {
+      "path": "docs/REPRODUCING.md",
+      "sha256": "3b27c65248ff182e42496a13376038487eafa68f016e68323aa97a957e5dddbe"
+    },
+    {
+      "path": "docs/RESULTS.md",
+      "sha256": "cc52311adaf5d2d63cc78eac0edb389a58149b1d4c60d070a5fa997c00be9d3e"
+    },
+    {
+      "path": "docs/REVIEW_TASKS.md",
+      "sha256": "1e94caa00d02fa8d653eb6a16de2b9ee5e01c8f2af099912cbd9a6dcaa729473"
+    },
+    {
+      "path": "schemas/slopbench-attestation-statement.schema.json",
+      "sha256": "e61c2aa9c245c55834e8ecbcd9c80093bf61418288038299280675ac37646e9b"
+    },
+    {
+      "path": "schemas/slopbench-attestation.schema.json",
+      "sha256": "8ec21b1dc350021ff12abf2a18c47e9af8ecf4ceb2bdc1a9fd70e2ed3894e0d5"
+    },
+    {
+      "path": "schemas/slopbench-bridge.schema.json",
+      "sha256": "974d46d13d62f1ca64140c3eb667537e1a1509c56e82ae4f83d39ebde060b306"
+    },
+    {
+      "path": "schemas/slopbench-disclosure.schema.json",
+      "sha256": "861a7634dcffb0190540b82b1c0e286be1ffbb416af3c522490f1ea14624c4d2"
+    },
+    {
+      "path": "schemas/slopbench-evaluation-result.schema.json",
+      "sha256": "6835ddd2af71c85cfe5a734cdb84a91302ce86d2947c0bef7e4e52a54801f0db"
+    },
+    {
+      "path": "schemas/slopbench-evaluation.schema.json",
+      "sha256": "f09d5948d62fbb0a89d16c3e653d725cc8ba698daf77ee6486b0124ee91085b7"
+    },
+    {
+      "path": "schemas/slopbench-profile.schema.json",
+      "sha256": "711fc948b6ae918074efc8d37dece68d1df5ce4574b45a0f578d82348fbbbb7b"
+    },
+    {
+      "path": "schemas/slopbench-reference-configuration.schema.json",
+      "sha256": "3ff68fc4af4c2db6284cf8d04aac67e71908bd00223c0f7607d59dbee6ed7eca"
+    },
+    {
+      "path": "schemas/slopbench-reference-verification.schema.json",
+      "sha256": "b94a6ccd61b85ded1db50eeffd7c7ea1e7140acc63cab01cced934ebc345a678"
+    },
+    {
+      "path": "schemas/slopbench-regression.schema.json",
+      "sha256": "bc7eda46c69a495236a9bb89c2088785ba82a7172e26a61428a89a38bd96087d"
+    },
+    {
+      "path": "schemas/slopbench-release-evidence.schema.json",
+      "sha256": "09f1f5e2e68e96c083c11fa63bb490addc4bd34a0e460ccccbc0821b1eee7603"
+    },
+    {
+      "path": "schemas/slopbench-release-readiness.schema.json",
+      "sha256": "4ee6a9167a741196241c56b4534c1548e23453f8a22ddc337b74eca6471b58b2"
+    },
+    {
+      "path": "schemas/slopbench-report.schema.json",
+      "sha256": "3ca9e0822e4b1e9065e981543b6d1c9133216a898840dab23bea1b00c89a29a8"
+    },
+    {
+      "path": "schemas/slopbench-result.schema.json",
+      "sha256": "2b9325e9456a15aac91a7820907ae0199c64dd0489c23cfdcdf17c01bbd84b37"
+    },
+    {
+      "path": "schemas/slopbench-retirement.schema.json",
+      "sha256": "4f920cdf7f86a99c0d11e0c92b67745360a7aea32e23e846308efcc1588bf3c3"
+    },
+    {
+      "path": "schemas/slopbench-review.schema.json",
+      "sha256": "70f8e91d60c3bf49975b1eea31a91378bfebd1b01dc6229495e6d846cb7fc62b"
+    },
+    {
+      "path": "schemas/slopbench-run.schema.json",
+      "sha256": "a25994422f9a349237e88aaa1d75704c92484be590d8b21872cc9a3fbdc1f4fb"
+    },
+    {
+      "path": "schemas/slopbench-task-set.schema.json",
+      "sha256": "046393a61218ae9cceb15fb6747997cbdfa4f408fea4c17e41ccd16ebcd23694"
+    },
+    {
+      "path": "schemas/slopbench-task.schema.json",
+      "sha256": "d1ead8af4a78a473e25201bfda0dc907a5a86b0c8568d7c74383a1209eeba182"
+    },
+    {
+      "path": "schemas/slopbench-verification.schema.json",
+      "sha256": "4bcd99ca573455f1a44be4ae3ca0e4df69b0e0bf0956293bbc1fab449af27306"
+    }
+  ],
+  "reference_comparisons": [],
+  "reference_configurations": [
+    {
+      "path": "reference-configurations/claude-code-sonnet-medium.json",
+      "sha256": "4ec231332140c67f6962c0e3cb01d50094cc894afec7f1b942ca8cb3e30c8c24"
+    },
+    {
+      "path": "reference-configurations/codex-terra-medium.json",
+      "sha256": "eec14e031308e6490c7e00451d9a30fcb723514e79d6cb585ff2e9b6acdc1240"
+    },
+    {
+      "path": "reference-configurations/cursor-grok-4.6-medium.json",
+      "sha256": "d493b7a329eec4452b39e8b4332d06009fe9bf3479a3ea3985acf2437fff3e81"
+    }
+  ],
+  "release_id": "slopbench-swe-v1-dev",
+  "schema_version": "slopbench.release-evidence.v1",
+  "stage": "provisional",
+  "task_set": {
+    "path": "datasets/slopbench-swe-v1-dev.json",
+    "sha256": "012f1110ea368b643f5e74218034b93f7d1fb589d34bc1442c9e815a7ddcb9bd"
+  },
+  "tracer_task": {
+    "path": "tasks/tracer/slopbench-task.json",
+    "sha256": "ddb808249205741365980be40967e0d7f3ee1e7ec773399f94f83d7d5a567825"
+  },
+  "version": "0.1.0"
+}

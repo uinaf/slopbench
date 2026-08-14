@@ -1,0 +1,37 @@
+{
+  "adapter": {
+    "name": "harbor-cursor-cli",
+    "settings": {},
+    "version": "0.16.1"
+  },
+  "configuration_id": "cursor-grok-4.6-medium",
+  "credential_env": [
+    "CURSOR_API_KEY"
+  ],
+  "effort_tier": "medium",
+  "environment": {},
+  "harness": {
+    "name": "cursor-cli",
+    "version": "2026.08.11-e8db854"
+  },
+  "model": {
+    "name": "cursor-grok-4.6-medium",
+    "provider": "cursor"
+  },
+  "network_allowed_hosts": [
+    "cursor.com",
+    "*.cursor.com",
+    "*.cursor.sh"
+  ],
+  "schema_version": "slopbench.reference-configuration.v1",
+  "settings": {},
+  "setup_network_allowed_hosts": [
+    "cursor.com",
+    "*.cursor.com",
+    "*.cursor.sh",
+    "deb.debian.org",
+    "security.debian.org"
+  ],
+  "tools": [],
+  "version": "0.1.0"
+}

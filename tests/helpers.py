@@ -149,6 +149,8 @@ def run_payload(*, harness: str = "oracle", variant: str = "oracle") -> dict[str
             "effort_tier": "not-applicable",
             "settings": {},
             "environment": {"SLOPBENCH_VARIANT": variant},
+            "setup_network_allowed_hosts": [],
+            "network_allowed_hosts": [],
             "tools": [{"name": "python", "version": "3.13.15", "settings": {}}],
             "instruction_layers": [
                 {"name": "task", "path": "tasks/tracer/instruction.md", "sha256": SHA_A}
@@ -336,6 +338,7 @@ def result_payload(*, classification: str = "valid_pass") -> dict[str, Any]:
         "harbor": {
             "version": "0.16.1",
             "task_checksum": "checksum",
+            "agent": {"name": "oracle", "version": "1.0.0", "model": None},
             "result_sha256": SHA_A,
             "config_sha256": SHA_B,
             "trajectory_sha256": None,

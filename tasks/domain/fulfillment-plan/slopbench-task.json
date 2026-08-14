@@ -43,7 +43,10 @@
     "network_allowed_hosts": [
       "cursor.com",
       "*.cursor.com",
-      "*.cursor.sh"
+      "*.cursor.sh",
+      "chatgpt.com",
+      "api.openai.com",
+      "api.anthropic.com"
     ],
     "repository": "read-write",
     "shell": true,
@@ -189,7 +192,7 @@
     },
     {
       "path": "task.toml",
-      "sha256": "2ed5af16f9f1b85a3e2413254894296b9c40b43399c1ab24f6718bde3c04d0d4"
+      "sha256": "4363f37b6b05880c94355d2e45cccc428144ce68ab33e80330d9dd0755c10da8"
     },
     {
       "path": "tests/Dockerfile",
