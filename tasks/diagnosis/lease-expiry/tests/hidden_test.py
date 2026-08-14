@@ -7,6 +7,12 @@ from src.leases import Lease, LeaseStore
 
 
 class ImplementContract(unittest.TestCase):
+    def test_new_owner_can_acquire_at_exact_expiry(self) -> None:
+        store = LeaseStore()
+        self.assertTrue(store.acquire("queue", "first", now=4, ttl=7))
+        self.assertTrue(store.acquire("queue", "second", now=11, ttl=3))
+        self.assertEqual(store.inspect("queue"), Lease("second", 14))
+
     def test_long_expired_lease_restarts_from_now(self) -> None:
         store = LeaseStore()
         self.assertTrue(store.acquire("job", "a", now=1, ttl=2))

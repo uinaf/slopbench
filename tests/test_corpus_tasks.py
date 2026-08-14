@@ -155,6 +155,28 @@ def test_corpus_base_revision_matches_deterministic_fixture_commit(
     assert revision == task.environment.base_revision
 
 
+def test_lease_expiry_requested_contract_rejects_unfixed_baseline(tmp_path: Path) -> None:
+    task_dir = ROOT / "tasks" / "diagnosis" / "lease-expiry"
+    repo = initialize_repo(task_dir, tmp_path)
+    hidden = subprocess.run(
+        ["python", str(task_dir / "tests" / "hidden_test.py")],
+        cwd=repo,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPYCACHEPREFIX": str(tmp_path / "pycache"),
+            "PYTHONPATH": str(repo),
+            "SLOPBENCH_PHASE": "implement",
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert hidden.returncode != 0
+    assert "test_new_owner_can_acquire_at_exact_expiry" in hidden.stderr
+
+
 @pytest.mark.parametrize("task_dir", CORPUS_TASKS, ids=lambda path: path.name)
 @pytest.mark.parametrize("variant", ["oracle", "alternate", "invalid"])
 def test_corpus_solutions_have_expected_behavior(

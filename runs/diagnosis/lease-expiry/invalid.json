@@ -60,9 +60,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/diagnosis/lease-expiry/slopbench-task.json",
-    "contract_sha256": "40f6a5457693783e91a744c2bc519f1949c5765c9880a667b0e8e0a282a0241d",
-    "harbor_task_checksum": "31692ad438b097138f0c47bc807c1ce809552066ab65639d5ffbab24d0f7a440",
-    "task_digest": "2906cc849d16914db837e56103f199616429e66aaec1eed565b289c17206b870",
+    "contract_sha256": "5e80c8eb8f57705e44960cc875201476148cc3b23ff5cffa409e7fe019271869",
+    "harbor_task_checksum": "1132556ed5a625edc6beb30f77401d452d296a82a7b6f044f51302888ee92cfb",
+    "task_digest": "fb80170d16e755159d3cdd54af02369ddbe455e15188bf23bb07255577cde1a4",
     "task_id": "slopbench/diagnosis/lease-expiry",
     "task_version": "1.0.0"
   },
