@@ -1,0 +1,36 @@
+{
+  "findings": [
+    {
+      "path": "src/archive.py",
+      "start_line": 24,
+      "line_count": 2,
+      "category": "resource_lifecycle",
+      "severity": "high",
+      "explanation": "The archive-wide limit is never accumulated."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 26,
+      "line_count": 2,
+      "category": "security",
+      "severity": "high",
+      "explanation": "An untrusted member name can escape the destination."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 28,
+      "line_count": 3,
+      "category": "data_integrity",
+      "severity": "medium",
+      "explanation": "Direct writes leave partial output after a later failure."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 18,
+      "line_count": 1,
+      "category": "resource_lifecycle",
+      "severity": "medium",
+      "explanation": "The ZIP handle is never closed after extraction."
+    }
+  ]
+}

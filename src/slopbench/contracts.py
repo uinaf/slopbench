@@ -19,6 +19,7 @@ from pydantic import (
 TASK_SCHEMA_VERSION: Literal["slopbench.task.v1"] = "slopbench.task.v1"
 RUN_SCHEMA_VERSION: Literal["slopbench.run.v1"] = "slopbench.run.v1"
 REPORT_SCHEMA_VERSION: Literal["slopbench.report.v1"] = "slopbench.report.v1"
+REVIEW_SCHEMA_VERSION: Literal["slopbench.review.v1"] = "slopbench.review.v1"
 VERIFICATION_SCHEMA_VERSION: Literal["slopbench.verification.v1"] = "slopbench.verification.v1"
 RESULT_SCHEMA_VERSION: Literal["slopbench.result.v1"] = "slopbench.result.v1"
 
@@ -28,6 +29,15 @@ GitRevision = Annotated[str, Field(pattern=r"^[0-9a-f]{40,64}$")]
 Identifier = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
 Version = Annotated[str, Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")]
 EnvName = Annotated[str, Field(pattern=r"^[A-Z][A-Z0-9_]*$")]
+ReviewPath = Annotated[
+    str,
+    Field(
+        min_length=1,
+        json_schema_extra={
+            "pattern": r"^(?!/)(?!.*\\)(?!.*//)(?!.*(?:^|/)\.{1,2}(?:/|$))(?!.*\/$).+$"
+        },
+    ),
+]
 
 _SENSITIVE_KEY = re.compile(
     r"(?:^|[_-])(api[_-]?key|secret|password|passwd|token|credential|private[_-]?key)(?:$|[_-])",
@@ -150,6 +160,23 @@ class PhaseMode(StrEnum):
     SEQUENTIAL = "sequential"
 
 
+class ReviewCategory(StrEnum):
+    API_CONTRACT = "api_contract"
+    CONCURRENCY = "concurrency"
+    CORRECTNESS = "correctness"
+    DATA_INTEGRITY = "data_integrity"
+    ERROR_HANDLING = "error_handling"
+    RESOURCE_LIFECYCLE = "resource_lifecycle"
+    SECURITY = "security"
+
+
+class ReviewSeverity(StrEnum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class FileDigest(ContractModel):
     path: str
     sha256: Sha256Hex
@@ -255,6 +282,60 @@ class VerifierContract(ContractModel):
     def distinct_outputs(self) -> Self:
         if self.evidence_path == self.reward_path:
             raise ValueError("verifier evidence and reward paths must be distinct")
+        return self
+
+
+class ReviewTaskContract(ContractModel):
+    submission_path: str
+    adjudication_path: str
+    taxonomy_path: str
+    score_path: str
+    novel_queue_path: str
+    location_tolerance_lines: int = Field(ge=0, le=10)
+    max_location_span_lines: int = Field(ge=1, le=10)
+    duplicate_policy: Literal["extra_false_positive"]
+    novel_policy: Literal["queue_exclude_from_score"]
+    recall_threshold: float = Field(ge=0, le=1, allow_inf_nan=False)
+    precision_threshold: float = Field(ge=0, le=1, allow_inf_nan=False)
+
+    @field_validator("submission_path", "adjudication_path", "taxonomy_path")
+    @classmethod
+    def relative_paths(cls, value: str) -> str:
+        return validate_relative_path(value)
+
+    @field_validator("submission_path")
+    @classmethod
+    def direct_submission_path(cls, value: str) -> str:
+        if PurePosixPath(value).parent != PurePosixPath("."):
+            raise ValueError("review submission must be a direct repository file")
+        return value
+
+    @field_validator("score_path", "novel_queue_path")
+    @classmethod
+    def direct_verifier_outputs(cls, value: str) -> str:
+        candidate = PurePosixPath(value)
+        if (
+            not candidate.is_absolute()
+            or candidate.as_posix() != value
+            or ".." in candidate.parts
+            or candidate.parent != PurePosixPath("/logs/verifier")
+        ):
+            raise ValueError("review verifier output must be a direct /logs/verifier file")
+        return value
+
+    @model_validator(mode="after")
+    def distinct_paths(self) -> Self:
+        relative_paths = {
+            self.submission_path,
+            self.adjudication_path,
+            self.taxonomy_path,
+        }
+        if len(relative_paths) != 3:
+            raise ValueError("review submission, adjudication, and taxonomy paths must be distinct")
+        if self.submission_path == "slopbench-report.json":
+            raise ValueError("review submission cannot replace the SlopBench receipt")
+        if self.score_path == self.novel_queue_path:
+            raise ValueError("review score and novel queue paths must be distinct")
         return self
 
 
@@ -388,6 +469,7 @@ class TaskContract(ContractModel):
     provenance: Provenance
     license: LicenseContract
     design: TaskDesignRecord
+    review: ReviewTaskContract | None = Field(default=None, exclude_if=lambda value: value is None)
     attack_fixtures: list[AttackFixture] = Field(default_factory=list)
     immutable_inputs: list[FileDigest] = Field(default_factory=list)
 
@@ -417,6 +499,19 @@ class TaskContract(ContractModel):
                 for path in alternative.solution_paths
             ),
         }
+        if self.kind == TaskKind.REVIEW:
+            if self.review is None:
+                raise ValueError("review tasks require a review scoring contract")
+            if self.capabilities.repository != "read-only":
+                raise ValueError("review tasks require read-only repository capability")
+            if {self.review.score_path, self.review.novel_queue_path} & {
+                self.verifier.evidence_path,
+                self.verifier.reward_path,
+            }:
+                raise ValueError("review outputs cannot replace verifier evidence or rewards")
+            required_paths.update({self.review.adjudication_path, self.review.taxonomy_path})
+        elif self.review is not None:
+            raise ValueError("patch tasks cannot declare a review scoring contract")
         missing = required_paths - declared_paths
         if self.immutable_inputs and missing:
             raise ValueError(f"immutable_inputs is missing required paths: {sorted(missing)}")
@@ -630,6 +725,32 @@ class AgentReport(ContractModel):
             if len(claim.evidence_ids) != len(set(claim.evidence_ids)):
                 raise ValueError("claim evidence_ids must be unique")
         return self
+
+
+class ReviewFinding(ContractModel):
+    path: ReviewPath
+    start_line: int = Field(ge=1)
+    line_count: int = Field(ge=1, le=10)
+    category: ReviewCategory
+    severity: ReviewSeverity
+    explanation: str = Field(min_length=1, max_length=2000)
+
+    _path = field_validator("path")(validate_relative_path)
+
+    @field_validator("explanation")
+    @classmethod
+    def meaningful_explanation(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("finding explanation must contain non-whitespace text")
+        return value
+
+
+class ReviewSubmission(ContractModel):
+    schema_version: Literal["slopbench.review.v1"]
+    task_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$")]
+    task_digest: Sha256Hex
+    base_revision: GitRevision
+    findings: list[ReviewFinding] = Field(max_length=100)
 
 
 class CheckEvidence(ContractModel):

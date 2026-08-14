@@ -438,6 +438,80 @@
       "title": "Provenance",
       "type": "object"
     },
+    "ReviewTaskContract": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudication_path": {
+          "title": "Adjudication Path",
+          "type": "string"
+        },
+        "duplicate_policy": {
+          "const": "extra_false_positive",
+          "title": "Duplicate Policy",
+          "type": "string"
+        },
+        "location_tolerance_lines": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Location Tolerance Lines",
+          "type": "integer"
+        },
+        "max_location_span_lines": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Location Span Lines",
+          "type": "integer"
+        },
+        "novel_policy": {
+          "const": "queue_exclude_from_score",
+          "title": "Novel Policy",
+          "type": "string"
+        },
+        "novel_queue_path": {
+          "title": "Novel Queue Path",
+          "type": "string"
+        },
+        "precision_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Precision Threshold",
+          "type": "number"
+        },
+        "recall_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Recall Threshold",
+          "type": "number"
+        },
+        "score_path": {
+          "title": "Score Path",
+          "type": "string"
+        },
+        "submission_path": {
+          "title": "Submission Path",
+          "type": "string"
+        },
+        "taxonomy_path": {
+          "title": "Taxonomy Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_path",
+        "adjudication_path",
+        "taxonomy_path",
+        "score_path",
+        "novel_queue_path",
+        "location_tolerance_lines",
+        "max_location_span_lines",
+        "duplicate_policy",
+        "novel_policy",
+        "recall_threshold",
+        "precision_threshold"
+      ],
+      "title": "ReviewTaskContract",
+      "type": "object"
+    },
     "TaskDesignRecord": {
       "additionalProperties": false,
       "properties": {
@@ -626,6 +700,17 @@
     },
     "provenance": {
       "$ref": "#/$defs/Provenance"
+    },
+    "review": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReviewTaskContract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "schema_version": {
       "const": "slopbench.task.v1",

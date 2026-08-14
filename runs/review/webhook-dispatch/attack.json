@@ -1,0 +1,66 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {},
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "review",
+        "path": "tasks/review/webhook-dispatch/instruction.md",
+        "sha256": "2a9cce9244d6aa8cdf2e28632a050faff7c5a153f889c49888da1fe37f32e615"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": [
+      {
+        "name": "python",
+        "settings": {},
+        "version": "3.13.15"
+      }
+    ]
+  },
+  "attack_fixture_id": "known-false-positive",
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "review-webhook-dispatch-attack-known-false-positive",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/review/webhook-dispatch/slopbench-task.json",
+    "contract_sha256": "1ee8ec463c5f2c9df210d91ff44e8156c138df522d062ecf8d04ad0e6790d502",
+    "harbor_task_checksum": "147beead931a407e77b0b4e91131039ad629e4161db8a7779a155e080c03de5c",
+    "task_digest": "ceacd69d5a5162ab98a23d37a8eba08957f84c80dc10af318587b1c8b08ec899",
+    "task_id": "slopbench/review/webhook-dispatch",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "review-webhook-dispatch-attack-known-false-positive",
+    "seed": 1
+  }
+}

@@ -14,6 +14,7 @@ from slopbench.contracts import (
     AgentReport,
     FailureClassification,
     ResultBundle,
+    ReviewSubmission,
     RunManifest,
     TaskContract,
     VerificationEvidence,
@@ -23,6 +24,7 @@ from slopbench.runner import RunError, execute_run
 
 _SCHEMAS: dict[str, type[BaseModel]] = {
     "report": AgentReport,
+    "review": ReviewSubmission,
     "result": ResultBundle,
     "run": RunManifest,
     "task": TaskContract,

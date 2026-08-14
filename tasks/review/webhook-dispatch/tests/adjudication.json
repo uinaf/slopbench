@@ -1,0 +1,60 @@
+{
+  "schema_version": "slopbench.review-adjudication.v1",
+  "task_id": "slopbench/review/webhook-dispatch",
+  "rules": {
+    "submission_path": "slopbench-review.json",
+    "location_tolerance_lines": 2,
+    "max_location_span_lines": 5,
+    "recall_threshold": 1.0,
+    "precision_threshold": 1.0
+  },
+  "defects": [
+    {
+      "id": "non-constant-time-signature",
+      "path": "src/webhooks.py",
+      "start_line": 20,
+      "end_line": 21,
+      "category": "security",
+      "severity": "medium",
+      "rationale": "Ordinary string equality exposes data-dependent comparison timing for an attacker-controlled signature."
+    },
+    {
+      "id": "unknown-event-misrouted",
+      "path": "src/webhooks.py",
+      "start_line": 45,
+      "end_line": 45,
+      "category": "api_contract",
+      "severity": "high",
+      "rationale": "An unknown type is sent to the invoice handler instead of being rejected without side effects."
+    },
+    {
+      "id": "failure-marked-processed",
+      "path": "src/webhooks.py",
+      "start_line": 46,
+      "end_line": 47,
+      "category": "data_integrity",
+      "severity": "high",
+      "rationale": "The event is marked before the handler succeeds, so a retry after handler failure is discarded."
+    }
+  ],
+  "false_positives": [
+    {
+      "id": "sha256-is-weak",
+      "path": "src/webhooks.py",
+      "start_line": 20,
+      "end_line": 20,
+      "category": "security",
+      "severity": "low",
+      "rationale": "HMAC-SHA256 is the required and appropriate primitive; the comparison operation is the defect."
+    },
+    {
+      "id": "dedup-check-race",
+      "path": "src/webhooks.py",
+      "start_line": 43,
+      "end_line": 44,
+      "category": "concurrency",
+      "severity": "high",
+      "rationale": "The fixture contract serializes delivery per event ID."
+    }
+  ]
+}

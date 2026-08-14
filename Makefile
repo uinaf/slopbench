@@ -1,4 +1,4 @@
-.PHONY: corpus hardening tracer verify
+.PHONY: corpus hardening review-corpus tracer verify
 
 verify:
 	uv sync --locked --all-groups
@@ -25,3 +25,8 @@ hardening:
 
 corpus:
 	uv run python scripts/run-corpus-matrix.py
+
+review-corpus:
+	uv run python scripts/run-corpus-matrix.py \
+		--task tasks/review/archive-extractor \
+		--task tasks/review/webhook-dispatch

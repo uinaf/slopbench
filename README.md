@@ -66,11 +66,14 @@ and hardening matrices.
 
 - [Architecture](docs/ARCHITECTURE.md) explains trust boundaries, evidence flow, and failure
   classification.
+- [Review tasks](docs/REVIEW_TASKS.md) defines the finding taxonomy and deterministic matching
+  rules.
 - [Task schema](schemas/slopbench-task.schema.json) declares phases, capabilities, provenance,
   licensing, and immutable inputs.
 - [Run schema](schemas/slopbench-run.schema.json) pins the agent and runtime configuration.
 - [Receipt schema](schemas/slopbench-report.schema.json) carries claims, commands, uncertainty,
   and the final revision.
+- [Review schema](schemas/slopbench-review.schema.json) defines structured review-only findings.
 - [Result schema](schemas/slopbench-result.schema.json) records evidence and the gate vector.
 - [Roadmap issue #1](https://github.com/uinaf/slopbench/issues/1) tracks the path from this tracer
   to the release corpus.

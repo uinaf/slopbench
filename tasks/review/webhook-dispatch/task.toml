@@ -1,0 +1,32 @@
+version = "1.3"
+
+[task]
+name = "uinaf/webhook-dispatch-review"
+description = "Review a signed webhook dispatcher for adjudicated defects"
+
+[[task.authors]]
+name = "uinaf"
+
+[metadata]
+slopbench_task_id = "slopbench/review/webhook-dispatch"
+slopbench_task_version = "1.0.0"
+
+[agent]
+timeout_sec = 300.0
+network_mode = "allowlist"
+allowed_hosts = ["cursor.com", "*.cursor.com", "*.cursor.sh"]
+
+[verifier]
+timeout_sec = 120.0
+environment_mode = "separate"
+network_mode = "no-network"
+
+[environment]
+build_timeout_sec = 600.0
+network_mode = "no-network"
+cpus = 1
+memory_mb = 512
+storage_mb = 1024
+workdir = "/app"
+
+[solution]
