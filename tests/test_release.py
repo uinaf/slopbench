@@ -238,6 +238,7 @@ def direct_result(
         evaluation_id=f"evaluation-{task_set.version.replace('.', '-')}",
         task_set=task_set_binding(task_set),
         profile=profile_binding(scoring_profile),
+        profile_definition=scoring_profile,
         evaluation_manifest_sha256=digest(f"evaluation-{task_set.version}"),
         purpose=purpose,
         configuration=configuration,
@@ -714,6 +715,11 @@ def test_raw_result_models_reject_vector_and_identity_tampering() -> None:
     with pytest.raises(ValidationError, match="receipt presence"):
         RawTrialOutcome.model_validate_json(json.dumps(trial_payload))
 
+    metrics_payload = result.model_dump(mode="json")
+    metrics_payload["metrics"]["quality_bps"] = 0
+    with pytest.raises(ValidationError, match="metrics do not recompute"):
+        EvaluationResult.model_validate_json(json.dumps(metrics_payload))
+
 
 def test_profile_budgets_are_separate_eligibility_signals() -> None:
     task_set = one_task_set()
@@ -912,23 +918,84 @@ def test_retirement_requires_replacement_coverage_bridge_and_publication() -> No
 
 
 def test_retirement_file_validation_binds_bridge_digest(tmp_path: Path) -> None:
-    before, after, bridge, retirement = retirement_fixture()
+    before, after, _, retirement = retirement_fixture()
     before_path = tmp_path / "before.json"
     after_path = tmp_path / "after.json"
+    before_result_path = tmp_path / "before-result.json"
+    after_result_path = tmp_path / "after-result.json"
     bridge_path = tmp_path / "bridge.json"
     retirement_path = tmp_path / "retirement.json"
     write_model(before_path, before)
     write_model(after_path, after)
+    configuration = reference_configuration()
+    before_result = direct_result(before, profile(), configuration=configuration)
+    after_result = direct_result(after, profile(), configuration=configuration)
+    write_model(before_result_path, before_result)
+    write_model(after_result_path, after_result)
+    bridge = build_bridge_report(
+        before,
+        after,
+        before_result,
+        after_result,
+        sha256_file(before_result_path),
+        sha256_file(after_result_path),
+    )
     write_model(bridge_path, bridge)
     write_model(
         retirement_path,
         retirement.model_copy(update={"bridge_sha256": sha256_file(bridge_path)}),
     )
 
-    validate_retirement(retirement_path, bridge_path, before_path, after_path, ROOT)
+    validate_retirement(
+        retirement_path,
+        bridge_path,
+        before_path,
+        after_path,
+        before_result_path,
+        after_result_path,
+        ROOT,
+    )
     bridge_path.write_text(bridge_path.read_text() + " ")
     with pytest.raises(ContractError, match="bridge digest mismatch"):
-        validate_retirement(retirement_path, bridge_path, before_path, after_path, ROOT)
+        validate_retirement(
+            retirement_path,
+            bridge_path,
+            before_path,
+            after_path,
+            before_result_path,
+            after_result_path,
+            ROOT,
+        )
+
+
+def test_retirement_rejects_bridge_result_digest_forgery(tmp_path: Path) -> None:
+    before, after, forged_bridge, retirement = retirement_fixture()
+    before_path = tmp_path / "before.json"
+    after_path = tmp_path / "after.json"
+    before_result_path = tmp_path / "before-result.json"
+    after_result_path = tmp_path / "after-result.json"
+    bridge_path = tmp_path / "bridge.json"
+    retirement_path = tmp_path / "retirement.json"
+    write_model(before_path, before)
+    write_model(after_path, after)
+    write_model(before_result_path, direct_result(before, profile()))
+    write_model(after_result_path, direct_result(after, profile()))
+    write_model(bridge_path, forged_bridge)
+    write_model(
+        retirement_path,
+        retirement.model_copy(update={"bridge_sha256": sha256_file(bridge_path)}),
+    )
+
+    with pytest.raises(ContractError, match="comparison result digest mismatch"):
+        validate_retirement(
+            retirement_path,
+            bridge_path,
+            before_path,
+            after_path,
+            before_result_path,
+            after_result_path,
+            ROOT,
+        )
 
 
 def test_bridge_rejects_nonpaired_or_inconsistent_results() -> None:
@@ -1115,6 +1182,30 @@ def test_attestation_rejects_external_bad_and_mismatched_signatures(tmp_path: Pa
             maintainer["evaluation_path"],
             maintainer["result_path"],
         )
+
+
+def test_attestation_rejects_trials_substituted_beyond_the_evaluation_manifest(
+    tmp_path: Path,
+) -> None:
+    fixture = materialize_evaluation(tmp_path, origin=ResultOrigin.MAINTAINER)
+    result = fixture["result"]
+    changed_trial = result.trials[0].model_copy(
+        update={"run_manifest_sha256": digest("substituted-run")}
+    )
+    trials = [changed_trial]
+    changed = result.model_copy(
+        update={
+            "trials": trials,
+            "result_vector_sha256": contract_digest(
+                "slopbench.result-vector.v1", RawResultVector(trials=trials)
+            ),
+        }
+    )
+    changed_path = tmp_path / "substituted-result.json"
+    write_model(changed_path, changed)
+
+    with pytest.raises(ContractError, match="run bindings"):
+        build_attestation_statement(fixture["evaluation_path"], changed_path)
 
 
 def test_attestation_signer_reports_process_and_output_failures(tmp_path: Path) -> None:

@@ -132,6 +132,8 @@ def _parser() -> argparse.ArgumentParser:
     retirement.add_argument("--bridge", required=True, type=_path)
     retirement.add_argument("--before-task-set", required=True, type=_path)
     retirement.add_argument("--after-task-set", required=True, type=_path)
+    retirement.add_argument("--before-result", required=True, type=_path)
+    retirement.add_argument("--after-result", required=True, type=_path)
     retirement.add_argument("--project-root", default=Path("."), type=_path)
 
     attestation = commands.add_parser(
@@ -266,6 +268,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.bridge,
                 args.before_task_set,
                 args.after_task_set,
+                args.before_result,
+                args.after_result,
                 args.project_root,
             )
         elif args.command == "attestation":

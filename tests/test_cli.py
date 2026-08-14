@@ -236,6 +236,10 @@ def test_release_commands_dispatch_to_contract_operations(
                 "before.json",
                 "--after-task-set",
                 "after.json",
+                "--before-result",
+                "before-result.json",
+                "--after-result",
+                "after-result.json",
             ]
         )
         == 0

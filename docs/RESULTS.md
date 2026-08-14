@@ -123,11 +123,14 @@ uv run slopbench retirement \
   --bridge release/bridge-0.1.0-to-0.2.0.json \
   --before-task-set release/held-out-0.1.0.json \
   --after-task-set release/held-out-0.2.0.json \
+  --before-result release/result-0.1.0.json \
+  --after-result release/result-0.2.0.json \
   --project-root .
 ```
 
-Validation rejects lost category coverage, an unrecorded removal, a carried-over task presented as
-a replacement, mismatched provenance or license, and any bridge digest mismatch.
+Validation reloads both comparison results and reconstructs the bridge before checking retirement.
+It rejects lost category coverage, an unrecorded removal, a carried-over task presented as a
+replacement, mismatched provenance or license, and any bridge or comparison-result digest mismatch.
 
 ## Maintainer attestations
 

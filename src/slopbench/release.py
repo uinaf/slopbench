@@ -405,6 +405,7 @@ class EvaluationResult(ContractModel):
     evaluation_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     task_set: VersionBinding
     profile: VersionBinding
+    profile_definition: ProfileDefinition
     evaluation_manifest_sha256: Sha256Hex
     purpose: EvaluationPurpose
     configuration: ReferenceConfiguration
@@ -461,8 +462,12 @@ class EvaluationResult(ContractModel):
         expected_vector_sha = contract_digest("slopbench.result-vector.v1", vector)
         if self.result_vector_sha256 != expected_vector_sha:
             raise ValueError("result vector digest mismatch")
+        if self.profile != profile_binding(self.profile_definition):
+            raise ValueError("result profile binding does not match its profile definition")
         if self.metrics.trial_count != len(self.trials):
             raise ValueError("aggregate trial_count does not match raw trials")
+        if self.metrics != _aggregate(self.trials, self.profile_definition):
+            raise ValueError("aggregate metrics do not recompute from raw trials and profile")
         return self
 
 
@@ -893,6 +898,7 @@ def compute_evaluation(
         evaluation_id=evaluation.evaluation_id,
         task_set=expected_task_set,
         profile=expected_profile,
+        profile_definition=profile,
         evaluation_manifest_sha256=sha256_file(evaluation_path),
         purpose=evaluation.purpose,
         configuration=evaluation.configuration,
@@ -1080,6 +1086,8 @@ def validate_retirement(
     bridge_path: Path,
     before_task_set_path: Path,
     after_task_set_path: Path,
+    before_result_path: Path,
+    after_result_path: Path,
     project_root: Path,
 ) -> None:
     retirement = load_model(retirement_path, RetirementManifest)
@@ -1088,6 +1096,24 @@ def validate_retirement(
     after, _ = validate_task_set(after_task_set_path, project_root)
     if sha256_file(bridge_path) != retirement.bridge_sha256:
         raise ContractError("retirement bridge digest mismatch")
+    before_result = load_model(before_result_path, EvaluationResult)
+    after_result = load_model(after_result_path, EvaluationResult)
+    before_result_sha = sha256_file(before_result_path)
+    after_result_sha = sha256_file(after_result_path)
+    if bridge.before_result_sha256 != before_result_sha or (
+        bridge.after_result_sha256 != after_result_sha
+    ):
+        raise ContractError("retirement comparison result digest mismatch")
+    expected_bridge = build_bridge_report(
+        before,
+        after,
+        before_result,
+        after_result,
+        before_result_sha,
+        after_result_sha,
+    )
+    if bridge != expected_bridge:
+        raise ContractError("retirement bridge does not match its comparison results")
     validate_retirement_models(retirement, bridge, before, after)
 
 
@@ -1107,6 +1133,30 @@ def build_attestation_statement(evaluation_path: Path, result_path: Path) -> Att
         or evaluation.configuration != result.configuration
     ):
         raise ContractError("attestation result does not match the evaluation contract")
+    expected_runs = sorted(
+        (
+            run.task_id,
+            run.task_digest,
+            run.pair_index,
+            run.run_manifest_sha256,
+            run.result_sha256,
+            run.report_sha256,
+        )
+        for run in evaluation.runs
+    )
+    actual_runs = sorted(
+        (
+            trial.task_id,
+            trial.task_digest,
+            trial.pair_index,
+            trial.run_manifest_sha256,
+            trial.result_sha256,
+            trial.report_sha256,
+        )
+        for trial in result.trials
+    )
+    if actual_runs != expected_runs:
+        raise ContractError("attestation result trials do not match evaluation run bindings")
     return AttestationStatement(
         evaluation_id=evaluation.evaluation_id,
         subjects=[
