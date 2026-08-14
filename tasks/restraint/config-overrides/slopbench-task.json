@@ -250,7 +250,7 @@
     },
     {
       "path": "tests/type_escapes.py",
-      "sha256": "025c5d7f73c7da5077aa0d05de272d636983ba851914e883e6fddc20e47f153a"
+      "sha256": "82b84dd056311194321d1d89e552ea869d2c62584f57bebbc1272640b4bb8d6c"
     },
     {
       "path": "tests/verify.py",

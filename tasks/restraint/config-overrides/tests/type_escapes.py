@@ -7,7 +7,7 @@ FORBIDDEN_SYMBOLS = frozenset({"Any", "cast"})
 
 
 def _module_aliases(tree: ast.AST) -> dict[str, str]:
-    aliases: dict[str, str] = {}
+    aliases = {module: module for module in FORBIDDEN_MODULES}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for imported in node.names:

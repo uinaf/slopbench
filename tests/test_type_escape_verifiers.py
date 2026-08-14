@@ -37,6 +37,18 @@ def test_type_escape_verifier_rejects_semantic_aliases(verifier: Path) -> None:
     assert find_type_escapes(
         "from typing import cast as coerce\nfrom typing_extensions import Any as Dynamic\n"
     ) == ("line 1: typing.cast", "line 2: typing_extensions.Any")
+    assert find_type_escapes(
+        "import typing\n"
+        "value: typing.Any = 1\n"
+        "converted = typing.cast(int, value)\n"
+        "dynamic = getattr(typing_extensions, 'Any')\n"
+    ) == (
+        "line 2: typing.Any",
+        "line 3: typing.cast",
+        "line 4: typing_extensions.Any",
+    )
+    assert find_type_escapes('value: "typing.Any" = 1\n') == ("line 1: typing.Any",)
+    assert find_type_escapes("from typing import *\n") == ("line 1: typing.*",)
     assert find_type_escapes("value = 1  # type: ignore[assignment]\n") == ("line 1: type: ignore",)
 
 
