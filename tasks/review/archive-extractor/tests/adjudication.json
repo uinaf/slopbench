@@ -1,0 +1,60 @@
+{
+  "schema_version": "slopbench.review-adjudication.v1",
+  "task_id": "slopbench/review/archive-extractor",
+  "rules": {
+    "submission_path": "slopbench-review.json",
+    "location_tolerance_lines": 2,
+    "max_location_span_lines": 5,
+    "recall_threshold": 1.0,
+    "precision_threshold": 1.0
+  },
+  "defects": [
+    {
+      "id": "cumulative-limit-not-enforced",
+      "path": "src/archive.py",
+      "start_line": 24,
+      "end_line": 25,
+      "category": "resource_lifecycle",
+      "severity": "high",
+      "rationale": "The total limit is compared with each member independently, so many allowed members can exceed the archive budget."
+    },
+    {
+      "id": "destination-path-escape",
+      "path": "src/archive.py",
+      "start_line": 26,
+      "end_line": 27,
+      "category": "security",
+      "severity": "high",
+      "rationale": "An absolute or parent-relative member name can write outside the owned destination."
+    },
+    {
+      "id": "partial-output-retained",
+      "path": "src/archive.py",
+      "start_line": 28,
+      "end_line": 30,
+      "category": "data_integrity",
+      "severity": "medium",
+      "rationale": "Files are published directly, so a later validation or extraction failure leaves a partial result."
+    }
+  ],
+  "false_positives": [
+    {
+      "id": "zip-handle-leak",
+      "path": "src/archive.py",
+      "start_line": 18,
+      "end_line": 18,
+      "category": "resource_lifecycle",
+      "severity": "medium",
+      "rationale": "The context manager closes the archive on success and failure."
+    },
+    {
+      "id": "whole-member-buffered",
+      "path": "src/archive.py",
+      "start_line": 29,
+      "end_line": 29,
+      "category": "resource_lifecycle",
+      "severity": "medium",
+      "rationale": "copyfileobj streams bounded chunks and does not load the entire member."
+    }
+  ]
+}

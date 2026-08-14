@@ -1,0 +1,36 @@
+{
+  "findings": [
+    {
+      "path": "src/webhooks.py",
+      "start_line": 20,
+      "end_line": 21,
+      "category": "security",
+      "severity": "medium",
+      "explanation": "The signature comparison is not constant-time."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 45,
+      "end_line": 45,
+      "category": "api_contract",
+      "severity": "high",
+      "explanation": "Unsupported event types are misrouted to invoice processing."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 46,
+      "end_line": 47,
+      "category": "data_integrity",
+      "severity": "high",
+      "explanation": "Failed handlers leave the event marked as processed."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 43,
+      "end_line": 44,
+      "category": "concurrency",
+      "severity": "high",
+      "explanation": "The deduplication check and mark are not an atomic cross-process operation."
+    }
+  ]
+}

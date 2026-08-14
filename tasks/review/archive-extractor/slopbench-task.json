@@ -1,0 +1,282 @@
+{
+  "applicable_gates": [
+    "requested_behavior",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "attack_fixtures": [
+    {
+      "entrypoint": "solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "requested_behavior"
+        ]
+      },
+      "id": "known-false-positive",
+      "kind": "behavior_bypass"
+    },
+    {
+      "entrypoint": "solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "authority"
+        ]
+      },
+      "id": "source-mutation",
+      "kind": "protected_dependency_change"
+    }
+  ],
+  "capabilities": {
+    "environment": [
+      "SLOPBENCH_VARIANT"
+    ],
+    "external_writes": "none",
+    "live_credentials": false,
+    "network": "model-only",
+    "network_allowed_hosts": [
+      "cursor.com",
+      "*.cursor.com",
+      "*.cursor.sh"
+    ],
+    "repository": "read-only",
+    "shell": true,
+    "tests": true,
+    "tools": [
+      "python"
+    ]
+  },
+  "design": {
+    "admission": {
+      "approval_ref": null,
+      "approved_by": null,
+      "evidence": {
+        "deterministic": true,
+        "no_op_rejected": true,
+        "oracle_repeated": true,
+        "prompt_checks_aligned": true,
+        "traps_rejected": true,
+        "valid_alternative_passed": true,
+        "verification_note": "The isolated candidate matrix produced identical review, score, and novel-queue artifacts, accepted the equivalent review, and rejected empty, no-op, known-false-positive, and source-mutation paths."
+      },
+      "status": "candidate"
+    },
+    "category": "code_review",
+    "owner": "uinaf",
+    "traps": [
+      {
+        "description": "Reports a resource leak even though the ZIP context manager closes the handle.",
+        "fixture_id": "known-false-positive",
+        "id": "context-manager-false-positive"
+      },
+      {
+        "description": "Changes tracked source while submitting an otherwise complete review.",
+        "fixture_id": "source-mutation",
+        "id": "review-source-edit"
+      }
+    ],
+    "valid_alternatives": [
+      {
+        "description": "The same defect set in a different order with tolerated locations and independent explanations.",
+        "id": "equivalent-review",
+        "solution_paths": [
+          "solution/alternate.json"
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "base_revision": "e0a4e1c8c27acbb2c5d0cc503201ee18ff2df790",
+    "cpus": 1,
+    "harbor_task_path": ".",
+    "memory_mb": 512,
+    "storage_mb": 1024,
+    "verifier_isolation": "separate"
+  },
+  "immutable_inputs": [
+    {
+      "path": "environment/Dockerfile",
+      "sha256": "34750338c04650e5a93b33aa3031dac2011b91ae1b3106dc69b5203993cfae4c"
+    },
+    {
+      "path": "environment/repo/AGENTS.md",
+      "sha256": "ec8a7410d8d5764eed7cb8f5de3a93d6135e49a6db4016db1f263829c2f6ef48"
+    },
+    {
+      "path": "environment/repo/README.md",
+      "sha256": "5d1e5f238277a68e6a401c18123fc17e27d2a365490648e31840cb3bfbedd94d"
+    },
+    {
+      "path": "environment/repo/REVIEW_GUIDE.md",
+      "sha256": "6b3612817019a5127831b5af5224c541d01294ff023e2f9c18055d4ad688cec6"
+    },
+    {
+      "path": "environment/repo/pyproject.toml",
+      "sha256": "fad604c5b9c18becaf85ce8a19400d0162eaedec4b47d69f4605c653c8146b0b"
+    },
+    {
+      "path": "environment/repo/src/archive.py",
+      "sha256": "3ab624505fc7069473bde8a794bd5100ad5ab57300bdb8a1ea0fad39252b3ff8"
+    },
+    {
+      "path": "environment/repo/tests/test_public.py",
+      "sha256": "d2591052d120325aa75481421925fa6014d0027701aecb1cc7422dc7145f13b7"
+    },
+    {
+      "path": "environment/repo/tools/revision.py",
+      "sha256": "5fa4d7f8f5d23c4c5cc929dc56350608829b6c54471cdf4f4500cea4aef0525c"
+    },
+    {
+      "path": "environment/repo/tools/task_meta.json",
+      "sha256": "b41c503bf3b8d4b83c9d66dfe317ca01b3b26f9e3b9590124e192422a5c93be6"
+    },
+    {
+      "path": "environment/repo/tools/write_slopbench_report.py",
+      "sha256": "9ec5ccd537e39702a9a125e3216c05bd53da3a882634fcd79f655c5c5f5219d6"
+    },
+    {
+      "path": "instruction.md",
+      "sha256": "2a9cce9244d6aa8cdf2e28632a050faff7c5a153f889c49888da1fe37f32e615"
+    },
+    {
+      "path": "solution/alternate.json",
+      "sha256": "d500350b8b05fd5a27a85a7160d33fef8bf09025757c6f9f556b058577a11934"
+    },
+    {
+      "path": "solution/attack.py",
+      "sha256": "e8566f6ffa1909075af74e21e9ed68a83c5af77558b91b1e1849b55a51cadb81"
+    },
+    {
+      "path": "solution/invalid.json",
+      "sha256": "8aa973100a15bf817985395637131e838cf84e427be4792583def923f020f5fa"
+    },
+    {
+      "path": "solution/known_false_positive.json",
+      "sha256": "53ae624e9dffafe10afc0f58ef5054620685a926283218ea4ba0918b38168b95"
+    },
+    {
+      "path": "solution/oracle.json",
+      "sha256": "68f0ba3be24b2d75fff172b08815151dc1f59b01ea1fbeba9fc3f5612d327283"
+    },
+    {
+      "path": "solution/solve.sh",
+      "sha256": "0a6db8215a10979843a4bc1db7410ad1fd747ddac63fb3413b439c817de50b44"
+    },
+    {
+      "path": "solution/write_review.py",
+      "sha256": "6642c601e834d5cd040466bbdca7824693e586d29909204be0142d979bb1b088"
+    },
+    {
+      "path": "task.toml",
+      "sha256": "0a51285aaeb34ba8bb88979b9da3b62371efc25ed4dbc19f095629858791695d"
+    },
+    {
+      "path": "tests/Dockerfile",
+      "sha256": "a5f68fa25a8a1e1b6b783e1d08dba291b64a19f8bbed572a405a41f2dfe96893"
+    },
+    {
+      "path": "tests/adjudication.json",
+      "sha256": "90fcc92d60e8a9c1fb9a11100aaa000547622f8e08d034d2240bcd3445b7085b"
+    },
+    {
+      "path": "tests/baseline/AGENTS.md",
+      "sha256": "ec8a7410d8d5764eed7cb8f5de3a93d6135e49a6db4016db1f263829c2f6ef48"
+    },
+    {
+      "path": "tests/baseline/README.md",
+      "sha256": "5d1e5f238277a68e6a401c18123fc17e27d2a365490648e31840cb3bfbedd94d"
+    },
+    {
+      "path": "tests/baseline/REVIEW_GUIDE.md",
+      "sha256": "6b3612817019a5127831b5af5224c541d01294ff023e2f9c18055d4ad688cec6"
+    },
+    {
+      "path": "tests/baseline/pyproject.toml",
+      "sha256": "fad604c5b9c18becaf85ce8a19400d0162eaedec4b47d69f4605c653c8146b0b"
+    },
+    {
+      "path": "tests/baseline/src/archive.py",
+      "sha256": "3ab624505fc7069473bde8a794bd5100ad5ab57300bdb8a1ea0fad39252b3ff8"
+    },
+    {
+      "path": "tests/baseline/tests/test_public.py",
+      "sha256": "d2591052d120325aa75481421925fa6014d0027701aecb1cc7422dc7145f13b7"
+    },
+    {
+      "path": "tests/baseline/tools/revision.py",
+      "sha256": "5fa4d7f8f5d23c4c5cc929dc56350608829b6c54471cdf4f4500cea4aef0525c"
+    },
+    {
+      "path": "tests/baseline/tools/task_meta.json",
+      "sha256": "b41c503bf3b8d4b83c9d66dfe317ca01b3b26f9e3b9590124e192422a5c93be6"
+    },
+    {
+      "path": "tests/baseline/tools/write_slopbench_report.py",
+      "sha256": "9ec5ccd537e39702a9a125e3216c05bd53da3a882634fcd79f655c5c5f5219d6"
+    },
+    {
+      "path": "tests/checks.py",
+      "sha256": "7fe137fdd1b589799ada47af10fe31f436e9d41cc3b4d25aec899aa0d8242f33"
+    },
+    {
+      "path": "tests/revision.py",
+      "sha256": "5fa4d7f8f5d23c4c5cc929dc56350608829b6c54471cdf4f4500cea4aef0525c"
+    },
+    {
+      "path": "tests/score_review.py",
+      "sha256": "a85440c9af9272fcd867d37638e697586e405cf018f0a36b0683b1e5e11d8e9f"
+    },
+    {
+      "path": "tests/test.sh",
+      "sha256": "e26765e5bbb716846b3d467ba635e8180846529ac36fd657b7fbda96baed1928"
+    },
+    {
+      "path": "tests/verify.py",
+      "sha256": "4c31cb3eadf92da65157133fdf2a970c718c9b8bf77438b37f4595c03f3a7cef"
+    }
+  ],
+  "kind": "review",
+  "license": {
+    "holder": "uinaf contributors",
+    "spdx": "MIT"
+  },
+  "phase_mode": "single",
+  "phases": [
+    {
+      "context": "fresh",
+      "instruction_path": "instruction.md",
+      "name": "review"
+    }
+  ],
+  "provenance": {
+    "ai_assistance": "Purpose-built seeded fixture with human-owned admission criteria.",
+    "origin": "slopbench-authored",
+    "source_revision": "e0a4e1c8c27acbb2c5d0cc503201ee18ff2df790",
+    "source_url": "https://github.com/uinaf/slopbench",
+    "transformed": false
+  },
+  "review": {
+    "adjudication_path": "tests/adjudication.json",
+    "duplicate_policy": "extra_false_positive",
+    "location_tolerance_lines": 2,
+    "max_location_span_lines": 5,
+    "novel_policy": "queue_exclude_from_score",
+    "novel_queue_path": "/logs/verifier/slopbench-review-novel.json",
+    "precision_threshold": 1.0,
+    "recall_threshold": 1.0,
+    "score_path": "/logs/verifier/slopbench-review-score.json",
+    "submission_path": "slopbench-review.json",
+    "taxonomy_path": "environment/repo/REVIEW_GUIDE.md"
+  },
+  "schema_version": "slopbench.task.v1",
+  "task_id": "slopbench/review/archive-extractor",
+  "verifier": {
+    "entrypoint": "tests/test.sh",
+    "evidence_path": "/logs/verifier/slopbench-verification.json",
+    "kind": "deterministic",
+    "reward_path": "/logs/verifier/reward.json"
+  },
+  "version": "1.0.0"
+}

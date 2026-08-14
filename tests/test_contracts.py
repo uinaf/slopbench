@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from slopbench.contracts import (
     AgentReport,
     ResultBundle,
+    ReviewSubmission,
     RunManifest,
     TaskContract,
     VerificationEvidence,
@@ -98,6 +99,105 @@ def test_task_contract_allows_an_unsealed_draft() -> None:
     contract = validate(TaskContract, task_payload(sealed=False))
 
     assert contract.immutable_inputs == []
+
+
+def review_task_payload() -> dict[str, object]:
+    payload = task_payload()
+    payload["kind"] = "review"
+    payload["capabilities"]["repository"] = "read-only"
+    payload["review"] = {
+        "submission_path": "slopbench-review.json",
+        "adjudication_path": "tests/adjudication.json",
+        "taxonomy_path": "environment/repo/REVIEW_GUIDE.md",
+        "score_path": "/logs/verifier/slopbench-review-score.json",
+        "novel_queue_path": "/logs/verifier/slopbench-review-novel.json",
+        "location_tolerance_lines": 2,
+        "max_location_span_lines": 5,
+        "duplicate_policy": "extra_false_positive",
+        "novel_policy": "queue_exclude_from_score",
+        "recall_threshold": 1.0,
+        "precision_threshold": 1.0,
+    }
+    payload["immutable_inputs"].extend(
+        [
+            {"path": "tests/adjudication.json", "sha256": "1" * 64},
+            {"path": "environment/repo/REVIEW_GUIDE.md", "sha256": "2" * 64},
+        ]
+    )
+    return payload
+
+
+def test_review_task_requires_read_only_capability_and_scoring_contract() -> None:
+    contract = validate(TaskContract, review_task_payload())
+    missing = review_task_payload()
+    missing["review"] = None
+    writable = review_task_payload()
+    writable["capabilities"]["repository"] = "read-write"
+
+    assert contract.review is not None
+    with pytest.raises(ValidationError, match="require a review scoring contract"):
+        validate(TaskContract, missing)
+    with pytest.raises(ValidationError, match="read-only repository"):
+        validate(TaskContract, writable)
+
+
+def test_patch_task_rejects_review_scoring_contract() -> None:
+    payload = review_task_payload()
+    payload["kind"] = "patch"
+    payload["capabilities"]["repository"] = "read-write"
+
+    with pytest.raises(ValidationError, match="patch tasks cannot declare"):
+        validate(TaskContract, payload)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("relative-collision", "paths must be distinct"),
+        ("receipt-collision", "cannot replace the SlopBench receipt"),
+        ("verifier-collision", "cannot replace verifier evidence"),
+    ],
+)
+def test_review_contract_rejects_output_collisions(mutation: str, message: str) -> None:
+    payload = review_task_payload()
+    if mutation == "relative-collision":
+        payload["review"]["taxonomy_path"] = payload["review"]["adjudication_path"]
+    elif mutation == "receipt-collision":
+        payload["review"]["submission_path"] = "slopbench-report.json"
+    else:
+        payload["review"]["score_path"] = payload["verifier"]["evidence_path"]
+
+    with pytest.raises(ValidationError, match=message):
+        validate(TaskContract, payload)
+
+
+def test_review_submission_accepts_tight_findings_and_rejects_wide_ranges() -> None:
+    payload = {
+        "schema_version": "slopbench.review.v1",
+        "task_id": "slopbench/review/example",
+        "task_digest": "a" * 64,
+        "base_revision": "b" * 40,
+        "findings": [
+            {
+                "path": "src/example.py",
+                "start_line": 10,
+                "end_line": 12,
+                "category": "correctness",
+                "severity": "high",
+                "explanation": "The branch returns the wrong value.",
+            }
+        ],
+    }
+
+    submission = validate(ReviewSubmission, payload)
+    assert submission.findings[0].start_line == 10
+    payload["findings"][0]["end_line"] = 20
+    with pytest.raises(ValidationError, match="at most 10 lines"):
+        validate(ReviewSubmission, payload)
+    payload["findings"][0]["end_line"] = 10
+    payload["findings"][0]["explanation"] = "   "
+    with pytest.raises(ValidationError, match="non-whitespace"):
+        validate(ReviewSubmission, payload)
 
 
 @pytest.mark.parametrize(

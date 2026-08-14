@@ -10,6 +10,7 @@ from slopbench.contracts import (
     OutcomeStatus,
     ResultBundle,
     RunManifest,
+    TaskKind,
 )
 from slopbench.hashing import load_model, validate_task, write_model
 from slopbench.runner import execute_run
@@ -68,11 +69,20 @@ def run_task(task_dir: Path, output: Path, temporary: Path) -> None:
         f"{task_dir.name}-oracle-b",
         FailureClassification.VALID_PASS,
     )
-    for suffix in (
+    deterministic_artifacts = [
         "slopbench-report.json",
         "slopbench-verification.json",
         "reward.json",
-    ):
+    ]
+    if task.kind == TaskKind.REVIEW:
+        deterministic_artifacts.extend(
+            [
+                "slopbench-review.json",
+                "slopbench-review-score.json",
+                "slopbench-review-novel.json",
+            ]
+        )
+    for suffix in deterministic_artifacts:
         first = artifact_shas(oracle_a / "result.json", suffix)
         second = artifact_shas(oracle_b / "result.json", suffix)
         if first != second:

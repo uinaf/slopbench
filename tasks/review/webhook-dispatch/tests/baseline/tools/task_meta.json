@@ -1,0 +1,8 @@
+{
+  "allowed_untracked": [
+    "slopbench-report.json",
+    "slopbench-review.json"
+  ],
+  "submission_path": "slopbench-review.json",
+  "task_id": "slopbench/review/webhook-dispatch"
+}
