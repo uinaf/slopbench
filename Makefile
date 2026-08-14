@@ -1,4 +1,4 @@
-.PHONY: corpus hardening review-corpus tracer verify
+.PHONY: corpus hardening issue7-corpus review-corpus tracer verify
 
 verify:
 	uv sync --locked --all-groups
@@ -30,3 +30,12 @@ review-corpus:
 	uv run python scripts/run-corpus-matrix.py \
 		--task tasks/review/archive-extractor \
 		--task tasks/review/webhook-dispatch
+
+issue7-corpus:
+	uv run python scripts/run-corpus-matrix.py \
+		--task tasks/diagnosis/query-cache-key \
+		--task tasks/diagnosis/lease-expiry \
+		--task tasks/feature/idempotency-registry \
+		--task tasks/feature/event-pagination \
+		--task tasks/restraint/header-lookup \
+		--task tasks/restraint/config-overrides

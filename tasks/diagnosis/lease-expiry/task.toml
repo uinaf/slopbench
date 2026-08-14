@@ -1,0 +1,46 @@
+version = "1.3"
+multi_step_reward_strategy = "final"
+
+[task]
+name = "uinaf/lease-expiry"
+description = "Diagnose lease expiry boundary failures across acquisition and renewal"
+
+[[task.authors]]
+name = "uinaf"
+
+[metadata]
+slopbench_task_id = "slopbench/diagnosis/lease-expiry"
+slopbench_task_version = "1.0.0"
+
+[[steps]]
+name = "implement"
+min_reward = 1.0
+
+[steps.verifier]
+env = { SLOPBENCH_PHASE = "implement" }
+
+[[steps]]
+name = "review"
+
+[steps.verifier]
+env = { SLOPBENCH_PHASE = "review" }
+
+[agent]
+timeout_sec = 300.0
+network_mode = "allowlist"
+allowed_hosts = ["cursor.com", "*.cursor.com", "*.cursor.sh"]
+
+[verifier]
+timeout_sec = 120.0
+environment_mode = "separate"
+network_mode = "no-network"
+
+[environment]
+build_timeout_sec = 600.0
+network_mode = "no-network"
+cpus = 1
+memory_mb = 512
+storage_mb = 1024
+workdir = "/app"
+
+[solution]

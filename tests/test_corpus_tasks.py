@@ -23,8 +23,14 @@ from slopbench.hashing import compute_worktree_revision, load_model, validate_ta
 
 ROOT = Path(__file__).parents[1]
 CORPUS_TASKS = [
+    ROOT / "tasks" / "diagnosis" / "query-cache-key",
+    ROOT / "tasks" / "diagnosis" / "lease-expiry",
     ROOT / "tasks" / "domain" / "pricing-adjustments",
     ROOT / "tasks" / "domain" / "fulfillment-plan",
+    ROOT / "tasks" / "feature" / "idempotency-registry",
+    ROOT / "tasks" / "feature" / "event-pagination",
+    ROOT / "tasks" / "restraint" / "header-lookup",
+    ROOT / "tasks" / "restraint" / "config-overrides",
     ROOT / "tasks" / "state" / "sync-command",
     ROOT / "tasks" / "state" / "watch-subscription",
 ]
@@ -74,7 +80,11 @@ def run_command(
 def test_corpus_shape_and_design_records() -> None:
     tasks = [validate_task(task_dir)[0] for task_dir in CORPUS_TASKS]
 
-    assert [task.phase_mode for task in tasks].count(PhaseMode.SEQUENTIAL) == 2
+    assert len(tasks) == 10
+    assert [task.phase_mode for task in tasks].count(PhaseMode.SEQUENTIAL) == 4
+    assert [task.design.category for task in tasks].count(CapabilityCategory.DIAGNOSIS_REPAIR) == 2
+    assert [task.design.category for task in tasks].count(CapabilityCategory.FEATURE) == 2
+    assert [task.design.category for task in tasks].count(CapabilityCategory.RESTRAINT) == 2
     assert [task.design.category for task in tasks].count(
         CapabilityCategory.COMPOSITION_DOMAIN_EVOLUTION
     ) == 2
@@ -85,6 +95,8 @@ def test_corpus_shape_and_design_records() -> None:
         assert task.design.admission.status == "candidate"
         assert task.design.admission.evidence.complete
         assert task.license.spdx == "MIT"
+        assert task.provenance.origin == "slopbench-authored"
+        assert task.provenance.source_revision == task.environment.base_revision
         assert len(task.design.traps) == 2
         assert len(task.design.valid_alternatives) == 1
         prompt = "\n".join(
@@ -194,5 +206,6 @@ def test_corpus_solutions_have_expected_behavior(
     assert report.returncode == 0, report.stdout + report.stderr
     receipt = load_model(repo / "slopbench-report.json", AgentReport)
     assert receipt.final_revision == compute_worktree_revision(repo)
+    assert {claim.gate for claim in receipt.claims} == set(task.applicable_gates)
     authority = next(claim for claim in receipt.claims if claim.gate.value == "authority")
     assert authority.status == ClaimStatus.PASSED

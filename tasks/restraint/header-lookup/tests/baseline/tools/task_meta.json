@@ -1,0 +1,6 @@
+{
+  "allowed_paths": ["src/headers.py"],
+  "build_command": "python -m compileall -q src tests tools",
+  "prohibited_patterns": ["# type: ignore", "from typing import Any", "typing.Any", "cast("],
+  "public_command": "python -m unittest discover -s tests -v"
+}

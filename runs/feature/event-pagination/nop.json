@@ -1,0 +1,65 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {},
+    "harness": "nop",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "implement",
+        "path": "tasks/feature/event-pagination/steps/implement/instruction.md",
+        "sha256": "8adfad44cc7c8cc7ebf95257c07b038d011204e564a3cde7f0c07c466bcc59eb"
+      },
+      {
+        "name": "review",
+        "path": "tasks/feature/event-pagination/steps/review/instruction.md",
+        "sha256": "3a9f2a383076993b2b394a4b23c48a5e73b3dde069f41406e26d709be3f2b5f3"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": []
+  },
+  "attack_fixture_id": null,
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "feature-event-pagination-nop",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/feature/event-pagination/slopbench-task.json",
+    "contract_sha256": "d270a1e8298737dcb30a25eeb91f3052cfcc2fe295fe06d5a7ac080b8c28081c",
+    "harbor_task_checksum": "77570f580642d0d060414d658ddc915a6af866afaf27a11d9d36f6103b0efba2",
+    "task_digest": "985f700a4c225fd2827fdd61b802a112b11111c67ff8b33820bc3db1f2ce5e46",
+    "task_id": "slopbench/feature/event-pagination",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "feature-event-pagination-nop",
+    "seed": 1
+  }
+}
