@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "f2ba4e4d61520b47bd393fc52e3aef5e8095de86c233136bfc037069f36a74f0",
+  "evidence_manifest_sha256": "a27ac5a8d71a5933cace0d51f0d9ab357a080e5de19c35d04b9b99008f45b80f",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
@@ -105,7 +105,7 @@
       "status": "pending"
     },
     {
-      "detail": "license, methodology, schemas, profiles, limitations, and reproduction materials are present",
+      "detail": "license, methodology, coverage, schemas, profiles, limitations, and reproduction materials are present",
       "gate": "public_materials",
       "status": "passed"
     },

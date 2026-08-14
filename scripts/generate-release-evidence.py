@@ -29,6 +29,7 @@ def main() -> int:
     public_material_paths = [
         "LICENSE",
         "README.md",
+        "coverage/slopbench-swe-v1-dev-agent-rules.json",
         *[f"docs/{path.name}" for path in sorted((root / "docs").glob("*.md"))],
         *[f"schemas/{path.name}" for path in sorted((root / "schemas").glob("*.json"))],
     ]

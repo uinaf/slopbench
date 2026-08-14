@@ -10,8 +10,8 @@ make verify
 ```
 
 This validates code, schemas, task seals, utility run manifests, profiles, the generated task set,
-reference configurations, release evidence, and the deterministic readiness report without model
-spend.
+agent-rule coverage, reference configurations, release evidence, and the deterministic readiness
+report without model spend.
 
 With Docker available, run the zero-cost execution proofs:
 

@@ -89,12 +89,12 @@ free pass. The Altay profile records its non-sensitive source priorities and is 
 
 ## Release readiness and regression
 
-`slopbench.release-evidence.v1` binds the public task set, tracer, profiles, pinned reference
-configurations, methodology, schemas, human and expert decisions, independent audits, signed
-comparisons, held-out status, and any cross-version bridge claims. `slopbench release audit`
-resolves every file digest and emits an ordered `slopbench.release-readiness.v1` gate report. A
-provisional report may retain explicit blockers. Stable evidence is rejected unless every gate
-passes.
+`slopbench.release-evidence.v1` binds the public task set, agent-rule coverage manifest, tracer,
+profiles, pinned reference configurations, methodology, schemas, human and expert decisions,
+independent audits, signed comparisons, held-out status, and any cross-version bridge claims.
+`slopbench release audit` resolves every file digest, validates coverage against exact task and
+gate bindings, and emits an ordered `slopbench.release-readiness.v1` gate report. A provisional
+report may retain explicit blockers. Stable evidence is rejected unless every gate passes.
 
 Each cross-version claim binds the before and after task sets, the corresponding five-trial
 results, and the bridge report. The release audit reloads those inputs and reconstructs the bridge

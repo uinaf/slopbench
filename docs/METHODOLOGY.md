@@ -16,6 +16,20 @@ Each task contract binds its instructions, environment, verifier, capabilities, 
 provenance, license, valid alternatives, and adversarial fixtures. The task digest changes when
 any sealed input changes.
 
+## Agent-rule coverage
+
+The versioned [agent-rule coverage manifest](../coverage/slopbench-swe-v1-dev-agent-rules.json)
+maps sanitized behavior families to exact task IDs and applicable gates. `measured` means the
+listed task evidence directly contributes to that rule, `partial` names the uncovered remainder,
+and `out_of_scope` carries no task or gate attribution. The manifest binds the task-set digest and
+is itself bound by release evidence, so `make verify` rejects stale mappings.
+
+The source revision is an opaque content digest of the sanitized guidance snapshot. The manifest
+does not import machine-local instructions into task prompts, add a universal style score, or
+change profile weights. Only the listed gates affect evaluation results.
+Maintainers update the mapping, source revision, and coverage version together when that guidance
+changes; portable release verification does not fetch the external source.
+
 ## Admission
 
 Machine admission requires all of the following:

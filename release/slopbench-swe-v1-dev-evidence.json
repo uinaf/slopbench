@@ -44,27 +44,31 @@
     },
     {
       "path": "README.md",
-      "sha256": "14f9a286d317c44623a0def7dca0fb4c036d858c05cc06500f58650f67d0f9c3"
+      "sha256": "a99f75a40fb12445d6e285e59737cdf562a6abc79c722da081f1e09ab7c8fc52"
+    },
+    {
+      "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
+      "sha256": "565db69f3ea3909875842e8c89afa727e66098115fcd520bbea9a7fc9edc39e4"
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "sha256": "58bd7968fd88e287b0a7c75cfe07b8443781b1000b757c2fd91dbf822b25198e"
+      "sha256": "aa4b5dbff29b302b489e33fca2c8d2af863c6ddbae6258c235e4ca1f6734d382"
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "f091311f3667d68bb2fc0da1c54bf9a0423bae6feee5f70b754424d3b9a836a3"
+      "sha256": "2af557845771ac8b22b6a98854bb6ea94997918cbff99fecc0ba00084314b586"
     },
     {
       "path": "docs/METHODOLOGY.md",
-      "sha256": "64d7b65c19463e2e51119b9df49c6325b74d2878bc47191f2c540500f211976b"
+      "sha256": "0ee383fb2b73055efa98811e9a92ceafaa06a37b56abdd97a9f6fb7f8a67efe8"
     },
     {
       "path": "docs/REPRODUCING.md",
-      "sha256": "3b27c65248ff182e42496a13376038487eafa68f016e68323aa97a957e5dddbe"
+      "sha256": "9be4aa709a0a21f4b7f90f834bc921b940177082532f317bd7ff9b578cd05ea9"
     },
     {
       "path": "docs/RESULTS.md",
-      "sha256": "cc52311adaf5d2d63cc78eac0edb389a58149b1d4c60d070a5fa997c00be9d3e"
+      "sha256": "66a92ca72bb52a01e43350e2dc59e1094883c896c534e24e75a7bde9ce3b5be1"
     },
     {
       "path": "docs/REVIEW_TASKS.md",
@@ -81,6 +85,10 @@
     {
       "path": "schemas/slopbench-bridge.schema.json",
       "sha256": "974d46d13d62f1ca64140c3eb667537e1a1509c56e82ae4f83d39ebde060b306"
+    },
+    {
+      "path": "schemas/slopbench-coverage.schema.json",
+      "sha256": "4608a8912256890005af4e101d3aa59dbfd4e3f141282f6a907d70f858180244"
     },
     {
       "path": "schemas/slopbench-disclosure.schema.json",

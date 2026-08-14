@@ -1,0 +1,176 @@
+{
+  "$defs": {
+    "CoverageDisposition": {
+      "enum": [
+        "measured",
+        "partial",
+        "out_of_scope"
+      ],
+      "title": "CoverageDisposition",
+      "type": "string"
+    },
+    "CoverageEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "minItems": 1,
+          "title": "Gates",
+          "type": "array"
+        },
+        "task_ids": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Task Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "task_ids",
+        "gates"
+      ],
+      "title": "CoverageEvidence",
+      "type": "object"
+    },
+    "CoverageRule": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "disposition": {
+          "$ref": "#/$defs/CoverageDisposition"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/CoverageEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "limitation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limitation"
+        },
+        "rule_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Rule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "description",
+        "disposition"
+      ],
+      "title": "CoverageRule",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "coverage_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Coverage Id",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/CoverageRule"
+      },
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "slopbench.coverage.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_label": {
+      "minLength": 1,
+      "title": "Source Label",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "coverage_id",
+    "version",
+    "source_label",
+    "source_revision",
+    "task_set",
+    "rules"
+  ],
+  "title": "BenchmarkCoverageManifest",
+  "type": "object"
+}
