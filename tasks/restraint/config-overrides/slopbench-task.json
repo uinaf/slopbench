@@ -30,6 +30,17 @@
       },
       "id": "scope-creep",
       "kind": "protected_dependency_change"
+    },
+    {
+      "entrypoint": "solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "safety_type_escapes"
+        ]
+      },
+      "id": "type-escape-alias",
+      "kind": "behavior_bypass"
     }
   ],
   "capabilities": {
@@ -67,7 +78,7 @@
         "prompt_checks_aligned": true,
         "traps_rejected": true,
         "valid_alternative_passed": true,
-        "verification_note": "The isolated admission matrix repeated the oracle with byte-stable evidence, passed a materially different solution, and rejected the no-op, invalid, and both attack fixtures on their declared gates."
+        "verification_note": "The isolated admission matrix repeated the oracle with byte-stable evidence, passed a materially different solution, and rejected the no-op, invalid, and all attack fixtures on their declared gates."
       },
       "status": "candidate"
     },
@@ -83,6 +94,11 @@
         "description": "Changes CLI output despite the configuration-only authority grant.",
         "fixture_id": "scope-creep",
         "id": "cli-scope-creep"
+      },
+      {
+        "description": "Aliases typing.Any and typing.cast while preserving the requested behavior.",
+        "fixture_id": "type-escape-alias",
+        "id": "aliased-type-escape"
       }
     ],
     "valid_alternatives": [
@@ -96,7 +112,7 @@
     ]
   },
   "environment": {
-    "base_revision": "6b7aab269661a7b8e3fadd9b4f38eeee6d4b9457",
+    "base_revision": "20e6200c5faa471d912fa38df4330bcbe0b2c60a",
     "cpus": 1,
     "harbor_task_path": ".",
     "memory_mb": 512,
@@ -138,11 +154,11 @@
     },
     {
       "path": "environment/repo/tools/task_meta.json",
-      "sha256": "83d3090cbe4d4772886ca6c21bb5f2930340a246163c287298cb6da47aa3836f"
+      "sha256": "a3fa34c5f01c7ec57cd1bd549bf7a83a07ef5992e882c1d8ed2a745d0f687bc9"
     },
     {
       "path": "environment/repo/tools/write_slopbench_report.py",
-      "sha256": "eab19b8b04284ded0c1721fc479ba1538b573504f7f3125c293447718e42ad6e"
+      "sha256": "9f94355232e0326c1babc638c8e00de7c596ee1647b84ccddc30b57a539bbde3"
     },
     {
       "path": "instruction.md",
@@ -154,7 +170,7 @@
     },
     {
       "path": "solution/attack.py",
-      "sha256": "5d154621fb2273d7df5abd88717275a36f3d5f7cbf5e1660c4717b8017b00437"
+      "sha256": "96600b7ce096d7adb4619fc0f49dfaaa67fa05d6a0c695dc26f5d779e232e143"
     },
     {
       "path": "solution/invalid.py",
@@ -169,12 +185,16 @@
       "sha256": "58abbf15e613977eeee80630a97909eb0bb01f89dbfde17a21a244f12b4d8178"
     },
     {
+      "path": "solution/type_escape.py",
+      "sha256": "f6fb5d9b819133b5f018036e72100ea296d9bd257bd9ba87f5d589047a055b49"
+    },
+    {
       "path": "task.toml",
-      "sha256": "3c276dd6cd48093170476acc07e597a0caef3fdeb696eb09df2088f915ec58ba"
+      "sha256": "40968fb272a5eb84a5056306288fe5b908f88294bea7631beb68a4b1b7f13ae2"
     },
     {
       "path": "tests/Dockerfile",
-      "sha256": "78eac37cdef3741641267dc68db9c4ab1321701409b59d898941ca6085a077cb"
+      "sha256": "f95821df45aae6ebc09d6c00d14406260fe25cea58e97ee46229a92f3b0d3059"
     },
     {
       "path": "tests/baseline/AGENTS.md",
@@ -206,15 +226,15 @@
     },
     {
       "path": "tests/baseline/tools/task_meta.json",
-      "sha256": "83d3090cbe4d4772886ca6c21bb5f2930340a246163c287298cb6da47aa3836f"
+      "sha256": "a3fa34c5f01c7ec57cd1bd549bf7a83a07ef5992e882c1d8ed2a745d0f687bc9"
     },
     {
       "path": "tests/baseline/tools/write_slopbench_report.py",
-      "sha256": "eab19b8b04284ded0c1721fc479ba1538b573504f7f3125c293447718e42ad6e"
+      "sha256": "9f94355232e0326c1babc638c8e00de7c596ee1647b84ccddc30b57a539bbde3"
     },
     {
       "path": "tests/checks.py",
-      "sha256": "63929b0a0fab27341db0144e3d10b69f33d1fed829ccfdeec41f42577044ab55"
+      "sha256": "91f19cfa80ed37c53209249458554f18dd3e0f8aaf6429920059a769517fc0f3"
     },
     {
       "path": "tests/hidden_test.py",
@@ -229,8 +249,12 @@
       "sha256": "9eb83acacdae11c82c88a701a921c5a69817dcddb316dbdc56d42a4a06739ef1"
     },
     {
+      "path": "tests/type_escapes.py",
+      "sha256": "025c5d7f73c7da5077aa0d05de272d636983ba851914e883e6fddc20e47f153a"
+    },
+    {
       "path": "tests/verify.py",
-      "sha256": "c4729cac1c4ab0b76a24973dcc5090266d7fc071e276009434dc3dbc039fd0d7"
+      "sha256": "dab791efa784c61ea293a4a096a2393e54de7ee740fbdc33a6846e228a2d2952"
     }
   ],
   "kind": "patch",
@@ -249,7 +273,7 @@
   "provenance": {
     "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
     "origin": "slopbench-authored",
-    "source_revision": "6b7aab269661a7b8e3fadd9b4f38eeee6d4b9457",
+    "source_revision": "20e6200c5faa471d912fa38df4330bcbe0b2c60a",
     "source_url": null,
     "transformed": false
   },
@@ -261,5 +285,5 @@
     "kind": "deterministic",
     "reward_path": "/logs/verifier/reward.json"
   },
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "e057bfdc12969a26735b6f0bf0a83fa331086038bd362a211f7de61a2d639e11"
+      "sha256": "f091311f3667d68bb2fc0da1c54bf9a0423bae6feee5f70b754424d3b9a836a3"
     },
     {
       "path": "docs/METHODOLOGY.md",
@@ -171,11 +171,11 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "012f1110ea368b643f5e74218034b93f7d1fb589d34bc1442c9e815a7ddcb9bd"
+    "sha256": "4c1680cf05836a791e5538a085aea6b6a087f6d344b679e00a91343d4a47db1c"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",
     "sha256": "ddb808249205741365980be40967e0d7f3ee1e7ec773399f94f83d7d5a567825"
   },
-  "version": "0.1.0"
+  "version": "0.1.1"
 }

@@ -21,7 +21,15 @@ def scope_creep() -> None:
     )
 
 
-ATTACKS = {"known-invalid": known_invalid, "scope-creep": scope_creep}
+def type_escape_alias() -> None:
+    shutil.copyfile("/solution/type_escape.py", ROOT / "src" / "headers.py")
+
+
+ATTACKS = {
+    "known-invalid": known_invalid,
+    "scope-creep": scope_creep,
+    "type-escape-alias": type_escape_alias,
+}
 
 
 def main() -> None:

@@ -36,7 +36,7 @@ def main() -> int:
     manifest = ReleaseEvidenceManifest(
         schema_version=RELEASE_EVIDENCE_SCHEMA_VERSION,
         release_id="slopbench-swe-v1-dev",
-        version="0.1.0",
+        version="0.1.1",
         stage=ReleaseStage.PROVISIONAL,
         task_set=bind(root, "datasets/slopbench-swe-v1-dev.json"),
         tracer_task=bind(root, "tasks/tracer/slopbench-task.json"),

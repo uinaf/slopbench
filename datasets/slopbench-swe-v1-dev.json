@@ -355,13 +355,13 @@
       "provenance": {
         "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
         "origin": "slopbench-authored",
-        "source_revision": "6b7aab269661a7b8e3fadd9b4f38eeee6d4b9457",
+        "source_revision": "20e6200c5faa471d912fa38df4330bcbe0b2c60a",
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "75b1b8626c023e53a61efafc53a535be4ac4ea42ac16e17ea2ed4ce5f35433f6",
+      "task_digest": "d2bae3fcb16839fc091dbff089a0eb5e710b615c6fed32ab4738c6b9d6c55985",
       "task_id": "slopbench/restraint/config-overrides",
-      "task_version": "1.0.0"
+      "task_version": "1.0.1"
     },
     {
       "applicable_gates": [
@@ -407,13 +407,13 @@
       "provenance": {
         "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
         "origin": "slopbench-authored",
-        "source_revision": "217457d1920ef88d2f0e3b78f74887612f274cc0",
+        "source_revision": "4db9065e836790ce073895bf1ed4731a5930dfa4",
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "0317dde5fdfd0834ccba3f9d9618eda90a75613c8207b2cada731ea791e3bab9",
+      "task_digest": "55db9edfc933435662e17b5d3347e08970a616506e6a54406e63681ff6f5818e",
       "task_id": "slopbench/restraint/header-lookup",
-      "task_version": "1.0.0"
+      "task_version": "1.0.1"
     },
     {
       "applicable_gates": [
@@ -613,6 +613,6 @@
       "task_version": "1.0.0"
     }
   ],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "visibility": "public"
 }

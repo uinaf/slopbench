@@ -77,7 +77,7 @@ def main() -> int:
             "evidence_ids": ["evidence-receipt"],
         },
     ]
-    if META.get("prohibited_patterns"):
+    if META.get("forbid_type_escapes"):
         claims.insert(
             -1,
             {
