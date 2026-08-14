@@ -38,9 +38,15 @@ def test_checked_in_coverage_is_bound_and_explicit_about_gaps() -> None:
         CoverageDisposition.PARTIAL: 5,
         CoverageDisposition.OUT_OF_SCOPE: 10,
     }
-    assert all(rule.limitation is None for rule in coverage.rules if rule.disposition == "measured")
     assert all(
-        rule.limitation is not None for rule in coverage.rules if rule.disposition != "measured"
+        rule.limitation is None
+        for rule in coverage.rules
+        if rule.disposition == CoverageDisposition.MEASURED
+    )
+    assert all(
+        rule.limitation is not None
+        for rule in coverage.rules
+        if rule.disposition != CoverageDisposition.MEASURED
     )
 
 
