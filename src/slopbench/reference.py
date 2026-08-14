@@ -13,6 +13,7 @@ from slopbench.contracts import (
     AgentConfiguration,
     ImagePin,
     InstructionLayer,
+    ResultBundle,
     RetryableReason,
     RetryPolicy,
     RunLimits,
@@ -21,8 +22,17 @@ from slopbench.contracts import (
     TaskBinding,
     TrialIdentity,
 )
-from slopbench.hashing import ContractError, validate_task, write_model
-from slopbench.release import EvaluationPurpose, ReferenceConfiguration
+from slopbench.hashing import ContractError, load_model, sha256_file, validate_task, write_model
+from slopbench.release import (
+    EvaluationManifest,
+    EvaluationPurpose,
+    EvaluationRunBinding,
+    ProfileDefinition,
+    ReferenceConfiguration,
+    TaskSetManifest,
+    profile_binding,
+    task_set_binding,
+)
 
 _IMAGE_PATTERN = re.compile(r"^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)", re.IGNORECASE)
 _TRIAL_COUNTS = {
@@ -161,3 +171,112 @@ def write_reference_runs(
             write_model(path, manifest)
             written.append(path)
     return written
+
+
+def _relative_regular_file(path: Path, root: Path, label: str) -> str:
+    resolved_root = root.resolve()
+    resolved = path.resolve()
+    if not resolved.is_relative_to(resolved_root):
+        raise ContractError(f"{label} escapes the bundle root: {path}")
+    if path.is_symlink() or not resolved.is_file():
+        raise ContractError(f"{label} is not a regular file: {path}")
+    return resolved.relative_to(resolved_root).as_posix()
+
+
+def _report_binding(
+    result: ResultBundle,
+    run: RunManifest,
+    result_bundle: Path,
+    bundle_root: Path,
+) -> tuple[str | None, str | None]:
+    if not result.receipt.present:
+        return None, None
+    if result.receipt.sha256 is None:
+        raise ContractError(f"present receipt has no digest for {result.run_id}")
+    matches = [
+        artifact
+        for artifact in result.artifacts
+        if artifact.sha256 == result.receipt.sha256
+        and Path(artifact.path).name == "slopbench-report.json"
+    ]
+    if len(matches) > 1:
+        final_phase = run.agent.instruction_layers[-1].name
+        final_suffix = f"/steps/{final_phase}/artifacts/app/slopbench-report.json"
+        matches = [artifact for artifact in matches if artifact.path.endswith(final_suffix)]
+    if len(matches) != 1:
+        raise ContractError(f"expected one final report artifact for {result.run_id}")
+    report_path = result_bundle / matches[0].path
+    resolved_bundle = result_bundle.resolve()
+    if not report_path.resolve().is_relative_to(resolved_bundle):
+        raise ContractError(f"report artifact escapes its result bundle for {result.run_id}")
+    relative = _relative_regular_file(report_path, bundle_root, "agent report")
+    if sha256_file(report_path) != result.receipt.sha256:
+        raise ContractError(f"agent report digest mismatch for {result.run_id}")
+    return relative, result.receipt.sha256
+
+
+def build_reference_evaluation(
+    manifest_dir: Path,
+    result_dir: Path,
+    bundle_root: Path,
+    configuration: ReferenceConfiguration,
+    task_set: TaskSetManifest,
+    profile: ProfileDefinition,
+    purpose: EvaluationPurpose,
+    evaluation_id: str,
+) -> EvaluationManifest:
+    expected_tasks = {entry.task_id: entry for entry in task_set.tasks}
+    manifest_paths = sorted(manifest_dir.glob("*/trial-*.json"))
+    if not manifest_paths:
+        raise ContractError(f"reference manifest directory is empty: {manifest_dir}")
+    bindings: list[EvaluationRunBinding] = []
+    covered_tasks: set[str] = set()
+    for manifest_path in manifest_paths:
+        run = load_model(manifest_path, RunManifest)
+        entry = expected_tasks.get(run.task.task_id)
+        if entry is None:
+            raise ContractError(f"reference run contains unexpected task: {run.task.task_id}")
+        if run.task.task_digest != entry.task_digest:
+            raise ContractError(f"reference run task digest mismatch for {run.task.task_id}")
+        if run.trial.seed is None:
+            raise ContractError(f"reference run has no pair seed: {run.run_id}")
+        result_bundle = result_dir / run.run_id
+        result_path = result_bundle / "result.json"
+        result = load_model(result_path, ResultBundle)
+        manifest_sha256 = sha256_file(manifest_path)
+        if (
+            result.run_id != run.run_id
+            or result.task_digest != run.task.task_digest
+            or result.run_manifest_sha256 != manifest_sha256
+            or result.attempt != run.trial.attempt
+        ):
+            raise ContractError(f"reference run/result binding mismatch for {run.run_id}")
+        report_path, report_sha256 = _report_binding(result, run, result_bundle, bundle_root)
+        bindings.append(
+            EvaluationRunBinding(
+                task_id=run.task.task_id,
+                task_digest=run.task.task_digest,
+                pair_index=run.trial.seed,
+                run_manifest_path=_relative_regular_file(
+                    manifest_path, bundle_root, "run manifest"
+                ),
+                run_manifest_sha256=manifest_sha256,
+                result_path=_relative_regular_file(result_path, bundle_root, "raw result"),
+                result_sha256=sha256_file(result_path),
+                report_path=report_path,
+                report_sha256=report_sha256,
+            )
+        )
+        covered_tasks.add(run.task.task_id)
+    missing_tasks = sorted(set(expected_tasks) - covered_tasks)
+    if missing_tasks:
+        raise ContractError(f"reference runs do not cover task set: {missing_tasks}")
+    return EvaluationManifest(
+        schema_version="slopbench.evaluation.v1",
+        evaluation_id=evaluation_id,
+        task_set=task_set_binding(task_set),
+        profile=profile_binding(profile),
+        purpose=purpose,
+        configuration=configuration,
+        runs=bindings,
+    )
