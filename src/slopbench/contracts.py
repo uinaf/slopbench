@@ -746,7 +746,7 @@ class ReviewFinding(ContractModel):
 
 
 class ReviewSubmission(ContractModel):
-    schema_version: Literal["slopbench.review.v1"] = REVIEW_SCHEMA_VERSION
+    schema_version: Literal["slopbench.review.v1"]
     task_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$")]
     task_digest: Sha256Hex
     base_revision: GitRevision

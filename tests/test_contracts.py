@@ -191,6 +191,10 @@ def test_review_submission_accepts_tight_findings_and_rejects_wide_ranges() -> N
 
     submission = validate(ReviewSubmission, payload)
     assert submission.findings[0].start_line == 10
+    assert "schema_version" in ReviewSubmission.model_json_schema()["required"]
+    versionless = {key: value for key, value in payload.items() if key != "schema_version"}
+    with pytest.raises(ValidationError, match="schema_version"):
+        validate(ReviewSubmission, versionless)
     payload["findings"][0]["line_count"] = 11
     with pytest.raises(ValidationError, match="less than or equal to 10"):
         validate(ReviewSubmission, payload)

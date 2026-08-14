@@ -78,7 +78,7 @@ def write_submission(
     return path
 
 
-def score(task_dir: Path, repo: Path, task_digest: str) -> tuple[int, dict[str, object] | None]:
+def run_score(task_dir: Path, repo: Path, task_digest: str) -> subprocess.CompletedProcess[str]:
     base_revision = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=repo,
@@ -86,7 +86,7 @@ def score(task_dir: Path, repo: Path, task_digest: str) -> tuple[int, dict[str, 
         capture_output=True,
         text=True,
     ).stdout.strip()
-    completed = subprocess.run(
+    return subprocess.run(
         ["python", str(task_dir / "tests" / "score_review.py")],
         cwd=repo,
         env={
@@ -102,6 +102,10 @@ def score(task_dir: Path, repo: Path, task_digest: str) -> tuple[int, dict[str, 
         capture_output=True,
         text=True,
     )
+
+
+def score(task_dir: Path, repo: Path, task_digest: str) -> tuple[int, dict[str, object] | None]:
+    completed = run_score(task_dir, repo, task_digest)
     envelope = json.loads(completed.stdout) if completed.stdout else None
     return completed.returncode, envelope
 
@@ -279,6 +283,38 @@ def test_authority_check_rejects_a_source_mutation(task_dir: Path, tmp_path: Pat
 
     assert completed.returncode == 1
     assert "review changed tracked" in completed.stderr
+
+
+@pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)
+def test_review_scorer_rejects_a_path_resolving_outside_repository(
+    task_dir: Path, tmp_path: Path
+) -> None:
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+    outside = tmp_path / "outside.py"
+    outside.write_text("hidden = True\n")
+    (repo / "escape.py").symlink_to(outside)
+    write_submission(
+        task_dir,
+        repo,
+        task_digest,
+        [
+            {
+                "path": "escape.py",
+                "start_line": 1,
+                "line_count": 1,
+                "category": "security",
+                "severity": "high",
+                "explanation": "This path must remain inside the reviewed repository.",
+            }
+        ],
+    )
+
+    completed = run_score(task_dir, repo, task_digest)
+
+    assert completed.returncode == 1
+    assert completed.stdout == ""
+    assert "finding path must stay within the repository" in completed.stderr
 
 
 @pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)

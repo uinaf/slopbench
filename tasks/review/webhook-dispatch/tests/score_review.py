@@ -35,7 +35,14 @@ def canonical_path(value: object) -> str:
         or any(part in {"", ".", ".."} for part in path.parts)
     ):
         fail("finding path must stay within the repository")
-    if not (ROOT / value).is_file():
+    candidate = ROOT / value
+    try:
+        resolved = candidate.resolve(strict=True)
+    except OSError:
+        fail("finding path does not identify a file")
+    if not resolved.is_relative_to(ROOT.resolve()):
+        fail("finding path must stay within the repository")
+    if not resolved.is_file():
         fail("finding path does not identify a file")
     return value
 

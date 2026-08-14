@@ -85,7 +85,6 @@
     },
     "schema_version": {
       "const": "slopbench.review.v1",
-      "default": "slopbench.review.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -101,6 +100,7 @@
     }
   },
   "required": [
+    "schema_version",
     "task_id",
     "task_digest",
     "base_revision",

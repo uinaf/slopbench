@@ -226,7 +226,7 @@
     },
     {
       "path": "tests/score_review.py",
-      "sha256": "6f91d8429fb3d5005bf1c2ab2e58a57ed4a4427c9ca1c01900358001fe9f3db2"
+      "sha256": "b19f47bfb95f23ee0f68d1b43794133e28f4de8720be8d79a7b84e1a1bfb9f57"
     },
     {
       "path": "tests/test.sh",
