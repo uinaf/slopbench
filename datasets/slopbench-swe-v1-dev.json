@@ -608,7 +608,7 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "1d4c66d30d0137fa0f7455411796ff4efe202132dc44a076dabd36461bdb37e8",
+      "task_digest": "63f25fe3af8f94df5f38398ede4287d9cb90289d62e8c208c1682e7fd9928903",
       "task_id": "slopbench/state/watch-subscription",
       "task_version": "1.1.0"
     }

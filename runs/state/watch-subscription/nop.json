@@ -59,9 +59,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/state/watch-subscription/slopbench-task.json",
-    "contract_sha256": "4c8aa561a4b655c3197f3cca63b12d273f9daecbf1c046893db66de196fddd9e",
-    "harbor_task_checksum": "48dceedd2ef9b8e4e2c294d228dc0407d8f0b050fc7846ee74a0a85e6f85b3b1",
-    "task_digest": "1d4c66d30d0137fa0f7455411796ff4efe202132dc44a076dabd36461bdb37e8",
+    "contract_sha256": "ffa21713c9e7e5f2b867784890c1cfd979b23ca861879d976bf5664a7b9edc6c",
+    "harbor_task_checksum": "05af17fa956c8b42b9b344fb826fd25d9678103ed4443e4793b9c172ea11df68",
+    "task_digest": "63f25fe3af8f94df5f38398ede4287d9cb90289d62e8c208c1682e7fd9928903",
     "task_id": "slopbench/state/watch-subscription",
     "task_version": "1.1.0"
   },

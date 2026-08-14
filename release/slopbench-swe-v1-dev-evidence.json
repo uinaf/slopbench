@@ -48,7 +48,7 @@
     },
     {
       "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
-      "sha256": "1c7a4c69faa87af5cdbe7b5468ceb06d50ca6667682c9236e01f2c3a65565630"
+      "sha256": "b94fc2e2bf92724a979bea9d832bef7b628f98f93f3d64608c9900547af579f4"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -56,7 +56,7 @@
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "e009ef70a2a596d93a0160795ee93124b46c6403050ae232fdd302e24e7d5df4"
+      "sha256": "d98063768e5f8c2ea10a838017525d79d9ff41ec5df1f05433e5683c4ae67f8f"
     },
     {
       "path": "docs/METHODOLOGY.md",
@@ -179,7 +179,7 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "63bf19f427cff1697640cd8f5ece124cc3ab258c315bd9c91b31375628ca139c"
+    "sha256": "6e265b14c25ced485ff3006d9d13dea374c91f6e97f9ca615d4ff9e478b344f0"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",

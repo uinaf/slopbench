@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "d2bafde0ca57fef47ca30a1e2bca83054484525f1ce646ebdd6f970c8beedfd1",
+  "evidence_manifest_sha256": "862db2fae9d6d73000ad9f40d89b2b5b2085c1049d5f6b3b66e282709449a93b",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
@@ -171,7 +171,7 @@
   "stage": "provisional",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "7f3e9e013d76da2a958748a3b7921afa30ee61a853f198304be48a256d414fe7",
+    "sha256": "38fd6df719c18210e0b40c2935d0196c3957451b15d936f856587df2f22c6170",
     "version": "0.2.0"
   },
   "version": "0.2.0"

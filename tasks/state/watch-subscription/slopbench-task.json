@@ -261,7 +261,7 @@
     },
     {
       "path": "tests/hidden_test.py",
-      "sha256": "3c217b85658824ad62d59754d8a25b5e9e9046e52a8a1d3ea38f4443311c79a1"
+      "sha256": "a9a68dc2045de8814522bf61ccdc4b7a242260563277f261220f5f322d34ad24"
     },
     {
       "path": "tests/revision.py",

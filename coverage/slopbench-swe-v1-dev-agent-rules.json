@@ -234,7 +234,7 @@
           ]
         }
       ],
-      "limitation": "A synthetic failure payload must not cross the typed event boundary, but no live credential or logger transport is exercised.",
+      "limitation": "The synthetic task covers only omission of secret-shaped message and payload data from a typed event record; credentials, loggers, and transports remain out of scope.",
       "rule_id": "secret-redaction"
     },
     {
@@ -354,7 +354,7 @@
   "source_revision": "487784abdd8c88eec52ffabd59a21801b98d3345e7c9dcc60a618c50aca23c2f",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "7f3e9e013d76da2a958748a3b7921afa30ee61a853f198304be48a256d414fe7",
+    "sha256": "38fd6df719c18210e0b40c2935d0196c3957451b15d936f856587df2f22c6170",
     "version": "0.2.0"
   },
   "version": "0.2.0"
