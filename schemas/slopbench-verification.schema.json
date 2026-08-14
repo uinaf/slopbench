@@ -69,7 +69,6 @@
     },
     "schema_version": {
       "const": "slopbench.verification.v1",
-      "default": "slopbench.verification.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -80,6 +79,7 @@
     }
   },
   "required": [
+    "schema_version",
     "task_digest",
     "base_revision",
     "final_revision",

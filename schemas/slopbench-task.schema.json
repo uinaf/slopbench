@@ -330,7 +330,6 @@
     },
     "schema_version": {
       "const": "slopbench.task.v1",
-      "default": "slopbench.task.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -349,6 +348,7 @@
     }
   },
   "required": [
+    "schema_version",
     "task_id",
     "version",
     "kind",

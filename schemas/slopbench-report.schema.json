@@ -120,7 +120,6 @@
     },
     "schema_version": {
       "const": "slopbench.report.v1",
-      "default": "slopbench.report.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -133,6 +132,7 @@
     }
   },
   "required": [
+    "schema_version",
     "claims",
     "commands",
     "uncertainty",

@@ -33,6 +33,7 @@ from harbor.models.trial.config import (
 from harbor.models.trial.result import TrialResult
 
 from slopbench.contracts import (
+    RESULT_SCHEMA_VERSION,
     AgentReport,
     ArtifactDigest,
     ClaimStatus,
@@ -585,6 +586,7 @@ def _finalize(
 
     completed = classification == FailureClassification.VALID_PASS
     result = ResultBundle(
+        schema_version=RESULT_SCHEMA_VERSION,
         run_id=manifest.run_id,
         task_digest=task_digest,
         run_manifest_sha256=run_manifest_sha256,

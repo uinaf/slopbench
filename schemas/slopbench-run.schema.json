@@ -366,7 +366,6 @@
     },
     "schema_version": {
       "const": "slopbench.run.v1",
-      "default": "slopbench.run.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -378,6 +377,7 @@
     }
   },
   "required": [
+    "schema_version",
     "run_id",
     "task",
     "agent",

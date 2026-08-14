@@ -164,7 +164,7 @@ class LicenseContract(ContractModel):
 
 
 class TaskContract(ContractModel):
-    schema_version: Literal["slopbench.task.v1"] = TASK_SCHEMA_VERSION
+    schema_version: Literal["slopbench.task.v1"]
     task_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$")]
     version: Version
     kind: TaskKind
@@ -315,7 +315,7 @@ class TrialIdentity(ContractModel):
 
 
 class RunManifest(ContractModel):
-    schema_version: Literal["slopbench.run.v1"] = RUN_SCHEMA_VERSION
+    schema_version: Literal["slopbench.run.v1"]
     run_id: Identifier
     task: TaskBinding
     agent: AgentConfiguration
@@ -354,7 +354,7 @@ class Uncertainty(ContractModel):
 
 
 class AgentReport(ContractModel):
-    schema_version: Literal["slopbench.report.v1"] = REPORT_SCHEMA_VERSION
+    schema_version: Literal["slopbench.report.v1"]
     claims: list[Claim]
     commands: list[CommandClaim]
     uncertainty: list[Uncertainty]
@@ -380,7 +380,7 @@ class CheckEvidence(ContractModel):
 
 
 class VerificationEvidence(ContractModel):
-    schema_version: Literal["slopbench.verification.v1"] = VERIFICATION_SCHEMA_VERSION
+    schema_version: Literal["slopbench.verification.v1"]
     task_digest: Sha256Hex
     base_revision: GitRevision
     final_revision: Revision
@@ -450,7 +450,7 @@ class HarborEvidence(ContractModel):
 
 
 class ResultBundle(ContractModel):
-    schema_version: Literal["slopbench.result.v1"] = RESULT_SCHEMA_VERSION
+    schema_version: Literal["slopbench.result.v1"]
     run_id: Identifier
     task_digest: Sha256Hex
     run_manifest_sha256: Sha256Hex
