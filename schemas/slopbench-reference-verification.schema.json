@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "attestation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Attestation Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.reference-verification.v1",
+      "default": "slopbench.reference-verification.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signer": {
+      "title": "Signer",
+      "type": "string"
+    },
+    "statement_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Statement Sha256",
+      "type": "string"
+    },
+    "status": {
+      "const": "official",
+      "default": "official",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "signer",
+    "attestation_sha256",
+    "statement_sha256"
+  ],
+  "title": "ReferenceVerification",
+  "type": "object"
+}

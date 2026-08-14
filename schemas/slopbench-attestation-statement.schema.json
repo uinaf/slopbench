@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "AttestationSubject": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "evaluation-manifest",
+            "evaluation-result"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256"
+      ],
+      "title": "AttestationSubject",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evaluation_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "predicate_type": {
+      "const": "slopbench.maintainer-reference.v1",
+      "default": "slopbench.maintainer-reference.v1",
+      "title": "Predicate Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.attestation-statement.v1",
+      "default": "slopbench.attestation-statement.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "subjects": {
+      "items": {
+        "$ref": "#/$defs/AttestationSubject"
+      },
+      "title": "Subjects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "evaluation_id",
+    "subjects"
+  ],
+  "title": "AttestationStatement",
+  "type": "object"
+}

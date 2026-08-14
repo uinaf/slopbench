@@ -1,0 +1,298 @@
+{
+  "$defs": {
+    "ComponentPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "EvaluationPurpose": {
+      "enum": [
+        "smoke",
+        "calibration",
+        "comparison"
+      ],
+      "title": "EvaluationPurpose",
+      "type": "string"
+    },
+    "EvaluationRunBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "pair_index": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Pair Index",
+          "type": "integer"
+        },
+        "report_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Report Path"
+        },
+        "report_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Report Sha256"
+        },
+        "result_path": {
+          "title": "Result Path",
+          "type": "string"
+        },
+        "result_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "run_manifest_path": {
+          "title": "Run Manifest Path",
+          "type": "string"
+        },
+        "run_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Run Manifest Sha256",
+          "type": "string"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_digest",
+        "pair_index",
+        "run_manifest_path",
+        "run_manifest_sha256",
+        "result_path",
+        "result_sha256"
+      ],
+      "title": "EvaluationRunBinding",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "ReferenceConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "configuration_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "version",
+        "harness",
+        "adapter",
+        "model",
+        "effort_tier"
+      ],
+      "title": "ReferenceConfiguration",
+      "type": "object"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "configuration": {
+      "$ref": "#/$defs/ReferenceConfiguration"
+    },
+    "evaluation_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "profile": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "purpose": {
+      "$ref": "#/$defs/EvaluationPurpose"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/EvaluationRunBinding"
+      },
+      "minItems": 1,
+      "title": "Runs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "slopbench.evaluation.v1",
+      "default": "slopbench.evaluation.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    }
+  },
+  "required": [
+    "evaluation_id",
+    "task_set",
+    "profile",
+    "purpose",
+    "configuration",
+    "runs"
+  ],
+  "title": "EvaluationManifest",
+  "type": "object"
+}

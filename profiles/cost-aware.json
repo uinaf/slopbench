@@ -1,0 +1,30 @@
+{
+  "budget": {
+    "max_mean_cost_usd": 1.0,
+    "max_mean_duration_seconds": null,
+    "require_complete_usage": true
+  },
+  "description": "Uses balanced quality and reliability with an explicit one-dollar mean per-trial eligibility budget; cost remains a separate metric.",
+  "gate_weights": {
+    "authority": 15,
+    "build_and_types": 15,
+    "evidence_receipt": 10,
+    "regressions": 20,
+    "requested_behavior": 25,
+    "safety_type_escapes": 5,
+    "verifier_integrity": 10
+  },
+  "label": "Cost aware",
+  "profile_id": "cost-aware",
+  "quality_weight": 50,
+  "reliability_weight": 50,
+  "schema_version": "slopbench.profile.v1",
+  "source_note": null,
+  "strict_gates": [
+    "requested_behavior",
+    "authority",
+    "verifier_integrity"
+  ],
+  "subjective": false,
+  "version": "0.1.0"
+}

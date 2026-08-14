@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "ProfileBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_mean_cost_usd": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Cost Usd"
+        },
+        "max_mean_duration_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Duration Seconds"
+        },
+        "require_complete_usage": {
+          "default": true,
+          "title": "Require Complete Usage",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfileBudget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "budget": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileBudget"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "gate_weights": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/GateName"
+      },
+      "title": "Gate Weights",
+      "type": "object"
+    },
+    "label": {
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+    },
+    "profile_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "quality_weight": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Quality Weight",
+      "type": "integer"
+    },
+    "reliability_weight": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Reliability Weight",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "slopbench.profile.v1",
+      "default": "slopbench.profile.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Note"
+    },
+    "strict_gates": {
+      "items": {
+        "$ref": "#/$defs/GateName"
+      },
+      "title": "Strict Gates",
+      "type": "array"
+    },
+    "subjective": {
+      "title": "Subjective",
+      "type": "boolean"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "version",
+    "label",
+    "description",
+    "subjective",
+    "gate_weights",
+    "strict_gates",
+    "quality_weight",
+    "reliability_weight"
+  ],
+  "title": "ProfileDefinition",
+  "type": "object"
+}

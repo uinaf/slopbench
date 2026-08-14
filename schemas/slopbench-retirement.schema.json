@@ -1,0 +1,233 @@
+{
+  "$defs": {
+    "LicenseContract": {
+      "additionalProperties": false,
+      "properties": {
+        "holder": {
+          "title": "Holder",
+          "type": "string"
+        },
+        "spdx": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$",
+          "title": "Spdx",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spdx",
+        "holder"
+      ],
+      "title": "LicenseContract",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_assistance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Assistance"
+        },
+        "origin": {
+          "enum": [
+            "slopbench-authored",
+            "public-upstream",
+            "transformed-private"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Revision"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "transformed": {
+          "default": false,
+          "title": "Transformed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "RetiredPublication": {
+      "additionalProperties": false,
+      "properties": {
+        "fixtures_url": {
+          "pattern": "^https://[^\\s]+$",
+          "title": "Fixtures Url",
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/$defs/LicenseContract"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "reference_runs_url": {
+          "pattern": "^https://[^\\s]+$",
+          "title": "Reference Runs Url",
+          "type": "string"
+        },
+        "task_url": {
+          "pattern": "^https://[^\\s]+$",
+          "title": "Task Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_url",
+        "fixtures_url",
+        "reference_runs_url",
+        "provenance",
+        "license"
+      ],
+      "title": "RetiredPublication",
+      "type": "object"
+    },
+    "RetirementReason": {
+      "enum": [
+        "leakage",
+        "verifier_weakness",
+        "dependency_rot",
+        "major_task_set_release"
+      ],
+      "title": "RetirementReason",
+      "type": "string"
+    },
+    "RetirementRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "publication": {
+          "$ref": "#/$defs/RetiredPublication"
+        },
+        "reason": {
+          "$ref": "#/$defs/RetirementReason"
+        },
+        "replacement_task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replacement Task Digest",
+          "type": "string"
+        },
+        "replacement_task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Replacement Task Id",
+          "type": "string"
+        },
+        "retired_task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Retired Task Digest",
+          "type": "string"
+        },
+        "retired_task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Retired Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "retired_task_id",
+        "retired_task_digest",
+        "reason",
+        "replacement_task_id",
+        "replacement_task_digest",
+        "publication"
+      ],
+      "title": "RetirementRecord",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "after_task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "before_task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "bridge_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bridge Sha256",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/RetirementRecord"
+      },
+      "minItems": 1,
+      "title": "Records",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "slopbench.retirement.v1",
+      "default": "slopbench.retirement.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "before_task_set",
+    "after_task_set",
+    "bridge_sha256",
+    "records"
+  ],
+  "title": "RetirementManifest",
+  "type": "object"
+}

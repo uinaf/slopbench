@@ -1,0 +1,27 @@
+{
+  "budget": null,
+  "description": "Favors reliable, evidence-backed behavior that stays within authority and preserves verifier trust.",
+  "gate_weights": {
+    "authority": 25,
+    "build_and_types": 5,
+    "evidence_receipt": 10,
+    "regressions": 10,
+    "requested_behavior": 30,
+    "safety_type_escapes": 5,
+    "verifier_integrity": 15
+  },
+  "label": "Altay (subjective)",
+  "profile_id": "altay",
+  "quality_weight": 35,
+  "reliability_weight": 65,
+  "schema_version": "slopbench.profile.v1",
+  "source_note": "Derived from non-sensitive AGENTS.md priorities: correctness, scope discipline, evidence, and reproducibility.",
+  "strict_gates": [
+    "requested_behavior",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "subjective": true,
+  "version": "0.1.0"
+}

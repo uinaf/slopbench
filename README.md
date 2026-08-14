@@ -59,13 +59,24 @@ make verify
 ```
 
 This checks formatting, lint, strict types, branch-aware coverage, the immutable task seal, every
-run manifest, and generated-schema drift. Docker is only required for the end-to-end tracer
-and hardening matrices.
+run manifest, all five profiles, deterministic task-set regeneration, and generated-schema drift.
+Docker is only required for the end-to-end tracer and hardening matrices.
+
+Regenerate and validate the provisional 12-task public development set independently:
+
+```sh
+make task-set profiles
+```
+
+The development set is versioned `0.x`. Its machine admission evidence is complete, but human
+calibration and approval remain release work; it is not a stable benchmark release.
 
 ## Contracts
 
 - [Architecture](docs/ARCHITECTURE.md) explains trust boundaries, evidence flow, and failure
   classification.
+- [Results and lifecycle](docs/RESULTS.md) defines task-set versions, profiles, trial policy,
+  held-out disclosure, retirement bridges, and maintainer attestations.
 - [Review tasks](docs/REVIEW_TASKS.md) defines the finding taxonomy and deterministic matching
   rules.
 - [Task schema](schemas/slopbench-task.schema.json) declares phases, capabilities, provenance,
@@ -75,6 +86,10 @@ and hardening matrices.
   and the final revision.
 - [Review schema](schemas/slopbench-review.schema.json) defines structured review-only findings.
 - [Result schema](schemas/slopbench-result.schema.json) records evidence and the gate vector.
+- [Task-set schema](schemas/slopbench-task-set.schema.json),
+  [profile schema](schemas/slopbench-profile.schema.json), and
+  [evaluation schemas](schemas/slopbench-evaluation.schema.json) define reproducible suite
+  computation without tying dataset versions to runner releases.
 - [Roadmap issue #1](https://github.com/uinaf/slopbench/issues/1) tracks the path from this tracer
   to the release corpus.
 

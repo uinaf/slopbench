@@ -1,0 +1,582 @@
+{
+  "schema_version": "slopbench.task-set.v1",
+  "task_set_id": "slopbench-swe-v1-dev",
+  "tasks": [
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_TARGET_PHASE",
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "diagnosis_repair",
+      "contract_path": "tasks/diagnosis/lease-expiry/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "f39d5b7c434b70e9b4936a9db117535d1686bb1b",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "fb80170d16e755159d3cdd54af02369ddbe455e15188bf23bb07255577cde1a4",
+      "task_id": "slopbench/diagnosis/lease-expiry",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "diagnosis_repair",
+      "contract_path": "tasks/diagnosis/query-cache-key/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "3897f34917c90d514d9a9a3900ec1aa24ba085b3",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "afb44ffaa82a7b443b723fdd45e38a240fb50c5305a0b18654e4906ebd6f5f72",
+      "task_id": "slopbench/diagnosis/query-cache-key",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_TARGET_PHASE",
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "composition_domain_evolution",
+      "contract_path": "tasks/domain/fulfillment-plan/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "745b3516c7b218c3756912f31dfda9d6647c0eab",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "e9d66fb85e556411ff4b838f8d62748738212b61e10280ec99f72f6604c34de3",
+      "task_id": "slopbench/domain/fulfillment-plan",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "composition_domain_evolution",
+      "contract_path": "tasks/domain/pricing-adjustments/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "f7521bba32c82a81bf5d5bedf1d0bdf6e06dd4c5",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "1f81dbdd177d7a208e2a4fcf0263f77f7611a0a03ec9c1cadfdc908a7f633ce1",
+      "task_id": "slopbench/domain/pricing-adjustments",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_TARGET_PHASE",
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "feature",
+      "contract_path": "tasks/feature/event-pagination/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "ecb370ebd21485f8c07a0192fb71e3a7479e858d",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "985f700a4c225fd2827fdd61b802a112b11111c67ff8b33820bc3db1f2ce5e46",
+      "task_id": "slopbench/feature/event-pagination",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "feature",
+      "contract_path": "tasks/feature/idempotency-registry/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "e87e69efef0fe1cc2c4710752d5293d5a53b804e",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "6953e0f9062ee2253d83f6d727965de753a557deb132b6f225df1010a4dcbe12",
+      "task_id": "slopbench/feature/idempotency-registry",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "restraint",
+      "contract_path": "tasks/restraint/config-overrides/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "6b7aab269661a7b8e3fadd9b4f38eeee6d4b9457",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "e86db55263ac3a953109489f77becbda1e92e974cfbcf326c3da4c1dd33f5d2d",
+      "task_id": "slopbench/restraint/config-overrides",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "restraint",
+      "contract_path": "tasks/restraint/header-lookup/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "217457d1920ef88d2f0e3b78f74887612f274cc0",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "e7e254e906930d73fd8b60003a457edda9537a055cc1382b9184cc2b019657b7",
+      "task_id": "slopbench/restraint/header-lookup",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-only",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "python"
+        ]
+      },
+      "category": "code_review",
+      "contract_path": "tasks/review/archive-extractor/slopbench-task.json",
+      "kind": "review",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "Purpose-built seeded fixture with human-owned admission criteria.",
+        "origin": "slopbench-authored",
+        "source_revision": "b6d0545976fde213fe2e0045f2e3dec10365801c",
+        "source_url": "https://github.com/uinaf/slopbench",
+        "transformed": false
+      },
+      "task_digest": "b1699844e7d2a7d6698a741c02bfb5b41428b555d065667e154b8a1c57a56822",
+      "task_id": "slopbench/review/archive-extractor",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-only",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "python"
+        ]
+      },
+      "category": "code_review",
+      "contract_path": "tasks/review/webhook-dispatch/slopbench-task.json",
+      "kind": "review",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "Purpose-built seeded fixture with human-owned admission criteria.",
+        "origin": "slopbench-authored",
+        "source_revision": "eaf9f9da7976f52c59c045a2fe3006bcac301951",
+        "source_url": "https://github.com/uinaf/slopbench",
+        "transformed": false
+      },
+      "task_digest": "834a1d55a91ef27b946e454b6deead97355790cf838cbaa2456968f9161dd27c",
+      "task_id": "slopbench/review/webhook-dispatch",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "state_effects",
+      "contract_path": "tasks/state/sync-command/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "4b1ca844e2beae5ba0d01c835af451ecb64ee6b4",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "7c54bb512cb5b2d80195763f01629b0370f948cdb223449b0b4fd772039b1707",
+      "task_id": "slopbench/state/sync-command",
+      "task_version": "1.0.0"
+    },
+    {
+      "applicable_gates": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "evidence_receipt"
+      ],
+      "capabilities": {
+        "environment": [
+          "SLOPBENCH_TARGET_PHASE",
+          "SLOPBENCH_VARIANT"
+        ],
+        "external_writes": "none",
+        "live_credentials": false,
+        "network": "model-only",
+        "network_allowed_hosts": [
+          "cursor.com",
+          "*.cursor.com",
+          "*.cursor.sh"
+        ],
+        "repository": "read-write",
+        "shell": true,
+        "tests": true,
+        "tools": [
+          "git",
+          "python",
+          "shell"
+        ]
+      },
+      "category": "state_effects",
+      "contract_path": "tasks/state/watch-subscription/slopbench-task.json",
+      "kind": "patch",
+      "license": {
+        "holder": "uinaf contributors",
+        "spdx": "MIT"
+      },
+      "provenance": {
+        "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+        "origin": "slopbench-authored",
+        "source_revision": "87db0dc94613077e9b8aaa0e73bfb848ec901a01",
+        "source_url": null,
+        "transformed": false
+      },
+      "task_digest": "231e131ee590ec3a0ed315cb7034150559d963077b1d1a3f563fcccd4823ba95",
+      "task_id": "slopbench/state/watch-subscription",
+      "task_version": "1.0.0"
+    }
+  ],
+  "version": "0.1.0",
+  "visibility": "public"
+}

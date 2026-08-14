@@ -1,0 +1,258 @@
+{
+  "$defs": {
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "ComponentPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "CoverageSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "category_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/CapabilityCategory"
+          },
+          "title": "Category Counts",
+          "type": "object"
+        }
+      },
+      "required": [
+        "category_counts"
+      ],
+      "title": "CoverageSnapshot",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "ReferenceConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "configuration_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "version",
+        "harness",
+        "adapter",
+        "model",
+        "effort_tier"
+      ],
+      "title": "ReferenceConfiguration",
+      "type": "object"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "after_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "After Result Sha256",
+      "type": "string"
+    },
+    "after_task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "before_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Before Result Sha256",
+      "type": "string"
+    },
+    "before_task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "configuration": {
+      "$ref": "#/$defs/ReferenceConfiguration"
+    },
+    "coverage_after": {
+      "$ref": "#/$defs/CoverageSnapshot"
+    },
+    "coverage_before": {
+      "$ref": "#/$defs/CoverageSnapshot"
+    },
+    "paired_trials": {
+      "const": 5,
+      "default": 5,
+      "title": "Paired Trials",
+      "type": "integer"
+    },
+    "profile": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "schema_version": {
+      "const": "slopbench.bridge.v1",
+      "default": "slopbench.bridge.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "before_task_set",
+    "after_task_set",
+    "profile",
+    "configuration",
+    "before_result_sha256",
+    "after_result_sha256",
+    "coverage_before",
+    "coverage_after"
+  ],
+  "title": "BridgeReport",
+  "type": "object"
+}
