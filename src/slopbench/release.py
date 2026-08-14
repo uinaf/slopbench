@@ -112,6 +112,21 @@ class RetirementReason(StrEnum):
     MAJOR_TASK_SET_RELEASE = "major_task_set_release"
 
 
+_AGENT_ATTRIBUTABLE_CLASSIFICATIONS = frozenset(
+    {
+        FailureClassification.VALID_PASS,
+        FailureClassification.VALID_AGENT_FAILURE,
+        FailureClassification.INVALID_RUN,
+    }
+)
+_NON_COMPARABLE_CLASSIFICATIONS = frozenset(
+    {
+        FailureClassification.BENCHMARK_DEFECT,
+        FailureClassification.INFRASTRUCTURE_FAILURE,
+    }
+)
+
+
 class VersionBinding(ContractModel):
     id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
@@ -404,6 +419,7 @@ class EvaluationResult(ContractModel):
     schema_version: Literal["slopbench.evaluation-result.v1"] = EVALUATION_RESULT_SCHEMA_VERSION
     evaluation_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     task_set: VersionBinding
+    task_set_manifest: TaskSetManifest
     profile: VersionBinding
     profile_definition: ProfileDefinition
     evaluation_manifest_sha256: Sha256Hex
@@ -418,9 +434,25 @@ class EvaluationResult(ContractModel):
     @model_validator(mode="after")
     def validate_result_vector(self) -> Self:
         expected_count = _TRIAL_COUNTS[self.purpose]
+        if self.task_set != task_set_binding(self.task_set_manifest):
+            raise ValueError("result task-set binding does not match its task-set manifest")
+        entries = {entry.task_id: entry for entry in self.task_set_manifest.tasks}
+        if {trial.task_id for trial in self.trials} != set(entries):
+            raise ValueError("raw trials do not cover the result task set exactly")
         grouped: dict[str, list[RawTrialOutcome]] = defaultdict(list)
         for trial in self.trials:
             grouped[trial.task_id].append(trial)
+            entry = entries[trial.task_id]
+            if trial.task_digest != entry.task_digest:
+                raise ValueError(f"raw task digest mismatch for {trial.task_id}")
+            if trial.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS:
+                actual_gates = {
+                    outcome.gate
+                    for outcome in trial.outcomes
+                    if outcome.status != OutcomeStatus.NOT_APPLICABLE
+                }
+                if actual_gates != set(entry.applicable_gates):
+                    raise ValueError(f"raw gate applicability mismatch for {trial.task_id}")
             comparisons = {
                 "harness": (self.configuration.harness.name, trial.agent.harness),
                 "harness_version": (
@@ -711,12 +743,9 @@ def _aggregate(trials: list[RawTrialOutcome], profile: ProfileDefinition) -> Agg
     quality_denominator = 0
     failure_counts = Counter(trial.classification for trial in trials)
     strict_counts = Counter(gate for trial in trials for gate in trial.strict_gate_failures)
-    attributable = {
-        FailureClassification.VALID_PASS,
-        FailureClassification.VALID_AGENT_FAILURE,
-        FailureClassification.INVALID_RUN,
-    }
-    reliable_trials = [trial for trial in trials if trial.classification in attributable]
+    reliable_trials = [
+        trial for trial in trials if trial.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+    ]
     for trial in reliable_trials:
         for outcome in trial.outcomes:
             if outcome.status == OutcomeStatus.NOT_APPLICABLE:
@@ -865,6 +894,14 @@ def compute_evaluation(
 
         outcomes_by_gate = {outcome.gate: outcome for outcome in result.outcomes}
         outcomes = [outcomes_by_gate[gate] for gate in GateName]
+        if result.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS:
+            actual_gates = {
+                outcome.gate
+                for outcome in outcomes
+                if outcome.status != OutcomeStatus.NOT_APPLICABLE
+            }
+            if actual_gates != set(entry.applicable_gates):
+                raise ContractError(f"raw gate applicability mismatch for {binding.task_id}")
         failed = {outcome.gate for outcome in outcomes if outcome.status == OutcomeStatus.FAILED}
         strict_failures = [gate for gate in GateName if gate in failed]
         trials.append(
@@ -897,6 +934,7 @@ def compute_evaluation(
     return EvaluationResult(
         evaluation_id=evaluation.evaluation_id,
         task_set=expected_task_set,
+        task_set_manifest=task_set,
         profile=expected_profile,
         profile_definition=profile,
         evaluation_manifest_sha256=sha256_file(evaluation_path),
@@ -974,19 +1012,21 @@ def coverage_snapshot(task_set: TaskSetManifest) -> CoverageSnapshot:
 
 
 def _validate_result_task_set(result: EvaluationResult, task_set: TaskSetManifest) -> None:
+    if result.task_set_manifest != task_set:
+        raise ContractError("result does not retain the bound task-set manifest")
     entries = {entry.task_id: entry for entry in task_set.tasks}
     if {trial.task_id for trial in result.trials} != set(entries):
         raise ContractError("result trials do not cover the bound task set exactly")
     for trial in result.trials:
         if trial.task_digest != entries[trial.task_id].task_digest:
             raise ContractError(f"result task digest mismatch for {trial.task_id}")
-        if trial.classification in {
-            FailureClassification.BENCHMARK_DEFECT,
-            FailureClassification.INFRASTRUCTURE_FAILURE,
-        }:
-            raise ContractError(
-                f"published comparison contains non-comparable trial: {trial.run_id}"
-            )
+    _validate_comparable_trials(result)
+
+
+def _validate_comparable_trials(result: EvaluationResult) -> None:
+    for trial in result.trials:
+        if trial.classification in _NON_COMPARABLE_CLASSIFICATIONS:
+            raise ContractError(f"result contains non-comparable trial: {trial.run_id}")
 
 
 def build_bridge_report(
@@ -1157,6 +1197,7 @@ def build_attestation_statement(evaluation_path: Path, result_path: Path) -> Att
     )
     if actual_runs != expected_runs:
         raise ContractError("attestation result trials do not match evaluation run bindings")
+    _validate_comparable_trials(result)
     return AttestationStatement(
         evaluation_id=evaluation.evaluation_id,
         subjects=[

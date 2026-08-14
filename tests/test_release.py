@@ -237,6 +237,7 @@ def direct_result(
     return EvaluationResult(
         evaluation_id=f"evaluation-{task_set.version.replace('.', '-')}",
         task_set=task_set_binding(task_set),
+        task_set_manifest=task_set,
         profile=profile_binding(scoring_profile),
         profile_definition=scoring_profile,
         evaluation_manifest_sha256=digest(f"evaluation-{task_set.version}"),
@@ -643,6 +644,38 @@ def test_compute_evaluation_rejects_changed_bundle_files(
         )
 
 
+@pytest.mark.parametrize(
+    ("gate", "status"),
+    [
+        (GateName.REQUESTED_BEHAVIOR, OutcomeStatus.NOT_APPLICABLE),
+        (GateName.SAFETY_TYPE_ESCAPES, OutcomeStatus.PASSED),
+    ],
+)
+def test_compute_evaluation_rejects_gate_applicability_drift(
+    tmp_path: Path, gate: GateName, status: OutcomeStatus
+) -> None:
+    fixture = materialize_evaluation(tmp_path)
+    binding = fixture["bindings"][0]
+    result_path = tmp_path / binding.result_path
+    payload = json.loads(result_path.read_text())
+    for outcome in payload["outcomes"]:
+        if outcome["gate"] == gate.value:
+            outcome["status"] = status.value
+    write_json(result_path, payload)
+    changed_binding = binding.model_copy(update={"result_sha256": sha256_file(result_path)})
+    changed_evaluation = fixture["evaluation"].model_copy(update={"runs": [changed_binding]})
+    write_model(fixture["evaluation_path"], changed_evaluation)
+
+    with pytest.raises(ContractError, match="gate applicability mismatch"):
+        compute_evaluation(
+            fixture["evaluation_path"],
+            fixture["task_set_path"],
+            fixture["profile_path"],
+            ROOT,
+            tmp_path,
+        )
+
+
 def test_compute_evaluation_rejects_binding_and_configuration_mismatches(
     tmp_path: Path,
 ) -> None:
@@ -719,6 +752,26 @@ def test_raw_result_models_reject_vector_and_identity_tampering() -> None:
     metrics_payload["metrics"]["quality_bps"] = 0
     with pytest.raises(ValidationError, match="metrics do not recompute"):
         EvaluationResult.model_validate_json(json.dumps(metrics_payload))
+
+    changed_outcomes = [
+        outcome.model_copy(update={"status": OutcomeStatus.NOT_APPLICABLE})
+        if outcome.gate == GateName.REQUESTED_BEHAVIOR
+        else outcome
+        for outcome in result.trials[0].outcomes
+    ]
+    changed_trial = result.trials[0].model_copy(update={"outcomes": changed_outcomes})
+    changed_trials = [changed_trial]
+    changed_result = result.model_copy(
+        update={
+            "trials": changed_trials,
+            "result_vector_sha256": contract_digest(
+                "slopbench.result-vector.v1", RawResultVector(trials=changed_trials)
+            ),
+            "metrics": _aggregate(changed_trials, result.profile_definition),
+        }
+    )
+    with pytest.raises(ValidationError, match="gate applicability mismatch"):
+        EvaluationResult.model_validate_json(json.dumps(changed_result.model_dump(mode="json")))
 
 
 def test_profile_budgets_are_separate_eligibility_signals() -> None:
@@ -1208,6 +1261,35 @@ def test_attestation_rejects_trials_substituted_beyond_the_evaluation_manifest(
         build_attestation_statement(fixture["evaluation_path"], changed_path)
 
 
+def test_attestation_rejects_non_comparable_reference_trials(tmp_path: Path) -> None:
+    fixture = materialize_evaluation(
+        tmp_path,
+        purpose=EvaluationPurpose.COMPARISON,
+        origin=ResultOrigin.MAINTAINER,
+    )
+    result = fixture["result"]
+    changed_trials = [
+        result.trials[0].model_copy(
+            update={"classification": FailureClassification.INFRASTRUCTURE_FAILURE}
+        ),
+        *result.trials[1:],
+    ]
+    changed = result.model_copy(
+        update={
+            "trials": changed_trials,
+            "result_vector_sha256": contract_digest(
+                "slopbench.result-vector.v1", RawResultVector(trials=changed_trials)
+            ),
+            "metrics": _aggregate(changed_trials, result.profile_definition),
+        }
+    )
+    changed_path = tmp_path / "non-comparable-result.json"
+    write_model(changed_path, changed)
+
+    with pytest.raises(ContractError, match="non-comparable trial"):
+        build_attestation_statement(fixture["evaluation_path"], changed_path)
+
+
 def test_attestation_signer_reports_process_and_output_failures(tmp_path: Path) -> None:
     fixture = materialize_evaluation(tmp_path, origin=ResultOrigin.MAINTAINER)
 
@@ -1406,7 +1488,7 @@ def test_raw_and_evaluation_result_models_reject_internal_drift() -> None:
     mutations.append(("pairs", payload, "pair_index coverage"))
     payload = result.model_dump(mode="json")
     payload["trials"][2]["task_digest"] = digest("changed-task")
-    mutations.append(("digest", payload, "task digest changes"))
+    mutations.append(("digest", payload, "raw task digest mismatch"))
     payload = result.model_dump(mode="json")
     payload["trials"] = list(reversed(payload["trials"]))
     mutations.append(("order", payload, "deterministic task and pair order"))

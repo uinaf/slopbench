@@ -26,7 +26,9 @@ sealed task contracts; `make verify` rejects drift.
 
 The evaluator rechecks every referenced file, live task seal, task digest, agent configuration,
 container image digest, Harbor version, receipt digest, and run/result identity before producing
-`slopbench.evaluation-result.v1`.
+`slopbench.evaluation-result.v1`. The result embeds the exact task-set manifest and profile behind
+their bindings, so later validation can recompute metrics and reject task coverage, digest, or gate
+applicability drift without trusting the original evaluator process.
 
 ## Trial policy and raw outcomes
 
