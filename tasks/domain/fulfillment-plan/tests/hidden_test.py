@@ -59,7 +59,7 @@ class ImplementContract(unittest.TestCase):
         self.assertEqual((requested, warehouses), original)
 
 
-class ReviewContract(unittest.TestCase):
+class ReviewContract(ImplementContract):
     def test_blocked_and_reserved_stock_change_the_minimal_plan(self) -> None:
         warehouses = [
             {"name": "a", "stock": {"book": 2, "pen": 1}},

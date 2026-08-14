@@ -7,7 +7,7 @@ from pathlib import Path
 
 from harbor.models.task.task import Task as HarborTask
 
-from slopbench.contracts import RunManifest
+from slopbench.contracts import PhaseMode, RunManifest
 from slopbench.hashing import validate_task, write_model
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +88,9 @@ def generate(task_dir: Path, output_dir: Path) -> None:
     for filename, harness, environment, attack_fixture_id in variants:
         suffix = f"attack-{attack_fixture_id}" if attack_fixture_id is not None else filename
         run_id = f"{slug}-{suffix}"
+        agent_environment = dict(environment)
+        if task.phase_mode == PhaseMode.SEQUENTIAL and filename in {"attack", "invalid"}:
+            agent_environment["SLOPBENCH_TARGET_PHASE"] = task.phases[-1].name
         payload = {
             **common,
             "run_id": run_id,
@@ -97,7 +100,7 @@ def generate(task_dir: Path, output_dir: Path) -> None:
                 "model": None,
                 "effort_tier": "not-applicable",
                 "settings": {},
-                "environment": environment,
+                "environment": agent_environment,
                 "tools": (
                     []
                     if harness == "nop"

@@ -46,7 +46,7 @@ class ImplementContract(unittest.TestCase):
                 transition(state, event)
 
 
-class ReviewContract(unittest.TestCase):
+class ReviewContract(ImplementContract):
     def test_reconnect_backoff_and_generation_progression(self) -> None:
         active = WatchState("active", "orders", 3, 0)
         waiting, effects = transition(active, {"kind": "connection_lost", "generation": 3})
@@ -72,9 +72,18 @@ class ReviewContract(unittest.TestCase):
             transition(waiting, {"kind": "connected", "generation": 5}),
             (waiting, ()),
         )
+        active = WatchState("active", "orders", 5, 2)
+        self.assertEqual(
+            transition(active, {"kind": "connection_lost", "generation": 4}),
+            (active, ()),
+        )
 
     def test_waiting_can_be_cancelled_or_replaced(self) -> None:
         waiting = WatchState("waiting", "orders", 5, 2)
+        self.assertEqual(
+            transition(waiting, {"kind": "subscribe", "topic": "orders"}),
+            (waiting, ()),
+        )
         self.assertEqual(
             transition(waiting, {"kind": "unsubscribe"}),
             (

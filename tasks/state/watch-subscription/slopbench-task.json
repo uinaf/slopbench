@@ -34,6 +34,7 @@
   ],
   "capabilities": {
     "environment": [
+      "SLOPBENCH_TARGET_PHASE",
       "SLOPBENCH_VARIANT"
     ],
     "external_writes": "none",
@@ -160,7 +161,7 @@
     },
     {
       "path": "steps/implement/solution/solve.sh",
-      "sha256": "e915e906217919564557558c03e7d97b7037e8005d6933c3198d1be7684a678c"
+      "sha256": "57281318ff226f41947e1c9c88a511210cb307c391f0d84197018c1850f30aae"
     },
     {
       "path": "steps/review/instruction.md",
@@ -184,7 +185,7 @@
     },
     {
       "path": "steps/review/solution/solve.sh",
-      "sha256": "e915e906217919564557558c03e7d97b7037e8005d6933c3198d1be7684a678c"
+      "sha256": "d36af92f673688180603a9dc18dbb26ea95be99690b2d79117d218adcc853ee3"
     },
     {
       "path": "task.toml",
@@ -232,7 +233,7 @@
     },
     {
       "path": "tests/hidden_test.py",
-      "sha256": "ddb56ff708b6a8860c2ab4cd47afe07ef208550f0185f49f8934c39ebbca7561"
+      "sha256": "9fd2d65fc37237fdca9919397966473168b398766115fd73ad0d74178d87734b"
     },
     {
       "path": "tests/revision.py",

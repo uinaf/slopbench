@@ -111,13 +111,19 @@ def test_corpus_task_baseline_and_manifests_are_bound(task_dir: Path) -> None:
         "oracle.json",
     }
     for manifest_path in sorted(runs_dir.glob("*.json")):
+        manifest = load_model(manifest_path, RunManifest)
         runner._validate_run_binding(
-            load_model(manifest_path, RunManifest),
+            manifest,
             task,
             contract_sha,
             task_digest,
             task_dir,
         )
+        if task.phase_mode == PhaseMode.SEQUENTIAL and manifest_path.stem in {
+            "attack",
+            "invalid",
+        }:
+            assert manifest.agent.environment["SLOPBENCH_TARGET_PHASE"] == task.phases[-1].name
 
 
 @pytest.mark.parametrize("task_dir", CORPUS_TASKS, ids=lambda path: path.name)
@@ -149,14 +155,13 @@ def test_corpus_solutions_have_expected_behavior(
     meta = json.loads((repo / "tools" / "task_meta.json").read_text())
     allowed_paths = meta["allowed_paths"]
     assert len(allowed_paths) == 1
-    phases = task.phases if variant != "invalid" else task.phases[:1]
     environment = {
         **os.environ,
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONPYCACHEPREFIX": str(tmp_path / "pycache"),
         "PYTHONPATH": str(repo),
     }
-    for phase in phases:
+    for phase in task.phases:
         solution_dir = (
             task_dir / "solution"
             if task.phase_mode == PhaseMode.SINGLE
