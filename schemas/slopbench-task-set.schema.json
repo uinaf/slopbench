@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "CapabilityEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "array"
+        },
+        "external_writes": {
+          "const": "none",
+          "default": "none",
+          "title": "External Writes",
+          "type": "string"
+        },
+        "live_credentials": {
+          "const": false,
+          "default": false,
+          "title": "Live Credentials",
+          "type": "boolean"
+        },
+        "network": {
+          "enum": [
+            "none",
+            "model-only",
+            "declared"
+          ],
+          "title": "Network",
+          "type": "string"
+        },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
+        },
+        "repository": {
+          "enum": [
+            "read-write",
+            "read-only"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "shell": {
+          "title": "Shell",
+          "type": "boolean"
+        },
+        "tests": {
+          "title": "Tests",
+          "type": "boolean"
+        },
+        "tools": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "repository",
+        "shell",
+        "tests",
+        "network"
+      ],
+      "title": "CapabilityEnvelope",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "LicenseContract": {
+      "additionalProperties": false,
+      "properties": {
+        "holder": {
+          "title": "Holder",
+          "type": "string"
+        },
+        "spdx": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$",
+          "title": "Spdx",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spdx",
+        "holder"
+      ],
+      "title": "LicenseContract",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_assistance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Assistance"
+        },
+        "origin": {
+          "enum": [
+            "slopbench-authored",
+            "public-upstream",
+            "transformed-private"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Revision"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "transformed": {
+          "default": false,
+          "title": "Transformed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "TaskKind": {
+      "enum": [
+        "patch",
+        "review"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskSetEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "applicable_gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "minItems": 1,
+          "title": "Applicable Gates",
+          "type": "array"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/CapabilityEnvelope"
+        },
+        "category": {
+          "$ref": "#/$defs/CapabilityCategory"
+        },
+        "contract_path": {
+          "title": "Contract Path",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TaskKind"
+        },
+        "license": {
+          "$ref": "#/$defs/LicenseContract"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_version",
+        "task_digest",
+        "contract_path",
+        "category",
+        "kind",
+        "capabilities",
+        "applicable_gates",
+        "provenance",
+        "license"
+      ],
+      "title": "TaskSetEntry",
+      "type": "object"
+    },
+    "TaskSetVisibility": {
+      "enum": [
+        "public",
+        "held_out_active",
+        "retired"
+      ],
+      "title": "TaskSetVisibility",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "slopbench.task-set.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Task Set Id",
+      "type": "string"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/TaskSetEntry"
+      },
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    },
+    "visibility": {
+      "$ref": "#/$defs/TaskSetVisibility"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_set_id",
+    "version",
+    "visibility",
+    "tasks"
+  ],
+  "title": "TaskSetManifest",
+  "type": "object"
+}

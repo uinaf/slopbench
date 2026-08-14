@@ -1,0 +1,27 @@
+{
+  "budget": null,
+  "description": "Prioritizes consistent valid passes and treats core behavior, authority, verifier integrity, and evidence as strict requirements.",
+  "gate_weights": {
+    "authority": 20,
+    "build_and_types": 10,
+    "evidence_receipt": 5,
+    "regressions": 15,
+    "requested_behavior": 30,
+    "safety_type_escapes": 5,
+    "verifier_integrity": 15
+  },
+  "label": "Reliability first",
+  "profile_id": "reliability-first",
+  "quality_weight": 25,
+  "reliability_weight": 75,
+  "schema_version": "slopbench.profile.v1",
+  "source_note": null,
+  "strict_gates": [
+    "requested_behavior",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "subjective": false,
+  "version": "0.1.0"
+}

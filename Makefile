@@ -1,4 +1,18 @@
-.PHONY: corpus hardening issue7-corpus review-corpus tracer verify
+.PHONY: corpus hardening issue7-corpus profiles review-corpus task-set tracer verify
+
+SWE_V1_TASKS = \
+	tasks/diagnosis/lease-expiry \
+	tasks/diagnosis/query-cache-key \
+	tasks/domain/fulfillment-plan \
+	tasks/domain/pricing-adjustments \
+	tasks/feature/event-pagination \
+	tasks/feature/idempotency-registry \
+	tasks/restraint/config-overrides \
+	tasks/restraint/header-lookup \
+	tasks/review/archive-extractor \
+	tasks/review/webhook-dispatch \
+	tasks/state/sync-command \
+	tasks/state/watch-subscription
 
 verify:
 	uv sync --locked --all-groups
@@ -12,10 +26,35 @@ verify:
 	@for manifest in $$(find runs -name '*.json'); do \
 		uv run slopbench validate run "$$manifest"; \
 	done
+	@for profile in profiles/*.json; do \
+		uv run slopbench validate profile "$$profile"; \
+	done
+	@task_set="$$(mktemp)"; \
+	trap 'rm -f "$$task_set"' EXIT; \
+	uv run python scripts/generate-task-set.py \
+		--task-set-id slopbench-swe-v1-dev \
+		--version 0.1.0 \
+		--visibility public \
+		"$$task_set" $(SWE_V1_TASKS); \
+	diff -u datasets/slopbench-swe-v1-dev.json "$$task_set"; \
+	uv run slopbench task-set "$$task_set" --root .
 	@schema_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$schema_dir"' EXIT; \
 	uv run slopbench schema export "$$schema_dir"; \
 	diff -ru schemas "$$schema_dir"
+
+task-set:
+	uv run python scripts/generate-task-set.py \
+		--task-set-id slopbench-swe-v1-dev \
+		--version 0.1.0 \
+		--visibility public \
+		datasets/slopbench-swe-v1-dev.json $(SWE_V1_TASKS)
+	uv run slopbench task-set datasets/slopbench-swe-v1-dev.json --root .
+
+profiles:
+	@for profile in profiles/*.json; do \
+		uv run slopbench validate profile "$$profile"; \
+	done
 
 tracer:
 	sh scripts/run-tracer-matrix.sh

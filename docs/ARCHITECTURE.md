@@ -14,6 +14,12 @@ flowchart LR
     V --> F
     R --> F
     F --> O["Versioned result bundle and gate vector"]
+    O --> E["Deterministic suite evaluator"]
+    S["Versioned task set"] --> E
+    P["Versioned profile"] --> E
+    E --> A["Raw vector plus profile aggregate"]
+    A --> D["Held-out disclosure or retirement bridge"]
+    A --> X["Optional maintainer SSH attestation"]
 ```
 
 ## Trust boundaries
@@ -25,6 +31,9 @@ flowchart LR
 | Agent receipt | Untrusted claim | Task, base, and final revisions plus exact gate evidence and command claims are reconciled with verifier evidence |
 | Harbor output | Execution evidence | Pinned Harbor version and exact task checksum; result, config, trajectory, and bundle artifacts are hashed |
 | Verifier output | Trusted task evidence | Separate offline container, task and base bindings, per-check log digests, explicit exits, and reward-file parity |
+| Task set and profile | Published scoring input | Independent semantic versions, canonical digests, exact task bindings, strict schemas, and deterministic regeneration |
+| Evaluation bundle | Recomputable suite evidence | Exact run, result, and optional report hashes; complete configuration and runtime pins; fixed 1/3/5 trial policy |
+| Maintainer attestation | Release trust decision | Canonical statement signed with SSHSIG and checked against an external allowed-signers trust root |
 
 The child Harbor process receives a host-environment allowlist plus only model-transport credential
 variables named by the run manifest. No target-service credential is permitted, and verifiers
@@ -74,6 +83,13 @@ until that canary passes.
 5. The finalizer reconciles task, base, and final revisions plus exact receipt claims with verifier
    evidence; validates each captured log and reward artifact; classifies the run; and hashes every
    evidence artifact without following symlinks.
+6. The suite evaluator binds the independently versioned task set and profile to immutable run,
+   result, and receipt files. It copies the profile-neutral raw gate vector, complete agent and
+   runtime pins, uncertainty, cost, latency, traces, and classification before computing an
+   aggregate.
+7. Publication either emits a whitelist-only active held-out disclosure or a five-trial old/new
+   bridge. A result remains unofficial until a trusted maintainer SSH attestation verifies; the
+   signed proof does not change the raw result.
 
 Single-phase tasks and multi-phase tasks with a fresh context for every phase share the same task
 contract. The tracer uses one phase; later tasks can declare ordered fresh-context phases without
@@ -138,3 +154,7 @@ requires two oracle runs to emit identical receipts and verifier evidence, accep
 different valid implementation, rejects a known-invalid implementation, and rejects the no-op.
 `scripts/run-hardening-matrix.py` derives one zero-cost run per sealed attack fixture and requires
 the declared classification, exact failed gates, and a non-retryable decision.
+
+The suite-level result and publication contracts are described in
+[Results and lifecycle](RESULTS.md). They do not define a universal canonical rank or a hosted
+leaderboard.

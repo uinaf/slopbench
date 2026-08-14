@@ -1,0 +1,30 @@
+{
+  "budget": {
+    "max_mean_cost_usd": null,
+    "max_mean_duration_seconds": 300.0,
+    "require_complete_usage": true
+  },
+  "description": "Favors behavior and build feedback with a five-minute mean per-trial eligibility budget; latency remains a separate metric.",
+  "gate_weights": {
+    "authority": 10,
+    "build_and_types": 20,
+    "evidence_receipt": 5,
+    "regressions": 25,
+    "requested_behavior": 30,
+    "safety_type_escapes": 0,
+    "verifier_integrity": 10
+  },
+  "label": "Fast feedback",
+  "profile_id": "fast-feedback",
+  "quality_weight": 55,
+  "reliability_weight": 45,
+  "schema_version": "slopbench.profile.v1",
+  "source_note": null,
+  "strict_gates": [
+    "requested_behavior",
+    "regressions",
+    "build_and_types"
+  ],
+  "subjective": false,
+  "version": "0.1.0"
+}

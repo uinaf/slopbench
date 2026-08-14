@@ -1,0 +1,1637 @@
+{
+  "$defs": {
+    "AgentConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Harness",
+          "type": "string"
+        },
+        "harness_version": {
+          "title": "Harness Version",
+          "type": "string"
+        },
+        "instruction_layers": {
+          "items": {
+            "$ref": "#/$defs/InstructionLayer"
+          },
+          "title": "Instruction Layers",
+          "type": "array"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "harness",
+        "harness_version",
+        "model",
+        "effort_tier"
+      ],
+      "title": "AgentConfiguration",
+      "type": "object"
+    },
+    "AggregateMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "budget_failures": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Budget Failures",
+          "type": "array"
+        },
+        "budget_status": {
+          "$ref": "#/$defs/BudgetStatus"
+        },
+        "excluded_reliability_trials": {
+          "minimum": 0,
+          "title": "Excluded Reliability Trials",
+          "type": "integer"
+        },
+        "failure_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/FailureClassification"
+          },
+          "title": "Failure Counts",
+          "type": "object"
+        },
+        "mean_cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Cost Usd"
+        },
+        "mean_duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Duration Seconds"
+        },
+        "missing_cost_trials": {
+          "minimum": 0,
+          "title": "Missing Cost Trials",
+          "type": "integer"
+        },
+        "missing_duration_trials": {
+          "minimum": 0,
+          "title": "Missing Duration Trials",
+          "type": "integer"
+        },
+        "quality_bps": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Quality Bps",
+          "type": "integer"
+        },
+        "reliability_bps": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Reliability Bps",
+          "type": "integer"
+        },
+        "reliability_trial_count": {
+          "minimum": 0,
+          "title": "Reliability Trial Count",
+          "type": "integer"
+        },
+        "selection_bps": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Selection Bps",
+          "type": "integer"
+        },
+        "strict_gate_failure_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Strict Gate Failure Counts",
+          "type": "object"
+        },
+        "total_cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Cost Usd"
+        },
+        "total_duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Duration Seconds"
+        },
+        "trial_count": {
+          "minimum": 1,
+          "title": "Trial Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trial_count",
+        "reliability_trial_count",
+        "excluded_reliability_trials",
+        "quality_bps",
+        "reliability_bps",
+        "selection_bps",
+        "failure_counts",
+        "strict_gate_failure_counts",
+        "missing_cost_trials",
+        "missing_duration_trials",
+        "budget_status",
+        "budget_failures"
+      ],
+      "title": "AggregateMetrics",
+      "type": "object"
+    },
+    "ArtifactDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactDigest",
+      "type": "object"
+    },
+    "BudgetStatus": {
+      "enum": [
+        "not_declared",
+        "passed",
+        "failed",
+        "incomplete"
+      ],
+      "title": "BudgetStatus",
+      "type": "string"
+    },
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "CapabilityEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "array"
+        },
+        "external_writes": {
+          "const": "none",
+          "default": "none",
+          "title": "External Writes",
+          "type": "string"
+        },
+        "live_credentials": {
+          "const": false,
+          "default": false,
+          "title": "Live Credentials",
+          "type": "boolean"
+        },
+        "network": {
+          "enum": [
+            "none",
+            "model-only",
+            "declared"
+          ],
+          "title": "Network",
+          "type": "string"
+        },
+        "network_allowed_hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Network Allowed Hosts",
+          "type": "array"
+        },
+        "repository": {
+          "enum": [
+            "read-write",
+            "read-only"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "shell": {
+          "title": "Shell",
+          "type": "boolean"
+        },
+        "tests": {
+          "title": "Tests",
+          "type": "boolean"
+        },
+        "tools": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "repository",
+        "shell",
+        "tests",
+        "network"
+      ],
+      "title": "CapabilityEnvelope",
+      "type": "object"
+    },
+    "ComponentPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "EvaluationPurpose": {
+      "enum": [
+        "smoke",
+        "calibration",
+        "comparison"
+      ],
+      "title": "EvaluationPurpose",
+      "type": "string"
+    },
+    "FailureClassification": {
+      "enum": [
+        "valid_pass",
+        "valid_agent_failure",
+        "benchmark_defect",
+        "infrastructure_failure",
+        "invalid_run"
+      ],
+      "title": "FailureClassification",
+      "type": "string"
+    },
+    "FailureReason": {
+      "enum": [
+        "none",
+        "gate_failure",
+        "receipt_missing",
+        "receipt_invalid",
+        "agent_timeout",
+        "agent_setup_timeout",
+        "agent_exit",
+        "provider_rate_limit",
+        "provider_usage_limit",
+        "environment_start_timeout",
+        "verifier_timeout",
+        "verifier_evidence_missing",
+        "verifier_evidence_invalid",
+        "verifier_contract_mismatch",
+        "harbor_task_mismatch",
+        "reward_mismatch",
+        "harbor_process_failure",
+        "harbor_result_invalid",
+        "harbor_exception"
+      ],
+      "title": "FailureReason",
+      "type": "string"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "GateOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "check_ids": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Check Ids",
+          "type": "array"
+        },
+        "gate": {
+          "$ref": "#/$defs/GateName"
+        },
+        "status": {
+          "$ref": "#/$defs/OutcomeStatus"
+        }
+      },
+      "required": [
+        "gate",
+        "status",
+        "check_ids"
+      ],
+      "title": "GateOutcome",
+      "type": "object"
+    },
+    "HarborEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Config Sha256"
+        },
+        "result_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result Sha256"
+        },
+        "task_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Task Checksum"
+        },
+        "trajectory_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Trajectory Sha256"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "task_checksum",
+        "result_sha256",
+        "config_sha256",
+        "trajectory_sha256"
+      ],
+      "title": "HarborEvidence",
+      "type": "object"
+    },
+    "ImagePin": {
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "pattern": "^.+@sha256:[0-9a-f]{64}$",
+          "title": "Reference",
+          "type": "string"
+        },
+        "role": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "reference"
+      ],
+      "title": "ImagePin",
+      "type": "object"
+    },
+    "InstructionLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "sha256"
+      ],
+      "title": "InstructionLayer",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "LicenseContract": {
+      "additionalProperties": false,
+      "properties": {
+        "holder": {
+          "title": "Holder",
+          "type": "string"
+        },
+        "spdx": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$",
+          "title": "Spdx",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spdx",
+        "holder"
+      ],
+      "title": "LicenseContract",
+      "type": "object"
+    },
+    "ModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "name"
+      ],
+      "title": "ModelPin",
+      "type": "object"
+    },
+    "OutcomeStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_applicable"
+      ],
+      "title": "OutcomeStatus",
+      "type": "string"
+    },
+    "ProfileBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_mean_cost_usd": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Cost Usd"
+        },
+        "max_mean_duration_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Duration Seconds"
+        },
+        "require_complete_usage": {
+          "default": true,
+          "title": "Require Complete Usage",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfileBudget",
+      "type": "object"
+    },
+    "ProfileDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileBudget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "gate_weights": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Gate Weights",
+          "type": "object"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "profile_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "quality_weight": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Quality Weight",
+          "type": "integer"
+        },
+        "reliability_weight": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Reliability Weight",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "slopbench.profile.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Note"
+        },
+        "strict_gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Strict Gates",
+          "type": "array"
+        },
+        "subjective": {
+          "title": "Subjective",
+          "type": "boolean"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "profile_id",
+        "version",
+        "label",
+        "description",
+        "subjective",
+        "gate_weights",
+        "strict_gates",
+        "quality_weight",
+        "reliability_weight"
+      ],
+      "title": "ProfileDefinition",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_assistance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Assistance"
+        },
+        "origin": {
+          "enum": [
+            "slopbench-authored",
+            "public-upstream",
+            "transformed-private"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Revision"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "transformed": {
+          "default": false,
+          "title": "Transformed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "RawTrialOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "$ref": "#/$defs/AgentConfiguration"
+        },
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactDigest"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "classification": {
+          "$ref": "#/$defs/FailureClassification"
+        },
+        "failure_reason": {
+          "$ref": "#/$defs/FailureReason"
+        },
+        "harbor": {
+          "$ref": "#/$defs/HarborEvidence"
+        },
+        "limits": {
+          "$ref": "#/$defs/RunLimits"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/GateOutcome"
+          },
+          "title": "Outcomes",
+          "type": "array"
+        },
+        "pair_index": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Pair Index",
+          "type": "integer"
+        },
+        "receipt": {
+          "$ref": "#/$defs/ReceiptValidation"
+        },
+        "report_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Report Sha256"
+        },
+        "result_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "run_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Run Manifest Sha256",
+          "type": "string"
+        },
+        "runtime": {
+          "$ref": "#/$defs/RuntimeConfiguration"
+        },
+        "strict_gate_failures": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Strict Gate Failures",
+          "type": "array"
+        },
+        "task": {
+          "$ref": "#/$defs/TaskBinding"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "timing": {
+          "$ref": "#/$defs/TimingMetrics"
+        },
+        "trial": {
+          "$ref": "#/$defs/TrialIdentity"
+        },
+        "uncertainty": {
+          "items": {
+            "$ref": "#/$defs/Uncertainty"
+          },
+          "title": "Uncertainty",
+          "type": "array"
+        },
+        "usage": {
+          "$ref": "#/$defs/UsageMetrics"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_digest",
+        "pair_index",
+        "run_id",
+        "task",
+        "run_manifest_sha256",
+        "result_sha256",
+        "classification",
+        "failure_reason",
+        "agent",
+        "runtime",
+        "limits",
+        "trial",
+        "outcomes",
+        "strict_gate_failures",
+        "uncertainty",
+        "report_sha256",
+        "receipt",
+        "usage",
+        "timing",
+        "harbor",
+        "artifacts"
+      ],
+      "title": "RawTrialOutcome",
+      "type": "object"
+    },
+    "ReceiptValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "present": {
+          "title": "Present",
+          "type": "boolean"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sha256"
+        },
+        "valid": {
+          "title": "Valid",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "present",
+        "valid",
+        "sha256",
+        "errors"
+      ],
+      "title": "ReceiptValidation",
+      "type": "object"
+    },
+    "ReferenceConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/ToolPin"
+        },
+        "configuration_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
+        },
+        "effort_tier": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Effort Tier",
+          "type": "string"
+        },
+        "environment": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "harness": {
+          "$ref": "#/$defs/ComponentPin"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelPin"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ToolPin"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "version",
+        "harness",
+        "adapter",
+        "model",
+        "effort_tier"
+      ],
+      "title": "ReferenceConfiguration",
+      "type": "object"
+    },
+    "ResultOrigin": {
+      "enum": [
+        "external",
+        "maintainer"
+      ],
+      "title": "ResultOrigin",
+      "type": "string"
+    },
+    "RunLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_setup_timeout_sec": {
+          "minimum": 1,
+          "title": "Agent Setup Timeout Sec",
+          "type": "integer"
+        },
+        "agent_timeout_sec": {
+          "minimum": 1,
+          "title": "Agent Timeout Sec",
+          "type": "integer"
+        },
+        "max_cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Cost Usd"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "verifier_timeout_sec": {
+          "minimum": 1,
+          "title": "Verifier Timeout Sec",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_timeout_sec",
+        "agent_setup_timeout_sec",
+        "verifier_timeout_sec"
+      ],
+      "title": "RunLimits",
+      "type": "object"
+    },
+    "RuntimeConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "cpus": {
+          "minimum": 1,
+          "title": "Cpus",
+          "type": "integer"
+        },
+        "environment_provider": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Environment Provider",
+          "type": "string"
+        },
+        "environment_provider_version": {
+          "title": "Environment Provider Version",
+          "type": "string"
+        },
+        "harbor_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Harbor Version",
+          "type": "string"
+        },
+        "images": {
+          "items": {
+            "$ref": "#/$defs/ImagePin"
+          },
+          "minItems": 1,
+          "title": "Images",
+          "type": "array"
+        },
+        "memory_mb": {
+          "minimum": 128,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "storage_mb": {
+          "minimum": 256,
+          "title": "Storage Mb",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "harbor_version",
+        "environment_provider",
+        "environment_provider_version",
+        "images",
+        "cpus",
+        "memory_mb",
+        "storage_mb"
+      ],
+      "title": "RuntimeConfiguration",
+      "type": "object"
+    },
+    "TaskBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "contract_path": {
+          "title": "Contract Path",
+          "type": "string"
+        },
+        "contract_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Contract Sha256",
+          "type": "string"
+        },
+        "harbor_task_checksum": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Harbor Task Checksum",
+          "type": "string"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_path",
+        "contract_sha256",
+        "task_digest",
+        "task_id",
+        "task_version",
+        "harbor_task_checksum"
+      ],
+      "title": "TaskBinding",
+      "type": "object"
+    },
+    "TaskKind": {
+      "enum": [
+        "patch",
+        "review"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskSetEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "applicable_gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "minItems": 1,
+          "title": "Applicable Gates",
+          "type": "array"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/CapabilityEnvelope"
+        },
+        "category": {
+          "$ref": "#/$defs/CapabilityCategory"
+        },
+        "contract_path": {
+          "title": "Contract Path",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TaskKind"
+        },
+        "license": {
+          "$ref": "#/$defs/LicenseContract"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "task_version",
+        "task_digest",
+        "contract_path",
+        "category",
+        "kind",
+        "capabilities",
+        "applicable_gates",
+        "provenance",
+        "license"
+      ],
+      "title": "TaskSetEntry",
+      "type": "object"
+    },
+    "TaskSetManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "slopbench.task-set.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_set_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Task Set Id",
+          "type": "string"
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/TaskSetEntry"
+          },
+          "minItems": 1,
+          "title": "Tasks",
+          "type": "array"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        },
+        "visibility": {
+          "$ref": "#/$defs/TaskSetVisibility"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task_set_id",
+        "version",
+        "visibility",
+        "tasks"
+      ],
+      "title": "TaskSetManifest",
+      "type": "object"
+    },
+    "TaskSetVisibility": {
+      "enum": [
+        "public",
+        "held_out_active",
+        "retired"
+      ],
+      "title": "TaskSetVisibility",
+      "type": "string"
+    },
+    "TimingMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finished At"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Started At"
+        }
+      },
+      "required": [
+        "started_at",
+        "finished_at"
+      ],
+      "title": "TimingMetrics",
+      "type": "object"
+    },
+    "ToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Settings",
+          "type": "object"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolPin",
+      "type": "object"
+    },
+    "TrialIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "required": [
+        "id",
+        "attempt"
+      ],
+      "title": "TrialIdentity",
+      "type": "object"
+    },
+    "Uncertainty": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "detail"
+      ],
+      "title": "Uncertainty",
+      "type": "object"
+    },
+    "UsageMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "cache_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Tokens"
+        },
+        "cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Usd"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        }
+      },
+      "title": "UsageMetrics",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "configuration": {
+      "$ref": "#/$defs/ReferenceConfiguration"
+    },
+    "evaluation_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "evaluation_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evaluation Manifest Sha256",
+      "type": "string"
+    },
+    "metrics": {
+      "$ref": "#/$defs/AggregateMetrics"
+    },
+    "official": {
+      "const": false,
+      "default": false,
+      "title": "Official",
+      "type": "boolean"
+    },
+    "profile": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "profile_definition": {
+      "$ref": "#/$defs/ProfileDefinition"
+    },
+    "purpose": {
+      "$ref": "#/$defs/EvaluationPurpose"
+    },
+    "result_origin": {
+      "$ref": "#/$defs/ResultOrigin"
+    },
+    "result_vector_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Result Vector Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.evaluation-result.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    },
+    "task_set_manifest": {
+      "$ref": "#/$defs/TaskSetManifest"
+    },
+    "trials": {
+      "items": {
+        "$ref": "#/$defs/RawTrialOutcome"
+      },
+      "minItems": 1,
+      "title": "Trials",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evaluation_id",
+    "task_set",
+    "task_set_manifest",
+    "profile",
+    "profile_definition",
+    "evaluation_manifest_sha256",
+    "purpose",
+    "configuration",
+    "result_origin",
+    "result_vector_sha256",
+    "trials",
+    "metrics"
+  ],
+  "title": "EvaluationResult",
+  "type": "object"
+}

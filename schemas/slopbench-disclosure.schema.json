@@ -1,0 +1,373 @@
+{
+  "$defs": {
+    "BudgetStatus": {
+      "enum": [
+        "not_declared",
+        "passed",
+        "failed",
+        "incomplete"
+      ],
+      "title": "BudgetStatus",
+      "type": "string"
+    },
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "FailureClassification": {
+      "enum": [
+        "valid_pass",
+        "valid_agent_failure",
+        "benchmark_defect",
+        "infrastructure_failure",
+        "invalid_run"
+      ],
+      "title": "FailureClassification",
+      "type": "string"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "ProfileBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_mean_cost_usd": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Cost Usd"
+        },
+        "max_mean_duration_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Mean Duration Seconds"
+        },
+        "require_complete_usage": {
+          "default": true,
+          "title": "Require Complete Usage",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfileBudget",
+      "type": "object"
+    },
+    "PublicAggregate": {
+      "additionalProperties": false,
+      "properties": {
+        "budget_status": {
+          "$ref": "#/$defs/BudgetStatus"
+        },
+        "excluded_reliability_trials": {
+          "title": "Excluded Reliability Trials",
+          "type": "integer"
+        },
+        "failure_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/FailureClassification"
+          },
+          "title": "Failure Counts",
+          "type": "object"
+        },
+        "mean_cost_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mean Cost Usd"
+        },
+        "mean_duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mean Duration Seconds"
+        },
+        "quality_bps": {
+          "title": "Quality Bps",
+          "type": "integer"
+        },
+        "reliability_bps": {
+          "title": "Reliability Bps",
+          "type": "integer"
+        },
+        "reliability_trial_count": {
+          "title": "Reliability Trial Count",
+          "type": "integer"
+        },
+        "selection_bps": {
+          "title": "Selection Bps",
+          "type": "integer"
+        },
+        "total_cost_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Total Cost Usd"
+        },
+        "total_duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Total Duration Seconds"
+        },
+        "trial_count": {
+          "title": "Trial Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trial_count",
+        "reliability_trial_count",
+        "excluded_reliability_trials",
+        "quality_bps",
+        "reliability_bps",
+        "selection_bps",
+        "failure_counts",
+        "total_cost_usd",
+        "mean_cost_usd",
+        "total_duration_seconds",
+        "mean_duration_seconds",
+        "budget_status"
+      ],
+      "title": "PublicAggregate",
+      "type": "object"
+    },
+    "PublicCapabilityRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "external_writes": {
+          "const": "none",
+          "title": "External Writes",
+          "type": "string"
+        },
+        "live_credentials": {
+          "const": false,
+          "title": "Live Credentials",
+          "type": "boolean"
+        },
+        "network": {
+          "enum": [
+            "none",
+            "model-only",
+            "declared"
+          ],
+          "title": "Network",
+          "type": "string"
+        },
+        "repository": {
+          "enum": [
+            "read-write",
+            "read-only"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "shell": {
+          "title": "Shell",
+          "type": "boolean"
+        },
+        "tests": {
+          "title": "Tests",
+          "type": "boolean"
+        },
+        "tools": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "repository",
+        "shell",
+        "tests",
+        "tools",
+        "network",
+        "external_writes",
+        "live_credentials"
+      ],
+      "title": "PublicCapabilityRequirement",
+      "type": "object"
+    },
+    "PublicScoringContract": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileBudget"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gate_weights": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Gate Weights",
+          "type": "object"
+        },
+        "profile": {
+          "$ref": "#/$defs/VersionBinding"
+        },
+        "quality_weight": {
+          "title": "Quality Weight",
+          "type": "integer"
+        },
+        "reliability_weight": {
+          "title": "Reliability Weight",
+          "type": "integer"
+        },
+        "strict_gates": {
+          "items": {
+            "$ref": "#/$defs/GateName"
+          },
+          "title": "Strict Gates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "profile",
+        "gate_weights",
+        "strict_gates",
+        "quality_weight",
+        "reliability_weight",
+        "budget"
+      ],
+      "title": "PublicScoringContract",
+      "type": "object"
+    },
+    "VersionBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256"
+      ],
+      "title": "VersionBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "aggregate": {
+      "$ref": "#/$defs/PublicAggregate"
+    },
+    "capability_requirements": {
+      "items": {
+        "$ref": "#/$defs/PublicCapabilityRequirement"
+      },
+      "title": "Capability Requirements",
+      "type": "array"
+    },
+    "category_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/CapabilityCategory"
+      },
+      "title": "Category Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "slopbench.disclosure.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scoring_contract": {
+      "$ref": "#/$defs/PublicScoringContract"
+    },
+    "task_set": {
+      "$ref": "#/$defs/VersionBinding"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_set",
+    "category_counts",
+    "capability_requirements",
+    "scoring_contract",
+    "aggregate"
+  ],
+  "title": "HeldOutDisclosure",
+  "type": "object"
+}

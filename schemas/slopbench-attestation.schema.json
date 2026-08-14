@@ -1,0 +1,117 @@
+{
+  "$defs": {
+    "AttestationStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluation_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "predicate_type": {
+          "const": "slopbench.maintainer-reference.v1",
+          "default": "slopbench.maintainer-reference.v1",
+          "title": "Predicate Type",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "slopbench.attestation-statement.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/AttestationSubject"
+          },
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evaluation_id",
+        "subjects"
+      ],
+      "title": "AttestationStatement",
+      "type": "object"
+    },
+    "AttestationSubject": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "evaluation-manifest",
+            "evaluation-result"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256"
+      ],
+      "title": "AttestationSubject",
+      "type": "object"
+    },
+    "SshSignature": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "sshsig",
+          "default": "sshsig",
+          "title": "Format",
+          "type": "string"
+        },
+        "namespace": {
+          "const": "slopbench",
+          "default": "slopbench",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "signature_base64": {
+          "minLength": 16,
+          "title": "Signature Base64",
+          "type": "string"
+        },
+        "signer": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9@._:+/-]*$",
+          "title": "Signer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "signer",
+        "signature_base64"
+      ],
+      "title": "SshSignature",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "slopbench.attestation.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signature": {
+      "$ref": "#/$defs/SshSignature"
+    },
+    "statement": {
+      "$ref": "#/$defs/AttestationStatement"
+    }
+  },
+  "required": [
+    "schema_version",
+    "statement",
+    "signature"
+  ],
+  "title": "ReferenceAttestation",
+  "type": "object"
+}

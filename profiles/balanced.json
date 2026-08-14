@@ -1,0 +1,26 @@
+{
+  "budget": null,
+  "description": "Balances weighted gate quality with repeat-trial reliability while reporting cost and latency separately.",
+  "gate_weights": {
+    "authority": 15,
+    "build_and_types": 15,
+    "evidence_receipt": 10,
+    "regressions": 20,
+    "requested_behavior": 25,
+    "safety_type_escapes": 5,
+    "verifier_integrity": 10
+  },
+  "label": "Balanced",
+  "profile_id": "balanced",
+  "quality_weight": 50,
+  "reliability_weight": 50,
+  "schema_version": "slopbench.profile.v1",
+  "source_note": null,
+  "strict_gates": [
+    "requested_behavior",
+    "authority",
+    "verifier_integrity"
+  ],
+  "subjective": false,
+  "version": "0.1.0"
+}

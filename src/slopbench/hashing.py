@@ -9,11 +9,11 @@ import stat
 import subprocess
 import tempfile
 from collections.abc import Iterable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from pydantic import BaseModel, ValidationError
 
-from slopbench.contracts import FileDigest, TaskContract
+from slopbench.contracts import FileDigest, InstructionLayer, TaskContract
 
 TASK_CONTRACT_FILENAME = "slopbench-task.json"
 
@@ -125,6 +125,37 @@ def validate_task(task_dir: Path) -> tuple[TaskContract, str, str]:
     contract_sha256 = sha256_file(contract_path)
     task_digest = sha256_bytes(b"slopbench.task.v1\0" + canonical_json_bytes(contract))
     return contract, contract_sha256, task_digest
+
+
+def validate_instruction_layers(
+    layers: list[InstructionLayer],
+    task: TaskContract,
+    task_dir: Path,
+    project_root: Path,
+) -> None:
+    task_dir = task_dir.resolve()
+    project_root = project_root.resolve()
+    resolved_layers: set[Path] = set()
+    for layer in layers:
+        declared_path = project_root.joinpath(*PurePosixPath(layer.path).parts)
+        resolved_path = declared_path.resolve()
+        if not resolved_path.is_relative_to(project_root):
+            raise ContractError(f"instruction layer escapes project root: {layer.path}")
+        if declared_path.is_symlink() or not resolved_path.is_file():
+            raise ContractError(f"instruction layer is not a regular file: {layer.path}")
+        if resolved_path in resolved_layers:
+            raise ContractError(f"instruction layer path is duplicated: {layer.path}")
+        resolved_layers.add(resolved_path)
+        actual_sha256 = sha256_file(resolved_path)
+        if actual_sha256 != layer.sha256:
+            raise ContractError(
+                f"instruction layer digest mismatch for {layer.path}: "
+                f"expected {layer.sha256}, got {actual_sha256}"
+            )
+    required = {(task_dir / phase.instruction_path).resolve() for phase in task.phases}
+    missing = sorted(path.relative_to(task_dir).as_posix() for path in required - resolved_layers)
+    if missing:
+        raise ContractError(f"run manifest is missing task instruction layers: {missing}")
 
 
 def _git_paths(repo_dir: Path) -> list[bytes]:
