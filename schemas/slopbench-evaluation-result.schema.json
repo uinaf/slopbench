@@ -3,6 +3,17 @@
     "AgentConfiguration": {
       "additionalProperties": false,
       "properties": {
+        "adapter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "credential_env": {
           "items": {
             "pattern": "^[A-Z][A-Z0-9_]*$",
@@ -882,6 +893,9 @@
           "title": "Strict Gate Failures",
           "type": "array"
         },
+        "task": {
+          "$ref": "#/$defs/TaskBinding"
+        },
         "task_digest": {
           "pattern": "^[0-9a-f]{64}$",
           "title": "Task Digest",
@@ -914,6 +928,7 @@
         "task_digest",
         "pair_index",
         "run_id",
+        "task",
         "run_manifest_sha256",
         "result_sha256",
         "classification",
@@ -979,12 +994,20 @@
       "additionalProperties": false,
       "properties": {
         "adapter": {
-          "$ref": "#/$defs/ComponentPin"
+          "$ref": "#/$defs/ToolPin"
         },
         "configuration_id": {
           "pattern": "^[a-z0-9][a-z0-9._:-]*$",
           "title": "Configuration Id",
           "type": "string"
+        },
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
         },
         "effort_tier": {
           "pattern": "^[a-z0-9][a-z0-9._:-]*$",
@@ -1156,6 +1179,49 @@
         "storage_mb"
       ],
       "title": "RuntimeConfiguration",
+      "type": "object"
+    },
+    "TaskBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "contract_path": {
+          "title": "Contract Path",
+          "type": "string"
+        },
+        "contract_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Contract Sha256",
+          "type": "string"
+        },
+        "harbor_task_checksum": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Harbor Task Checksum",
+          "type": "string"
+        },
+        "task_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Task Digest",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Task Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_path",
+        "contract_sha256",
+        "task_digest",
+        "task_id",
+        "task_version",
+        "harbor_task_checksum"
+      ],
+      "title": "TaskBinding",
       "type": "object"
     },
     "TaskKind": {

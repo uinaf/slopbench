@@ -18,8 +18,17 @@ from slopbench.contracts import (
     OutcomeStatus,
     ResultBundle,
     RunManifest,
+    TaskBinding,
+    ToolPin,
 )
-from slopbench.hashing import ContractError, load_model, sha256_bytes, sha256_file, write_model
+from slopbench.hashing import (
+    ContractError,
+    load_model,
+    sha256_bytes,
+    sha256_file,
+    validate_task,
+    write_model,
+)
 from slopbench.release import (
     AggregateMetrics,
     AttestationStatement,
@@ -111,12 +120,13 @@ def reference_configuration() -> ReferenceConfiguration:
         configuration_id="oracle-reference",
         version="0.1.0",
         harness=ComponentPin(name=manifest.agent.harness, version=manifest.agent.harness_version),
-        adapter=ComponentPin(name="harbor-oracle", version="0.16.1"),
+        adapter=ToolPin(name="harbor-oracle", version="0.16.1", settings={}),
         model=manifest.agent.model,
         effort_tier=manifest.agent.effort_tier,
         settings=manifest.agent.settings,
         environment={},
         tools=manifest.agent.tools,
+        credential_env=[],
     )
 
 
@@ -131,15 +141,31 @@ def raw_trial(
 ) -> RawTrialOutcome:
     run_id = f"{entry.task_id.replace('/', '-')}-{pair_index}"
     run = parse_json(RunManifest, run_payload())
+    harbor_task_checksum = digest(f"harbor-task-{entry.task_id}")
+    contract_path = ROOT / entry.contract_path
+    task_binding = TaskBinding(
+        contract_path=entry.contract_path,
+        contract_sha256=(
+            sha256_file(contract_path)
+            if contract_path.is_file()
+            else digest(f"contract-{entry.task_id}")
+        ),
+        task_digest=entry.task_digest,
+        task_id=entry.task_id,
+        task_version=entry.task_version,
+        harbor_task_checksum=harbor_task_checksum,
+    )
     agent = run.agent.model_copy(
         update={
             "harness": configuration.harness.name,
             "harness_version": configuration.harness.version,
+            "adapter": configuration.adapter,
             "model": configuration.model,
             "effort_tier": configuration.effort_tier,
             "settings": configuration.settings,
             "environment": configuration.environment,
             "tools": configuration.tools,
+            "credential_env": configuration.credential_env,
         }
     )
     result_data = result_payload(
@@ -170,7 +196,7 @@ def raw_trial(
     }
     result_data["harbor"] = {
         "version": "0.16.1",
-        "task_checksum": digest(f"task-{run_id}"),
+        "task_checksum": harbor_task_checksum,
         "result_sha256": digest(f"harbor-result-{run_id}"),
         "config_sha256": digest(f"harbor-config-{run_id}"),
         "trajectory_sha256": digest(f"trajectory-{run_id}"),
@@ -193,6 +219,7 @@ def raw_trial(
         task_digest=entry.task_digest,
         pair_index=pair_index,
         run_id=run_id,
+        task=task_binding,
         run_manifest_sha256=result.run_manifest_sha256,
         result_sha256=digest(f"result-{run_id}"),
         classification=result.classification,
@@ -272,21 +299,48 @@ def materialize_evaluation(
     }[purpose]
     bindings: list[EvaluationRunBinding] = []
     entry = task_set.tasks[0]
+    contract_path = ROOT / entry.contract_path
+    task, contract_sha256, task_digest = validate_task(contract_path.parent)
+    assert task_digest == entry.task_digest
+    instruction_layers = [
+        {
+            "name": phase.name,
+            "path": (contract_path.parent / phase.instruction_path).relative_to(ROOT).as_posix(),
+            "sha256": sha256_file(contract_path.parent / phase.instruction_path),
+        }
+        for phase in task.phases
+    ]
+    harbor_task_checksum = digest(f"harbor-task-{entry.task_id}")
     for pair_index in range(1, trial_count + 1):
         run_id = f"fixture-run-{pair_index}"
         run_data = run_payload()
         run_data.update(run_id=run_id)
-        contract_path = ROOT / entry.contract_path
         run_data["task"] = {
             "contract_path": entry.contract_path,
-            "contract_sha256": sha256_file(contract_path),
+            "contract_sha256": contract_sha256,
             "task_digest": entry.task_digest,
             "task_id": entry.task_id,
             "task_version": entry.task_version,
-            "harbor_task_checksum": digest(f"harbor-task-{pair_index}"),
+            "harbor_task_checksum": harbor_task_checksum,
         }
-        run_data["agent"]["environment"] = {}
-        run_data["agent"]["instruction_layers"] = []
+        run_data["agent"].update(
+            {
+                "harness": configuration.harness.name,
+                "harness_version": configuration.harness.version,
+                "adapter": configuration.adapter.model_dump(mode="json"),
+                "model": (
+                    None
+                    if configuration.model is None
+                    else configuration.model.model_dump(mode="json")
+                ),
+                "effort_tier": configuration.effort_tier,
+                "settings": configuration.settings,
+                "environment": configuration.environment,
+                "tools": [tool.model_dump(mode="json") for tool in configuration.tools],
+                "instruction_layers": instruction_layers,
+                "credential_env": configuration.credential_env,
+            }
+        )
         run_data["trial"] = {"id": run_id, "attempt": 1, "seed": pair_index}
         run = parse_json(RunManifest, run_data)
         trial_dir = tmp_path / "bundles" / str(pair_index)
@@ -540,6 +594,10 @@ def test_compute_evaluation_is_deterministic_and_retains_full_raw_evidence(
     assert first.metrics.reliability_bps == 10_000
     trial = first.trials[0]
     assert trial.agent.harness == "oracle"
+    assert trial.agent.adapter == fixture["evaluation"].configuration.adapter
+    assert trial.agent.credential_env == fixture["evaluation"].configuration.credential_env
+    assert trial.task.contract_path == fixture["task_set"].tasks[0].contract_path
+    assert len(trial.agent.instruction_layers) == 2
     assert trial.runtime.images[0].reference.endswith("f" * 64)
     assert trial.trial.seed == 1
     assert trial.report_sha256 == trial.receipt.sha256
@@ -676,6 +734,29 @@ def test_compute_evaluation_rejects_gate_applicability_drift(
         )
 
 
+def test_compute_evaluation_rejects_missing_attributable_harbor_checksum(
+    tmp_path: Path,
+) -> None:
+    fixture = materialize_evaluation(tmp_path)
+    binding = fixture["bindings"][0]
+    result_path = tmp_path / binding.result_path
+    payload = json.loads(result_path.read_text())
+    payload["harbor"]["task_checksum"] = None
+    write_json(result_path, payload)
+    changed_binding = binding.model_copy(update={"result_sha256": sha256_file(result_path)})
+    changed_evaluation = fixture["evaluation"].model_copy(update={"runs": [changed_binding]})
+    write_model(fixture["evaluation_path"], changed_evaluation)
+
+    with pytest.raises(ContractError, match="raw run/result binding mismatch"):
+        compute_evaluation(
+            fixture["evaluation_path"],
+            fixture["task_set_path"],
+            fixture["profile_path"],
+            ROOT,
+            tmp_path,
+        )
+
+
 def test_compute_evaluation_rejects_binding_and_configuration_mismatches(
     tmp_path: Path,
 ) -> None:
@@ -705,6 +786,21 @@ def test_compute_evaluation_rejects_binding_and_configuration_mismatches(
     with pytest.raises(ContractError, match="reference configuration mismatch"):
         compute_evaluation(
             tmp_path / "bad-configuration.json",
+            fixture["task_set_path"],
+            fixture["profile_path"],
+            ROOT,
+            tmp_path,
+        )
+
+    changed_adapter = evaluation.configuration.adapter.model_copy(update={"version": "0.16.2"})
+    adapter_configuration = evaluation.configuration.model_copy(update={"adapter": changed_adapter})
+    write_model(
+        tmp_path / "bad-adapter.json",
+        evaluation.model_copy(update={"configuration": adapter_configuration}),
+    )
+    with pytest.raises(ContractError, match="adapter"):
+        compute_evaluation(
+            tmp_path / "bad-adapter.json",
             fixture["task_set_path"],
             fixture["profile_path"],
             ROOT,
@@ -1119,7 +1215,7 @@ def test_publication_rejects_non_comparable_trials() -> None:
         build_held_out_disclosure(task_set, scoring_profile, changed)
 
 
-def test_retirement_accepts_a_new_digest_under_the_same_task_id() -> None:
+def test_retirement_allows_a_same_id_digest_change_only_for_a_major_release() -> None:
     before, after, _, retirement = retirement_fixture()
     replacement = after.tasks[0].model_copy(update={"task_id": before.tasks[0].task_id})
     after_same_id = after.model_copy(update={"tasks": [replacement]})
@@ -1134,6 +1230,7 @@ def test_retirement_accepts_a_new_digest_under_the_same_task_id() -> None:
     )
     record = retirement.records[0].model_copy(
         update={
+            "reason": RetirementReason.MAJOR_TASK_SET_RELEASE,
             "replacement_task_id": replacement.task_id,
             "replacement_task_digest": replacement.task_digest,
         }
@@ -1143,6 +1240,54 @@ def test_retirement_accepts_a_new_digest_under_the_same_task_id() -> None:
     )
 
     validate_retirement_models(manifest, bridge, before, after_same_id)
+
+    leakage = record.model_copy(update={"reason": RetirementReason.LEAKAGE})
+    with pytest.raises(ContractError, match="same-ID replacement requires a major"):
+        validate_retirement_models(
+            manifest.model_copy(update={"records": [leakage]}),
+            bridge,
+            before,
+            after_same_id,
+        )
+
+
+def test_bridge_rejects_execution_pin_drift_for_an_unchanged_task() -> None:
+    dataset, _ = validate_task_set(DATASET, ROOT)
+    shared, added = dataset.tasks[:2]
+    before = TaskSetManifest(
+        task_set_id="held-out-suite",
+        version="0.1.0",
+        visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
+        tasks=[shared],
+    )
+    after = TaskSetManifest(
+        task_set_id="held-out-suite",
+        version="0.2.0",
+        visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
+        tasks=[shared, added],
+    )
+    scoring_profile = profile()
+    configuration = reference_configuration()
+    before_result = direct_result(before, scoring_profile, configuration=configuration)
+    after_result = direct_result(after, scoring_profile, configuration=configuration)
+    payload = after_result.model_dump(mode="json")
+    for trial in payload["trials"]:
+        if trial["task_id"] == shared.task_id:
+            trial["runtime"]["memory_mb"] += 128
+    vector = RawResultVector.model_validate_json(json.dumps({"trials": payload["trials"]}))
+    payload["result_vector_sha256"] = contract_digest("slopbench.result-vector.v1", vector)
+    payload["metrics"] = _aggregate(vector.trials, scoring_profile).model_dump(mode="json")
+    changed_after = EvaluationResult.model_validate_json(json.dumps(payload))
+
+    with pytest.raises(ContractError, match="execution pins drift for unchanged task"):
+        build_bridge_report(
+            before,
+            after,
+            before_result,
+            changed_after,
+            digest("before-result"),
+            digest("after-result"),
+        )
 
 
 def test_ssh_attestation_promotes_only_trusted_maintainer_references(tmp_path: Path) -> None:
@@ -1402,6 +1547,11 @@ def test_reference_configuration_rejects_duplicate_tools() -> None:
     with pytest.raises(ValidationError, match="tool names must be unique"):
         ReferenceConfiguration.model_validate_json(json.dumps(payload))
 
+    payload = reference_configuration().model_dump(mode="json")
+    payload["credential_env"] = ["CURSOR_API_KEY", "CURSOR_API_KEY"]
+    with pytest.raises(ValidationError, match="credential_env values must be unique"):
+        ReferenceConfiguration.model_validate_json(json.dumps(payload))
+
 
 @pytest.mark.parametrize(
     ("mutation", "message"),
@@ -1488,7 +1638,10 @@ def test_raw_and_evaluation_result_models_reject_internal_drift() -> None:
     mutations.append(("pairs", payload, "pair_index coverage"))
     payload = result.model_dump(mode="json")
     payload["trials"][2]["task_digest"] = digest("changed-task")
-    mutations.append(("digest", payload, "raw task digest mismatch"))
+    mutations.append(("digest", payload, "raw task binding does not match"))
+    payload = result.model_dump(mode="json")
+    payload["trials"][1]["runtime"]["memory_mb"] += 128
+    mutations.append(("execution-pins", payload, "task execution pins drift"))
     payload = result.model_dump(mode="json")
     payload["trials"] = list(reversed(payload["trials"]))
     mutations.append(("order", payload, "deterministic task and pair order"))

@@ -573,6 +573,7 @@ class InstructionLayer(ContractModel):
 class AgentConfiguration(ContractModel):
     harness: Identifier
     harness_version: str
+    adapter: ToolPin | None = None
     model: ModelPin | None
     effort_tier: Identifier
     settings: dict[str, JsonValue] = Field(default_factory=dict)

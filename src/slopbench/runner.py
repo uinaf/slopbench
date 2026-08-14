@@ -71,6 +71,7 @@ from slopbench.hashing import (
     load_model,
     sha256_bytes,
     sha256_file,
+    validate_instruction_layers,
     validate_task,
     write_model,
 )
@@ -386,7 +387,12 @@ def _validate_run_binding(
     if mismatches:
         raise ContractError(f"run manifest binding mismatch: {mismatches}")
     _validate_images(task_dir, manifest.runtime)
-    _validate_instruction_layers(manifest, task, task_dir, project_root)
+    validate_instruction_layers(
+        manifest.agent.instruction_layers,
+        task,
+        task_dir,
+        project_root,
+    )
     _validate_capability_binding(manifest, task)
     try:
         harbor_task = HarborTask(task_dir)
@@ -405,35 +411,6 @@ def _validate_run_binding(
             f"expected {manifest.task.harbor_task_checksum}, got {harbor_task.checksum}"
         )
     _validate_harbor_boundary(harbor_task, manifest, task, task_dir)
-
-
-def _validate_instruction_layers(
-    manifest: RunManifest,
-    task: TaskContract,
-    task_dir: Path,
-    project_root: Path,
-) -> None:
-    resolved_layers: set[Path] = set()
-    for layer in manifest.agent.instruction_layers:
-        declared_path = project_root.joinpath(*PurePosixPath(layer.path).parts)
-        resolved_path = declared_path.resolve()
-        if not resolved_path.is_relative_to(project_root):
-            raise ContractError(f"instruction layer escapes project root: {layer.path}")
-        if declared_path.is_symlink() or not resolved_path.is_file():
-            raise ContractError(f"instruction layer is not a regular file: {layer.path}")
-        if resolved_path in resolved_layers:
-            raise ContractError(f"instruction layer path is duplicated: {layer.path}")
-        resolved_layers.add(resolved_path)
-        actual_sha256 = sha256_file(resolved_path)
-        if actual_sha256 != layer.sha256:
-            raise ContractError(
-                f"instruction layer digest mismatch for {layer.path}: "
-                f"expected {layer.sha256}, got {actual_sha256}"
-            )
-    required = {(task_dir / phase.instruction_path).resolve() for phase in task.phases}
-    missing = sorted(path.relative_to(task_dir).as_posix() for path in required - resolved_layers)
-    if missing:
-        raise ContractError(f"run manifest is missing task instruction layers: {missing}")
 
 
 def _harbor_config(

@@ -38,6 +38,7 @@ from slopbench.contracts import (
     RunManifest,
     RuntimeConfiguration,
     Sha256Hex,
+    TaskBinding,
     TaskKind,
     TimingMetrics,
     ToolPin,
@@ -54,6 +55,7 @@ from slopbench.hashing import (
     load_model,
     sha256_bytes,
     sha256_file,
+    validate_instruction_layers,
     validate_task,
 )
 
@@ -229,12 +231,13 @@ class ReferenceConfiguration(ContractModel):
     configuration_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
     harness: ComponentPin
-    adapter: ComponentPin
+    adapter: ToolPin
     model: ModelPin | None
     effort_tier: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     settings: dict[str, JsonValue] = Field(default_factory=dict)
     environment: dict[EnvName, str] = Field(default_factory=dict)
     tools: list[ToolPin] = Field(default_factory=list)
+    credential_env: list[EnvName] = Field(default_factory=list)
 
     @field_validator("settings")
     @classmethod
@@ -257,6 +260,8 @@ class ReferenceConfiguration(ContractModel):
         names = [tool.name for tool in self.tools]
         if len(names) != len(set(names)):
             raise ValueError("reference configuration tool names must be unique")
+        if len(self.credential_env) != len(set(self.credential_env)):
+            raise ValueError("reference configuration credential_env values must be unique")
         return self
 
 
@@ -340,6 +345,7 @@ class RawTrialOutcome(ContractModel):
     task_digest: Sha256Hex
     pair_index: int = Field(ge=1, le=5)
     run_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
+    task: TaskBinding
     run_manifest_sha256: Sha256Hex
     result_sha256: Sha256Hex
     classification: FailureClassification
@@ -362,6 +368,17 @@ class RawTrialOutcome(ContractModel):
     def validate_raw_outcome(self) -> Self:
         if self.run_id != self.trial.id:
             raise ValueError("raw run_id and trial.id must match")
+        if self.task.task_id != self.task_id or self.task.task_digest != self.task_digest:
+            raise ValueError("raw task binding does not match trial identity")
+        if self.harbor.version != self.runtime.harbor_version:
+            raise ValueError("raw Harbor version does not match runtime configuration")
+        if self.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS:
+            if self.harbor.task_checksum != self.task.harbor_task_checksum:
+                raise ValueError("raw Harbor task checksum is missing or mismatched")
+        elif self.harbor.task_checksum is not None and (
+            self.harbor.task_checksum != self.task.harbor_task_checksum
+        ):
+            raise ValueError("raw Harbor task checksum does not match the run binding")
         gates = [outcome.gate for outcome in self.outcomes]
         if set(gates) != set(GateName) or len(gates) != len(GateName):
             raise ValueError("raw outcomes must contain exactly one entry per gate")
@@ -445,6 +462,11 @@ class EvaluationResult(ContractModel):
             entry = entries[trial.task_id]
             if trial.task_digest != entry.task_digest:
                 raise ValueError(f"raw task digest mismatch for {trial.task_id}")
+            if (
+                trial.task.task_version != entry.task_version
+                or trial.task.contract_path != entry.contract_path
+            ):
+                raise ValueError(f"raw task contract binding mismatch for {trial.task_id}")
             if trial.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS:
                 actual_gates = {
                     outcome.gate
@@ -459,11 +481,16 @@ class EvaluationResult(ContractModel):
                     self.configuration.harness.version,
                     trial.agent.harness_version,
                 ),
+                "adapter": (self.configuration.adapter, trial.agent.adapter),
                 "model": (self.configuration.model, trial.agent.model),
                 "effort_tier": (self.configuration.effort_tier, trial.agent.effort_tier),
                 "settings": (self.configuration.settings, trial.agent.settings),
                 "environment": (self.configuration.environment, trial.agent.environment),
                 "tools": (self.configuration.tools, trial.agent.tools),
+                "credential_env": (
+                    self.configuration.credential_env,
+                    trial.agent.credential_env,
+                ),
             }
             mismatches = [
                 field for field, (expected, actual) in comparisons.items() if expected != actual
@@ -481,6 +508,17 @@ class EvaluationResult(ContractModel):
                 raise ValueError(f"result pair_index coverage is incomplete for {task_id}")
             if len({trial.task_digest for trial in trials}) != 1:
                 raise ValueError(f"task digest changes within result trials for {task_id}")
+            baseline = trials[0]
+            for trial in trials[1:]:
+                if (
+                    trial.task != baseline.task
+                    or trial.agent.instruction_layers != baseline.agent.instruction_layers
+                    or trial.runtime != baseline.runtime
+                    or trial.limits != baseline.limits
+                ):
+                    raise ValueError(
+                        f"task execution pins drift within result trials for {task_id}"
+                    )
         if self.trials != sorted(self.trials, key=lambda trial: (trial.task_id, trial.pair_index)):
             raise ValueError("raw trials must use deterministic task and pair order")
         for label, values in {
@@ -726,11 +764,13 @@ def _configuration_mismatches(configuration: ReferenceConfiguration, run: RunMan
     comparisons = {
         "harness": (configuration.harness.name, run.agent.harness),
         "harness_version": (configuration.harness.version, run.agent.harness_version),
+        "adapter": (configuration.adapter, run.agent.adapter),
         "model": (configuration.model, run.agent.model),
         "effort_tier": (configuration.effort_tier, run.agent.effort_tier),
         "settings": (configuration.settings, run.agent.settings),
         "environment": (configuration.environment, run.agent.environment),
         "tools": (configuration.tools, run.agent.tools),
+        "credential_env": (configuration.credential_env, run.agent.credential_env),
     }
     for field, (expected, actual) in comparisons.items():
         if expected != actual:
@@ -855,6 +895,13 @@ def compute_evaluation(
         run = load_model(run_path, RunManifest)
         result = load_model(result_path, ResultBundle)
         contract_path = _resolved_file(project_root, entry.contract_path)
+        task, _, _ = validate_task(contract_path.parent)
+        validate_instruction_layers(
+            run.agent.instruction_layers,
+            task,
+            contract_path.parent,
+            project_root,
+        )
         if (
             run.task.task_id != binding.task_id
             or run.task.task_version != entry.task_version
@@ -867,7 +914,12 @@ def compute_evaluation(
             or result.attempt != run.trial.attempt
             or result.harbor.version != run.runtime.harbor_version
             or (
-                result.harbor.task_checksum is not None
+                result.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+                and result.harbor.task_checksum != run.task.harbor_task_checksum
+            )
+            or (
+                result.classification not in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+                and result.harbor.task_checksum is not None
                 and result.harbor.task_checksum != run.task.harbor_task_checksum
             )
         ):
@@ -910,6 +962,7 @@ def compute_evaluation(
                 task_digest=binding.task_digest,
                 pair_index=binding.pair_index,
                 run_id=result.run_id,
+                task=run.task,
                 run_manifest_sha256=binding.run_manifest_sha256,
                 result_sha256=binding.result_sha256,
                 classification=result.classification,
@@ -1053,6 +1106,28 @@ def build_bridge_report(
         raise ContractError("bridge result task-set binding mismatch")
     _validate_result_task_set(before_result, before_task_set)
     _validate_result_task_set(after_result, after_task_set)
+    before_pins = {
+        (trial.task_id, trial.task_digest): trial
+        for trial in before_result.trials
+        if trial.pair_index == 1
+    }
+    after_pins = {
+        (trial.task_id, trial.task_digest): trial
+        for trial in after_result.trials
+        if trial.pair_index == 1
+    }
+    for identity in before_pins.keys() & after_pins.keys():
+        before_trial = before_pins[identity]
+        after_trial = after_pins[identity]
+        if (
+            before_trial.task != after_trial.task
+            or before_trial.agent.instruction_layers != after_trial.agent.instruction_layers
+            or before_trial.runtime != after_trial.runtime
+            or before_trial.limits != after_trial.limits
+        ):
+            raise ContractError(
+                f"bridge task execution pins drift for unchanged task: {identity[0]}"
+            )
     return BridgeReport(
         before_task_set=before_result.task_set,
         after_task_set=after_result.task_set,
@@ -1113,6 +1188,11 @@ def validate_retirement_models(
             raise ContractError(
                 f"replacement task identity is not new: {record.replacement_task_id}"
             )
+        if (
+            record.replacement_task_id == record.retired_task_id
+            and record.reason != RetirementReason.MAJOR_TASK_SET_RELEASE
+        ):
+            raise ContractError("same-ID replacement requires a major task-set release")
         if replacement.category != retired.category:
             raise ContractError("replacement task does not preserve category coverage")
         if record.publication.provenance != retired.provenance or (

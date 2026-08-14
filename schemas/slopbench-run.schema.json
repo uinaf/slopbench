@@ -3,6 +3,17 @@
     "AgentConfiguration": {
       "additionalProperties": false,
       "properties": {
+        "adapter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "credential_env": {
           "items": {
             "pattern": "^[A-Z][A-Z0-9_]*$",

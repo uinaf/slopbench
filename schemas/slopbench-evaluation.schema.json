@@ -131,12 +131,20 @@
       "additionalProperties": false,
       "properties": {
         "adapter": {
-          "$ref": "#/$defs/ComponentPin"
+          "$ref": "#/$defs/ToolPin"
         },
         "configuration_id": {
           "pattern": "^[a-z0-9][a-z0-9._:-]*$",
           "title": "Configuration Id",
           "type": "string"
+        },
+        "credential_env": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "title": "Credential Env",
+          "type": "array"
         },
         "effort_tier": {
           "pattern": "^[a-z0-9][a-z0-9._:-]*$",

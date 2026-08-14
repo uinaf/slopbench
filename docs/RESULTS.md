@@ -19,13 +19,14 @@ sealed task contracts; `make verify` rejects drift.
 
 - the task-set ID, version, and canonical digest;
 - the profile ID, version, and canonical digest;
-- the harness and adapter names and versions;
-- model, effort tier, non-secret settings, environment, and tool pins;
+- the harness pin and adapter name, version, and non-secret settings;
+- model, effort tier, non-secret settings, environment, tool pins, and credential variable names;
 - every run manifest, raw result, optional agent report, and their SHA-256 digests; and
 - a unique trial identity and pair index.
 
-The evaluator rechecks every referenced file, live task seal, task digest, agent configuration,
-container image digest, Harbor version, receipt digest, and run/result identity before producing
+The evaluator rechecks every referenced file, live task seal, task digest, instruction-layer hash,
+agent configuration, container image digest, resource limit, Harbor version and task checksum,
+receipt digest, and run/result identity before producing
 `slopbench.evaluation-result.v1`. The result embeds the exact task-set manifest and profile behind
 their bindings, so later validation can recompute metrics and reject task coverage, digest, or gate
 applicability drift without trusting the original evaluator process.
@@ -41,8 +42,11 @@ applicability drift without trusting the original evaluator process.
 Raw trials retain the complete deterministic gate vector, failed completion gates, failure class
 and reason, uncertainty, evidence receipt, usage and cost, timing and latency, Harbor trajectory
 hash, artifact hashes, complete agent configuration, runtime image pins, limits, and trial identity.
-The evaluator orders trials by task and pair index and hashes the complete raw vector. Changing a
-profile never changes that vector; it creates a new profile binding and aggregate.
+They also retain the complete task binding, adapter evidence, hashed instruction layers, and only
+the names of credential variables, never their values. Repeated trials for one task must use the
+same task binding, instructions, runtime, and limits. The evaluator orders trials by task and pair
+index and hashes the complete raw vector. Changing a profile never changes that vector; it creates
+a new profile binding and aggregate.
 
 Reliability uses only agent-attributable evidence: valid passes, valid agent failures, and invalid
 agent runs. Infrastructure failures and benchmark defects remain explicit in failure counts and in
@@ -105,8 +109,9 @@ A task may retire only for `leakage`, `verifier_weakness`, `dependency_rot`, or
 publication record with HTTPS links for the retired task, fixtures, and reference runs. Published
 provenance and license must equal the sealed retired contract.
 
-Identity is the task ID plus digest. A major release may preserve a stable task ID while replacing
-its digest; an unchanged ID and digest cannot be presented as a replacement.
+Identity is the task ID plus digest. Only a `major_task_set_release` may preserve a stable task ID
+while replacing its digest. Leakage, verifier weakness, and dependency rot require a new task ID;
+an unchanged ID and digest can never be presented as a replacement.
 
 Before retirement, run the old and replacement sets with the same configuration and profile using
 five paired trials, then create and verify the bridge:
@@ -131,8 +136,11 @@ uv run slopbench retirement \
 ```
 
 Validation reloads both comparison results and reconstructs the bridge before checking retirement.
-It rejects lost category coverage, an unrecorded removal, a carried-over task presented as a
-replacement, mismatched provenance or license, and any bridge or comparison-result digest mismatch.
+For every unchanged task identity, the bridge also requires identical task bindings, instruction
+layers, runtime pins, and limits on both sides. Replacement tasks may carry new task-specific pins.
+Validation rejects lost category coverage, an unrecorded removal, a carried-over task presented as
+a replacement, mismatched provenance or license, and any bridge or comparison-result digest
+mismatch.
 
 ## Maintainer attestations
 
