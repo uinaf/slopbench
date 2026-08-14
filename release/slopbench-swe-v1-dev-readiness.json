@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "a6fb98e657c608af112fdbc0b96c4af3a0c80d1b7a12a8200b2c28a6421d4f2b",
+  "evidence_manifest_sha256": "6364a0d2cd89ab84751607c83ca99b27d76fda510d5e6988b63b9fa8f94ae2bc",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
