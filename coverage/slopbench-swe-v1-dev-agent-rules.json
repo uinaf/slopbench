@@ -1,0 +1,355 @@
+{
+  "coverage_id": "slopbench-swe-v1-dev-agent-rules",
+  "rules": [
+    {
+      "description": "Keep changes inside the authority granted by the task and preserve protected files.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "authority"
+          ],
+          "task_ids": [
+            "slopbench/diagnosis/lease-expiry",
+            "slopbench/diagnosis/query-cache-key",
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/domain/pricing-adjustments",
+            "slopbench/feature/event-pagination",
+            "slopbench/feature/idempotency-registry",
+            "slopbench/restraint/config-overrides",
+            "slopbench/restraint/header-lookup",
+            "slopbench/review/archive-extractor",
+            "slopbench/review/webhook-dispatch",
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "bounded-authority"
+    },
+    {
+      "description": "Ground code-review findings in repository behavior and submit only the requested review artifact.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "authority",
+            "evidence_receipt"
+          ],
+          "task_ids": [
+            "slopbench/review/archive-extractor",
+            "slopbench/review/webhook-dispatch"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "code-review-grounding"
+    },
+    {
+      "description": "Communicate outcomes, plans, evidence, caveats, and status with appropriate brevity.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "The deterministic task result scores repository artifacts, not conversational quality.",
+      "rule_id": "communication-quality"
+    },
+    {
+      "description": "Use subagents only for bounded work and validate delegated results.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "The harness does not expose a vendor-neutral collaboration trace or subagent contract.",
+      "rule_id": "delegation-discipline"
+    },
+    {
+      "description": "Diagnose the behavioral root cause and repair it without hiding the regression.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "regressions"
+          ],
+          "task_ids": [
+            "slopbench/diagnosis/lease-expiry",
+            "slopbench/diagnosis/query-cache-key"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "diagnosis-and-repair"
+    },
+    {
+      "description": "Ask before destructive, public, costly, security-sensitive, or scope-expanding actions.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "Offline synthetic tasks grant fixed authority and cannot safely score real approvals or external side effects.",
+      "rule_id": "external-action-approval"
+    },
+    {
+      "description": "Carry ordered work through fresh contexts while preserving prior behavior.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "regressions"
+          ],
+          "task_ids": [
+            "slopbench/diagnosis/lease-expiry",
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/feature/event-pagination",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "fresh-context-sequencing"
+    },
+    {
+      "description": "Preserve product hierarchy, input, recovery, accessibility, responsive behavior, and visible UI states.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "The development corpus has no user-interface task or visual runtime surface.",
+      "rule_id": "interface-quality"
+    },
+    {
+      "description": "Keep linear flows linear and avoid unnecessary abstraction or speculative structure.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "Equivalent implementations are accepted; the deterministic verifier does not impose a universal style metric.",
+      "rule_id": "linear-flow-simplicity"
+    },
+    {
+      "description": "Model inputs at boundaries, reject malformed states, and preserve immutable inputs.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "regressions"
+          ],
+          "task_ids": [
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/domain/pricing-adjustments",
+            "slopbench/feature/event-pagination",
+            "slopbench/feature/idempotency-registry",
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "parsed-immutable-boundaries"
+    },
+    {
+      "description": "Surface partial success and recovery instead of hiding intermediate outcomes.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior"
+          ],
+          "task_ids": [
+            "slopbench/feature/idempotency-registry",
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": "The tasks cover retryable failure and recovery states but not mixed-success batch operations.",
+      "rule_id": "partial-success-and-recovery"
+    },
+    {
+      "description": "Benchmark performance-sensitive changes with before-and-after evidence.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "No current task has a performance contract or benchmark-sensitive hot path.",
+      "rule_id": "performance-evidence"
+    },
+    {
+      "description": "Represent state transitions and external effects as deterministic data without performing I/O.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "regressions"
+          ],
+          "task_ids": [
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "pure-state-and-effects"
+    },
+    {
+      "description": "Use closed retry, cancellation, concurrency, and recovery states with bounded transient retries.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "regressions"
+          ],
+          "task_ids": [
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": "Cancellation, stale-event rejection, and capped delay are covered; retry exhaustion, attempt bounds, and idempotent retry eligibility are not.",
+      "rule_id": "retry-cancellation-recovery"
+    },
+    {
+      "description": "Avoid unchecked Any, casts, and type-ignore directives when validated types are available.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "build_and_types",
+            "safety_type_escapes"
+          ],
+          "task_ids": [
+            "slopbench/restraint/config-overrides",
+            "slopbench/restraint/header-lookup"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "safe-type-discipline"
+    },
+    {
+      "description": "Prevent secrets and full payloads from crossing logs or structured event boundaries.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "Tasks use no live credentials and do not exercise secret-bearing application logs.",
+      "rule_id": "secret-redaction"
+    },
+    {
+      "description": "Classify boundary failures with stable kinds and preserve causes and context.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior"
+          ],
+          "task_ids": [
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/feature/idempotency-registry",
+            "slopbench/state/sync-command"
+          ]
+        }
+      ],
+      "limitation": "The tasks distinguish validation and domain failures, but they do not require a shared error taxonomy or preserved exception cause chain.",
+      "rule_id": "stable-errors-and-causes"
+    },
+    {
+      "description": "Extend the closest structured owner instead of introducing a parallel script or command path.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior",
+            "authority"
+          ],
+          "task_ids": [
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/feature/event-pagination",
+            "slopbench/restraint/config-overrides",
+            "slopbench/restraint/header-lookup"
+          ]
+        }
+      ],
+      "limitation": "File authority blocks adjacent changes, but no task requires replacing parallel shell automation with a typed manifest or task-graph owner.",
+      "rule_id": "structured-owner-extension"
+    },
+    {
+      "description": "Emit structured boundary events with stable fields, redaction, and one record per failure.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior"
+          ],
+          "task_ids": [
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": "State tasks emit typed effect data, but no task covers process-boundary event fields, redaction, prose-independent classification, or exact-once failure logging.",
+      "rule_id": "structured-redacted-events"
+    },
+    {
+      "description": "Choose implementation languages and tools appropriate to an unconstrained greenfield problem.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "All public tasks provide an existing Python repository and intentionally constrain the implementation surface.",
+      "rule_id": "technology-selection"
+    },
+    {
+      "description": "Keep documentation portable and add comments only for non-obvious invariants or external constraints.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "Patch-task authority excludes documentation and does not score source-comment quality.",
+      "rule_id": "documentation-and-comments"
+    },
+    {
+      "description": "Follow commit, push, pull-request, review-aid, and feedback-delivery contracts.",
+      "disposition": "out_of_scope",
+      "evidence": [],
+      "limitation": "The harness evaluates an isolated worktree before repository delivery operations.",
+      "rule_id": "delivery-workflow"
+    },
+    {
+      "description": "Run relevant gates and provide revision-bound evidence that agrees with an independent verifier.",
+      "disposition": "measured",
+      "evidence": [
+        {
+          "gates": [
+            "regressions",
+            "build_and_types",
+            "verifier_integrity",
+            "evidence_receipt"
+          ],
+          "task_ids": [
+            "slopbench/diagnosis/lease-expiry",
+            "slopbench/diagnosis/query-cache-key",
+            "slopbench/domain/fulfillment-plan",
+            "slopbench/domain/pricing-adjustments",
+            "slopbench/feature/event-pagination",
+            "slopbench/feature/idempotency-registry",
+            "slopbench/restraint/config-overrides",
+            "slopbench/restraint/header-lookup",
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
+          ]
+        },
+        {
+          "gates": [
+            "verifier_integrity",
+            "evidence_receipt"
+          ],
+          "task_ids": [
+            "slopbench/review/archive-extractor",
+            "slopbench/review/webhook-dispatch"
+          ]
+        }
+      ],
+      "limitation": null,
+      "rule_id": "verification-evidence"
+    }
+  ],
+  "schema_version": "slopbench.coverage.v1",
+  "source_label": "sanitized base agent guidance",
+  "source_revision": "487784abdd8c88eec52ffabd59a21801b98d3345e7c9dcc60a618c50aca23c2f",
+  "task_set": {
+    "id": "slopbench-swe-v1-dev",
+    "sha256": "7d03364a88556db0b137a722538e568264092ff71157eaf3325462769cc838ce",
+    "version": "0.1.1"
+  },
+  "version": "0.1.0"
+}

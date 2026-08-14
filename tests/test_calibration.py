@@ -336,6 +336,19 @@ def test_release_audit_rejects_bound_file_drift_and_wrong_tracer(tmp_path: Path)
     with pytest.raises(ContractError, match="digest mismatch"):
         audit_release(write_evidence(tmp_path, bad_digest), ROOT)
 
+    bad_coverage = evidence.model_copy(
+        update={
+            "public_materials": [
+                bound.model_copy(update={"sha256": "a" * 64})
+                if bound.path == "coverage/slopbench-swe-v1-dev-agent-rules.json"
+                else bound
+                for bound in evidence.public_materials
+            ]
+        }
+    )
+    with pytest.raises(ContractError, match="digest mismatch"):
+        audit_release(write_evidence(tmp_path, bad_coverage), ROOT)
+
     material_drift = evidence.model_copy(
         update={
             "public_materials": [
@@ -446,12 +459,19 @@ def test_release_audit_requires_cursor_as_primary_and_valid_common_harness(
     assert gate_status(report, ReleaseGate.COMMON_HARNESS_DECISION) == GateStatus.FAILED
 
 
-def test_release_audit_requires_every_public_material_binding(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "missing_path",
+    ["README.md", "coverage/slopbench-swe-v1-dev-agent-rules.json"],
+)
+def test_release_audit_requires_every_public_material_binding(
+    missing_path: str,
+    tmp_path: Path,
+) -> None:
     evidence = candidate_evidence()
     evidence = evidence.model_copy(
         update={
             "public_materials": [
-                bound for bound in evidence.public_materials if bound.path != "README.md"
+                bound for bound in evidence.public_materials if bound.path != missing_path
             ]
         }
     )

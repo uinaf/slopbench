@@ -32,6 +32,7 @@ flowchart LR
 | Harbor output | Execution evidence | Pinned Harbor version, exact task checksum, detected or installed CLI version, and Harbor-reported selected model metadata; result, config, trajectory, and bundle artifacts are hashed |
 | Verifier output | Trusted task evidence | Separate offline container, task and base bindings, per-check log digests, explicit exits, and reward-file parity |
 | Task set and profile | Published scoring input | Independent semantic versions, canonical digests, exact task bindings, strict schemas, and deterministic regeneration |
+| Agent-rule coverage | Published interpretation boundary | Sanitized rule families map to exact task IDs and applicable gates; the manifest binds the task-set digest and release evidence binds the manifest |
 | Evaluation bundle | Recomputable suite evidence | Exact run, result, and optional report hashes; complete configuration and runtime pins; fixed 1/3/5 trial policy |
 | Maintainer attestation | Release trust decision | Canonical statement signed with SSHSIG and checked against an external allowed-signers trust root |
 

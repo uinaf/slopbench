@@ -50,6 +50,7 @@ def test_schema_export_writes_every_versioned_boundary(tmp_path: Path) -> None:
         "slopbench-attestation-statement.schema.json",
         "slopbench-attestation.schema.json",
         "slopbench-bridge.schema.json",
+        "slopbench-coverage.schema.json",
         "slopbench-disclosure.schema.json",
         "slopbench-evaluation-result.schema.json",
         "slopbench-evaluation.schema.json",

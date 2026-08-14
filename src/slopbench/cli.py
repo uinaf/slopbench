@@ -26,6 +26,7 @@ from slopbench.contracts import (
     TaskContract,
     VerificationEvidence,
 )
+from slopbench.coverage import BenchmarkCoverageManifest
 from slopbench.hashing import (
     ContractError,
     load_model,
@@ -61,6 +62,7 @@ _SCHEMAS: dict[str, type[BaseModel]] = {
     "attestation": ReferenceAttestation,
     "attestation-statement": AttestationStatement,
     "bridge": BridgeReport,
+    "coverage": BenchmarkCoverageManifest,
     "disclosure": HeldOutDisclosure,
     "evaluation": EvaluationManifest,
     "evaluation-result": EvaluationResult,

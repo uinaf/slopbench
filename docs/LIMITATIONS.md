@@ -10,6 +10,12 @@ they do not establish universal intelligence, production readiness, security cer
 design quality, or operational competence. Deterministic verifiers can still encode an incomplete
 or incorrect task specification, which is why human admission remains mandatory.
 
+The [agent-rule coverage manifest](../coverage/slopbench-swe-v1-dev-agent-rules.json) is the
+authoritative scope map. Structured-owner integration, retries and recovery, error taxonomy, and
+structured events are only partially covered. Communication, delegation, external approvals,
+interface quality, performance evidence, documentation style, secret-bearing observability,
+technology choice, and delivery workflow are outside the current score.
+
 Model sampling and provider infrastructure can vary even with a fixed model identifier and trial
 seed. Five trials measure observed reliability; they do not make inference deterministic.
 Model identifiers are requested selection aliases, not attestations of provider-side weights or

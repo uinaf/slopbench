@@ -24,6 +24,7 @@ from slopbench.contracts import (
     Version,
     validate_relative_path,
 )
+from slopbench.coverage import validate_coverage
 from slopbench.hashing import ContractError, load_model, sha256_file, validate_task
 from slopbench.release import (
     BridgeReport,
@@ -78,12 +79,14 @@ _REQUIRED_PUBLIC_MATERIALS = frozenset(
     {
         "LICENSE",
         "README.md",
+        "coverage/slopbench-swe-v1-dev-agent-rules.json",
         "docs/ARCHITECTURE.md",
         "docs/LIMITATIONS.md",
         "docs/METHODOLOGY.md",
         "docs/REPRODUCING.md",
         "docs/RESULTS.md",
         "docs/REVIEW_TASKS.md",
+        "schemas/slopbench-coverage.schema.json",
         "schemas/slopbench-reference-configuration.schema.json",
         "schemas/slopbench-regression.schema.json",
         "schemas/slopbench-release-evidence.schema.json",
@@ -528,6 +531,16 @@ def audit_release(
     evidence = load_model(evidence_path, ReleaseEvidenceManifest)
     task_set_path = _resolve_bound(project_root, evidence.task_set)
     task_set, _ = validate_task_set(task_set_path, project_root)
+    coverage_bound = next(
+        (
+            bound
+            for bound in evidence.public_materials
+            if bound.path == "coverage/slopbench-swe-v1-dev-agent-rules.json"
+        ),
+        None,
+    )
+    if coverage_bound is not None:
+        validate_coverage(_resolve_bound(project_root, coverage_bound), task_set)
     contracts = _task_contracts(task_set, project_root)
     tracer_path = _resolve_bound(project_root, evidence.tracer_task)
     if tracer_path.name != "slopbench-task.json":
@@ -788,8 +801,8 @@ def audit_release(
             ReleaseGate.PUBLIC_MATERIALS,
             public_materials_complete,
             (
-                "license, methodology, schemas, profiles, limitations, and reproduction "
-                "materials are present"
+                "license, methodology, coverage, schemas, profiles, limitations, and "
+                "reproduction materials are present"
             ),
             failed=not public_materials_complete,
         ),
