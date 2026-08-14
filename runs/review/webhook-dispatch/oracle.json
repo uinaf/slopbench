@@ -54,9 +54,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/review/webhook-dispatch/slopbench-task.json",
-    "contract_sha256": "fc1c7c64c77d51b0b2927440ee57fabb1bc461921fb3e25e95e18ef7c18ab53b",
-    "harbor_task_checksum": "d5da5741881186917a1029abc9ff72608b2f4a479f7a28c68f77ef264b51b951",
-    "task_digest": "6f141aada521ad1b67294728d581e372bef48a81b682c9b08ec8b190c8b8afc7",
+    "contract_sha256": "478b784b0128e7c6bf4aba127d4d3b5d62acb183e15c99702fb3a443d8693b43",
+    "harbor_task_checksum": "1b09885ed6601646ef2056b5a1de9d755e5958c5608dc5d564945736f632b491",
+    "task_digest": "834a1d55a91ef27b946e454b6deead97355790cf838cbaa2456968f9161dd27c",
     "task_id": "slopbench/review/webhook-dispatch",
     "task_version": "1.0.0"
   },

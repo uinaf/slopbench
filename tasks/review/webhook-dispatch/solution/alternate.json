@@ -3,7 +3,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 47,
-      "end_line": 47,
+      "line_count": 1,
       "category": "data_integrity",
       "severity": "high",
       "explanation": "If this call raises, the earlier processed marker suppresses the retry that should deliver the event."
@@ -11,7 +11,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 21,
-      "end_line": 21,
+      "line_count": 1,
       "category": "security",
       "severity": "medium",
       "explanation": "The MAC comparison is not constant-time even though the presented value comes from an attacker."
@@ -19,7 +19,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 44,
-      "end_line": 45,
+      "line_count": 2,
       "category": "api_contract",
       "severity": "high",
       "explanation": "A missing exact handler silently selects invoice processing instead of rejecting the unsupported type."

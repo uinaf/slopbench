@@ -29,6 +29,15 @@ GitRevision = Annotated[str, Field(pattern=r"^[0-9a-f]{40,64}$")]
 Identifier = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
 Version = Annotated[str, Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")]
 EnvName = Annotated[str, Field(pattern=r"^[A-Z][A-Z0-9_]*$")]
+ReviewPath = Annotated[
+    str,
+    Field(
+        min_length=1,
+        json_schema_extra={
+            "pattern": r"^(?!/)(?!.*\\)(?!.*//)(?!.*(?:^|/)\.{1,2}(?:/|$))(?!.*\/$).+$"
+        },
+    ),
+]
 
 _SENSITIVE_KEY = re.compile(
     r"(?:^|[_-])(api[_-]?key|secret|password|passwd|token|credential|private[_-]?key)(?:$|[_-])",
@@ -719,9 +728,9 @@ class AgentReport(ContractModel):
 
 
 class ReviewFinding(ContractModel):
-    path: str
+    path: ReviewPath
     start_line: int = Field(ge=1)
-    end_line: int = Field(ge=1)
+    line_count: int = Field(ge=1, le=10)
     category: ReviewCategory
     severity: ReviewSeverity
     explanation: str = Field(min_length=1, max_length=2000)
@@ -734,14 +743,6 @@ class ReviewFinding(ContractModel):
         if not value.strip():
             raise ValueError("finding explanation must contain non-whitespace text")
         return value
-
-    @model_validator(mode="after")
-    def tight_location(self) -> Self:
-        if self.end_line < self.start_line:
-            raise ValueError("finding end_line must not precede start_line")
-        if self.end_line - self.start_line + 1 > 10:
-            raise ValueError("finding location must span at most 10 lines")
-        return self
 
 
 class ReviewSubmission(ContractModel):

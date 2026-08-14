@@ -19,18 +19,21 @@
         "category": {
           "$ref": "#/$defs/ReviewCategory"
         },
-        "end_line": {
-          "minimum": 1,
-          "title": "End Line",
-          "type": "integer"
-        },
         "explanation": {
           "maxLength": 2000,
           "minLength": 1,
           "title": "Explanation",
           "type": "string"
         },
+        "line_count": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Line Count",
+          "type": "integer"
+        },
         "path": {
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\/$).+$",
           "title": "Path",
           "type": "string"
         },
@@ -46,7 +49,7 @@
       "required": [
         "path",
         "start_line",
-        "end_line",
+        "line_count",
         "category",
         "severity",
         "explanation"

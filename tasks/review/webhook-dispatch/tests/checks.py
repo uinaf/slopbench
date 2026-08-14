@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import pwd
 import re
 import stat
 import subprocess
@@ -10,9 +11,10 @@ from pathlib import Path
 
 from revision import worktree_revision
 
-ROOT = Path("/app")
-BASELINE = Path("/baseline")
+ROOT = Path(os.environ.get("SLOPBENCH_REVIEW_ROOT", "/app"))
+BASELINE = Path(os.environ.get("SLOPBENCH_REVIEW_BASELINE", "/baseline"))
 REPORT = ROOT / "slopbench-report.json"
+PUBLISHED_LOGS = Path("/logs/verifier")
 GATES = {
     "requested_behavior": ["review-score"],
     "authority": ["authority-scope"],
@@ -57,9 +59,24 @@ def integrity() -> None:
             raise SystemExit(f"trusted path identity is invalid: {path}")
         if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
             raise SystemExit(f"trusted path is writable by an untrusted user: {path}")
-    published = Path("/logs/verifier")
-    if any(published.iterdir()):
-        raise SystemExit("published verifier logs changed before verification")
+    published_metadata = PUBLISHED_LOGS.lstat()
+    if PUBLISHED_LOGS.is_symlink() or published_metadata.st_uid == pwd.getpwnam("slopbench").pw_uid:
+        raise SystemExit("published verifier log directory is owned by the untrusted user")
+    if published_metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise SystemExit("published verifier log directory is writable by an untrusted user")
+    published_entries = {path.name: path for path in PUBLISHED_LOGS.iterdir()}
+    if set(published_entries) != {"test-stdout.txt"}:
+        raise SystemExit(
+            f"unexpected published verifier files before verification: {sorted(published_entries)}"
+        )
+    stdout_path = published_entries["test-stdout.txt"]
+    stdout_metadata = stdout_path.lstat()
+    if stdout_path.is_symlink() or not stdout_path.is_file():
+        raise SystemExit("verifier stdout capture is not a regular file")
+    if stdout_metadata.st_uid == pwd.getpwnam("slopbench").pw_uid:
+        raise SystemExit("verifier stdout capture is owned by the untrusted user")
+    if stdout_metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise SystemExit("verifier stdout capture is writable by an untrusted user")
 
 
 def receipt() -> None:

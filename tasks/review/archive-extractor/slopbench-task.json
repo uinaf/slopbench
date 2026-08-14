@@ -88,7 +88,7 @@
     ]
   },
   "environment": {
-    "base_revision": "e0a4e1c8c27acbb2c5d0cc503201ee18ff2df790",
+    "base_revision": "b6d0545976fde213fe2e0045f2e3dec10365801c",
     "cpus": 1,
     "harbor_task_path": ".",
     "memory_mb": 512,
@@ -110,7 +110,7 @@
     },
     {
       "path": "environment/repo/REVIEW_GUIDE.md",
-      "sha256": "6b3612817019a5127831b5af5224c541d01294ff023e2f9c18055d4ad688cec6"
+      "sha256": "454e3671b80d629ac7ca1b886da2a1a16928c9fa6e2e88a7e744d79adb010629"
     },
     {
       "path": "environment/repo/pyproject.toml",
@@ -142,7 +142,7 @@
     },
     {
       "path": "solution/alternate.json",
-      "sha256": "d500350b8b05fd5a27a85a7160d33fef8bf09025757c6f9f556b058577a11934"
+      "sha256": "fabde14157c341c97e52fec79356c3928ad25a46d7082951341040e3d162cc88"
     },
     {
       "path": "solution/attack.py",
@@ -154,11 +154,11 @@
     },
     {
       "path": "solution/known_false_positive.json",
-      "sha256": "53ae624e9dffafe10afc0f58ef5054620685a926283218ea4ba0918b38168b95"
+      "sha256": "3957d6858fcafde21daf989f8823ec88c2335eea6914dcd41ddd93449ce5adde"
     },
     {
       "path": "solution/oracle.json",
-      "sha256": "68f0ba3be24b2d75fff172b08815151dc1f59b01ea1fbeba9fc3f5612d327283"
+      "sha256": "6ca34793006dcebb90c6c1dabb40a2960fff6a79488b80c5d2a6bbd7641898fb"
     },
     {
       "path": "solution/solve.sh",
@@ -190,7 +190,7 @@
     },
     {
       "path": "tests/baseline/REVIEW_GUIDE.md",
-      "sha256": "6b3612817019a5127831b5af5224c541d01294ff023e2f9c18055d4ad688cec6"
+      "sha256": "454e3671b80d629ac7ca1b886da2a1a16928c9fa6e2e88a7e744d79adb010629"
     },
     {
       "path": "tests/baseline/pyproject.toml",
@@ -218,7 +218,7 @@
     },
     {
       "path": "tests/checks.py",
-      "sha256": "7fe137fdd1b589799ada47af10fe31f436e9d41cc3b4d25aec899aa0d8242f33"
+      "sha256": "8e34eae113a991a4daea20535bfb12ab27dd79e94059993eb6e3504972675201"
     },
     {
       "path": "tests/revision.py",
@@ -226,7 +226,7 @@
     },
     {
       "path": "tests/score_review.py",
-      "sha256": "a85440c9af9272fcd867d37638e697586e405cf018f0a36b0683b1e5e11d8e9f"
+      "sha256": "6f91d8429fb3d5005bf1c2ab2e58a57ed4a4427c9ca1c01900358001fe9f3db2"
     },
     {
       "path": "tests/test.sh",
@@ -234,7 +234,7 @@
     },
     {
       "path": "tests/verify.py",
-      "sha256": "4c31cb3eadf92da65157133fdf2a970c718c9b8bf77438b37f4595c03f3a7cef"
+      "sha256": "5b1dd5149b7d49e2a3315e49a6abf07dd057c4ce1b815e7ad9bf027cd572ccb2"
     }
   ],
   "kind": "review",
@@ -253,7 +253,7 @@
   "provenance": {
     "ai_assistance": "Purpose-built seeded fixture with human-owned admission criteria.",
     "origin": "slopbench-authored",
-    "source_revision": "e0a4e1c8c27acbb2c5d0cc503201ee18ff2df790",
+    "source_revision": "b6d0545976fde213fe2e0045f2e3dec10365801c",
     "source_url": "https://github.com/uinaf/slopbench",
     "transformed": false
   },

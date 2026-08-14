@@ -51,7 +51,6 @@ def publish_review_artifacts(stdout: str) -> None:
 
 def main() -> int:
     clear(LOGS)
-    clear(PUBLISHED_LOGS)
     base_revision = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=ROOT,

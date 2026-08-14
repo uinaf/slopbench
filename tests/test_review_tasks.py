@@ -106,6 +106,23 @@ def score(task_dir: Path, repo: Path, task_digest: str) -> tuple[int, dict[str, 
     return completed.returncode, envelope
 
 
+def check_authority(task_dir: Path, repo: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["python", str(task_dir / "tests" / "checks.py"), "authority"],
+        cwd=repo,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPYCACHEPREFIX": str(repo.parent / "pycache"),
+            "SLOPBENCH_REVIEW_BASELINE": str(task_dir / "tests" / "baseline"),
+            "SLOPBENCH_REVIEW_ROOT": str(repo),
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
 def variant_findings(task_dir: Path, variant: str) -> list[dict[str, object]]:
     payload = json.loads((task_dir / "solution" / f"{variant}.json").read_text())
     return payload["findings"]
@@ -222,7 +239,7 @@ def test_novel_findings_are_queued_without_changing_official_score(
         {
             "path": "README.md",
             "start_line": 1,
-            "end_line": 1,
+            "line_count": 1,
             "category": "correctness",
             "severity": "low",
             "explanation": "A previously unadjudicated concern for the human review queue.",
@@ -238,6 +255,30 @@ def test_novel_findings_are_queued_without_changing_official_score(
     assert envelope["score"]["precision"] == 1.0
     assert envelope["score"]["novel_findings"] == 1
     assert len(envelope["novel"]["findings"]) == 1
+
+
+@pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)
+def test_missing_review_fails_closed_before_scoring(task_dir: Path, tmp_path: Path) -> None:
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 1
+    assert envelope is None
+
+
+@pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)
+def test_authority_check_rejects_a_source_mutation(task_dir: Path, tmp_path: Path) -> None:
+    repo = initialize_repo(task_dir, tmp_path)
+    assert check_authority(task_dir, repo).returncode == 0
+    source = next((repo / "src").glob("*.py"))
+    source.write_text(source.read_text() + "\n")
+
+    completed = check_authority(task_dir, repo)
+
+    assert completed.returncode == 1
+    assert "review changed tracked" in completed.stderr
 
 
 @pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)

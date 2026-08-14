@@ -3,7 +3,7 @@
     {
       "path": "src/archive.py",
       "start_line": 24,
-      "end_line": 25,
+      "line_count": 2,
       "category": "resource_lifecycle",
       "severity": "high",
       "explanation": "The archive-wide limit is checked against one member at a time, so enough individually valid entries can exceed the promised 1 MiB budget."
@@ -11,7 +11,7 @@
     {
       "path": "src/archive.py",
       "start_line": 26,
-      "end_line": 27,
+      "line_count": 2,
       "category": "security",
       "severity": "high",
       "explanation": "Joining an untrusted absolute or parent-relative member name without containment validation lets extraction write outside the destination."
@@ -19,7 +19,7 @@
     {
       "path": "src/archive.py",
       "start_line": 28,
-      "end_line": 30,
+      "line_count": 3,
       "category": "data_integrity",
       "severity": "medium",
       "explanation": "Members are written directly to their final paths, so a failure on a later member leaves a partial extraction instead of the promised all-or-nothing result."

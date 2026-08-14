@@ -56,6 +56,11 @@ def test_schema_export_writes_every_versioned_boundary(tmp_path: Path) -> None:
     }
     task_schema = json.loads((output / "slopbench-task.schema.json").read_text())
     assert task_schema["title"] == "TaskContract"
+    review_schema = json.loads((output / "slopbench-review.schema.json").read_text())
+    finding = review_schema["$defs"]["ReviewFinding"]["properties"]
+    assert finding["line_count"]["minimum"] == 1
+    assert finding["line_count"]["maximum"] == 10
+    assert finding["path"]["pattern"]
 
 
 @pytest.mark.parametrize(

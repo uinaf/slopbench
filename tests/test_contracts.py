@@ -181,7 +181,7 @@ def test_review_submission_accepts_tight_findings_and_rejects_wide_ranges() -> N
             {
                 "path": "src/example.py",
                 "start_line": 10,
-                "end_line": 12,
+                "line_count": 3,
                 "category": "correctness",
                 "severity": "high",
                 "explanation": "The branch returns the wrong value.",
@@ -191,12 +191,35 @@ def test_review_submission_accepts_tight_findings_and_rejects_wide_ranges() -> N
 
     submission = validate(ReviewSubmission, payload)
     assert submission.findings[0].start_line == 10
-    payload["findings"][0]["end_line"] = 20
-    with pytest.raises(ValidationError, match="at most 10 lines"):
+    payload["findings"][0]["line_count"] = 11
+    with pytest.raises(ValidationError, match="less than or equal to 10"):
         validate(ReviewSubmission, payload)
-    payload["findings"][0]["end_line"] = 10
+    payload["findings"][0]["line_count"] = 1
     payload["findings"][0]["explanation"] = "   "
     with pytest.raises(ValidationError, match="non-whitespace"):
+        validate(ReviewSubmission, payload)
+
+
+@pytest.mark.parametrize("path", ["/src/example.py", "src/../example.py", "src//example.py"])
+def test_review_submission_rejects_noncanonical_paths(path: str) -> None:
+    payload = {
+        "schema_version": "slopbench.review.v1",
+        "task_id": "slopbench/review/example",
+        "task_digest": "a" * 64,
+        "base_revision": "b" * 40,
+        "findings": [
+            {
+                "path": path,
+                "start_line": 1,
+                "line_count": 1,
+                "category": "correctness",
+                "severity": "high",
+                "explanation": "The branch returns the wrong value.",
+            }
+        ],
+    }
+
+    with pytest.raises(ValidationError, match="path must"):
         validate(ReviewSubmission, payload)
 
 

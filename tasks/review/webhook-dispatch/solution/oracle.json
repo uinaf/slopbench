@@ -3,7 +3,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 20,
-      "end_line": 21,
+      "line_count": 2,
       "category": "security",
       "severity": "medium",
       "explanation": "Comparing an attacker-controlled MAC with ordinary string equality can leak a data-dependent timing signal; a constant-time comparison is required."
@@ -11,7 +11,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 45,
-      "end_line": 45,
+      "line_count": 1,
       "category": "api_contract",
       "severity": "high",
       "explanation": "Unknown event types fall back to the invoice handler, causing side effects where the contract requires rejection."
@@ -19,7 +19,7 @@
     {
       "path": "src/webhooks.py",
       "start_line": 46,
-      "end_line": 47,
+      "line_count": 2,
       "category": "data_integrity",
       "severity": "high",
       "explanation": "The event is persisted as processed before its handler completes, so a handler exception makes the subsequent retry look like a duplicate."

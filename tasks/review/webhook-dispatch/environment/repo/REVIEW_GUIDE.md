@@ -12,8 +12,8 @@ Write `slopbench-review.json` with exactly these top-level fields:
 }
 ```
 
-Each finding contains `path`, `start_line`, `end_line`, `category`, `severity`, and a non-empty
-`explanation`. Ranges may span at most five lines.
+Each finding contains `path`, `start_line`, `line_count`, `category`, `severity`, and a non-empty
+`explanation`. `line_count` must be from one through five.
 
 Categories are `api_contract`, `concurrency`, `correctness`, `data_integrity`, `error_handling`,
 `resource_lifecycle`, and `security`. Severities are `critical`, `high`, `medium`, and `low`.

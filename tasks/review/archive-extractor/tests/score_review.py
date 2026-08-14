@@ -18,7 +18,7 @@ CATEGORIES = {
     "security",
 }
 SEVERITIES = {"critical", "high", "medium", "low"}
-FINDING_KEYS = {"path", "start_line", "end_line", "category", "severity", "explanation"}
+FINDING_KEYS = {"path", "start_line", "line_count", "category", "severity", "explanation"}
 
 
 def fail(message: str) -> None:
@@ -51,11 +51,11 @@ def normalize_finding(value: object, max_span: int) -> dict[str, object]:
         fail("finding has an invalid shape")
     path = canonical_path(value["path"])
     start = integer(value["start_line"], "start_line")
-    end = integer(value["end_line"], "end_line")
-    if end < start or end - start + 1 > max_span:
+    line_count = integer(value["line_count"], "line_count")
+    if line_count > max_span:
         fail("finding range is not tight")
-    line_count = len((ROOT / path).read_text().splitlines())
-    if end > line_count:
+    file_line_count = len((ROOT / path).read_text().splitlines())
+    if start + line_count - 1 > file_line_count:
         fail("finding range exceeds the file")
     category = value["category"]
     severity = value["severity"]
@@ -67,7 +67,7 @@ def normalize_finding(value: object, max_span: int) -> dict[str, object]:
     return {
         "path": path,
         "start_line": start,
-        "end_line": end,
+        "line_count": line_count,
         "category": category,
         "severity": severity,
         "explanation": explanation,
@@ -76,7 +76,7 @@ def normalize_finding(value: object, max_span: int) -> dict[str, object]:
 
 def range_distance(finding: dict[str, object], target: dict[str, object]) -> int:
     start = int(finding["start_line"])
-    end = int(finding["end_line"])
+    end = start + int(finding["line_count"]) - 1
     target_start = int(target["start_line"])
     target_end = int(target["end_line"])
     if end < target_start:
@@ -135,7 +135,7 @@ def main() -> int:
         key=lambda item: (
             item[1]["path"],
             item[1]["start_line"],
-            item[1]["end_line"],
+            item[1]["line_count"],
             item[1]["category"],
             item[1]["severity"],
             item[1]["explanation"],

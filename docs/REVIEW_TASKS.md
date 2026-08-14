@@ -2,8 +2,9 @@
 
 Review tasks inspect a sealed repository without changing tracked files. The agent writes
 `slopbench-review.json` using `slopbench.review.v1`, then writes the ordinary revision-bound
-SlopBench receipt. Each finding has a repository-relative file, a one-based line or tight range,
-a category, a severity, and a non-empty explanation.
+SlopBench receipt. Each finding has a canonical repository-relative path, a one-based
+`start_line`, a `line_count` from 1 through 10, a category, a severity, and a non-empty
+explanation. Individual tasks may declare a smaller maximum line count.
 
 ## Taxonomy
 
@@ -32,7 +33,8 @@ preference, tone, and speculative hardening are not findings.
 Each task seals an adjudicated defect set, adjudicated false positives, location tolerance, maximum
 range width, and recall and precision thresholds. The scorer applies these rules:
 
-1. Normalize findings into a stable path, line, category, severity, and explanation order.
+1. Normalize findings into a stable path, start line, line count, category, severity, and
+   explanation order.
 2. Match a finding only when path, category, and severity are exact and its range overlaps the
    adjudicated range within the declared line tolerance.
 3. Choose the nearest unmatched defect, breaking ties by defect ID. A defect and a finding can each
@@ -49,3 +51,5 @@ explanations and tolerated locations receive the same outcome.
 
 The verifier publishes versioned score and novel-queue artifacts beside its normal evidence. A
 defect-set or adjudication change requires a new task version and fresh admission evidence.
+Missing or malformed submissions fail closed before score and novel-queue artifacts are emitted;
+deterministic artifact comparison applies to completed scorer runs.
