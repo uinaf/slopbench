@@ -48,10 +48,40 @@
     "ai_assistance": null
   },
   "license": {"spdx": "MIT", "holder": "uinaf contributors"},
+  "design": {
+    "category": "tracer",
+    "owner": "uinaf",
+    "traps": [],
+    "valid_alternatives": [
+      {
+        "id": "alternate",
+        "solution_paths": ["solution/alternate.py"],
+        "description": "A materially different valid implementation."
+      }
+    ],
+    "admission": {
+      "status": "candidate",
+      "evidence": {
+        "oracle_repeated": true,
+        "no_op_rejected": true,
+        "valid_alternative_passed": true,
+        "traps_rejected": true,
+        "prompt_checks_aligned": true,
+        "deterministic": true,
+        "verification_note": "Schema validation fixture."
+      },
+      "approved_by": null,
+      "approval_ref": null
+    }
+  },
   "immutable_inputs": [
     {
       "path": "instruction.md",
       "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "path": "solution/alternate.py",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     },
     {
       "path": "tests/test.sh",

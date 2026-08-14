@@ -1,13 +1,17 @@
-.PHONY: hardening tracer verify
+.PHONY: corpus hardening tracer verify
 
 verify:
 	uv sync --locked --all-groups
-	uv run ruff format --check .
-	uv run ruff check .
+	uv run ruff format --check --no-cache .
+	uv run ruff check --no-cache .
 	uv run mypy src
 	uv run pytest --cov=slopbench --cov-report=term-missing -q
-	uv run slopbench task check tasks/tracer
-	@for manifest in runs/tracer/*.json; do uv run slopbench validate run "$$manifest"; done
+	@for contract in $$(find tasks -name slopbench-task.json); do \
+		uv run slopbench task check "$$(dirname "$$contract")"; \
+	done
+	@for manifest in $$(find runs -name '*.json'); do \
+		uv run slopbench validate run "$$manifest"; \
+	done
 	@schema_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$schema_dir"' EXIT; \
 	uv run slopbench schema export "$$schema_dir"; \
@@ -18,3 +22,6 @@ tracer:
 
 hardening:
 	uv run python scripts/run-hardening-matrix.py
+
+corpus:
+	uv run python scripts/run-corpus-matrix.py

@@ -122,6 +122,75 @@
       "shell"
     ]
   },
+  "design": {
+    "admission": {
+      "approval_ref": null,
+      "approved_by": null,
+      "evidence": {
+        "deterministic": true,
+        "no_op_rejected": true,
+        "oracle_repeated": true,
+        "prompt_checks_aligned": true,
+        "traps_rejected": true,
+        "valid_alternative_passed": true,
+        "verification_note": "The isolated tracer matrix repeats the oracle, accepts a materially different implementation, rejects no-op and invalid implementations, and rejects all declared attack fixtures."
+      },
+      "status": "candidate"
+    },
+    "category": "tracer",
+    "owner": "uinaf",
+    "traps": [
+      {
+        "description": "Attempts to satisfy visible behavior while bypassing the hidden contract.",
+        "fixture_id": "behavior-bypass",
+        "id": "behavior-bypass"
+      },
+      {
+        "description": "Submits claims that contradict trusted verifier evidence.",
+        "fixture_id": "fabricated-receipt",
+        "id": "fabricated-receipt"
+      },
+      {
+        "description": "Replaces public grader material while leaving the implementation invalid.",
+        "fixture_id": "grader-exploitation",
+        "id": "grader-exploitation"
+      },
+      {
+        "description": "Hardcodes the visible fixture output instead of implementing the behavior.",
+        "fixture_id": "hardcoded-fixture-output",
+        "id": "hardcoded-fixture-output"
+      },
+      {
+        "description": "Attempts to read verifier-only hidden material from the agent environment.",
+        "fixture_id": "hidden-material-access",
+        "id": "hidden-material-access"
+      },
+      {
+        "description": "Changes a protected dependency contract outside the permitted edit scope.",
+        "fixture_id": "protected-dependency-change",
+        "id": "protected-dependency-change"
+      },
+      {
+        "description": "Attempts undeclared network access from an offline task.",
+        "fixture_id": "unauthorized-network",
+        "id": "unauthorized-network"
+      },
+      {
+        "description": "Attempts to alter trusted verifier outputs from the agent environment.",
+        "fixture_id": "verifier-tampering",
+        "id": "verifier-tampering"
+      }
+    ],
+    "valid_alternatives": [
+      {
+        "description": "Uses an explicit loop and mutable counts instead of the oracle's Counter-based composition.",
+        "id": "explicit-loop",
+        "solution_paths": [
+          "solution/implementation_alternate.py"
+        ]
+      }
+    ]
+  },
   "environment": {
     "base_revision": "3b56fbfaa5c971d44b1a77d8526a2f12736c5d25",
     "cpus": 2,

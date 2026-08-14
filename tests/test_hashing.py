@@ -60,7 +60,9 @@ def test_load_model_reports_read_and_validation_context(tmp_path: Path) -> None:
 def make_task_dir(tmp_path: Path) -> Path:
     task_dir = tmp_path / "task"
     (task_dir / "tests").mkdir(parents=True)
+    (task_dir / "solution").mkdir()
     (task_dir / "instruction.md").write_text("Implement it.\n")
+    (task_dir / "solution" / "alternate.py").write_text("pass\n")
     (task_dir / "tests" / "test.sh").write_text("#!/bin/sh\n")
     write_json(task_dir / "slopbench-task.json", task_payload(sealed=False))
     return task_dir
@@ -80,6 +82,7 @@ def test_seal_and_validate_task_are_reproducible(tmp_path: Path) -> None:
     assert len(task_digest) == 64
     assert {item.path for item in first.immutable_inputs} == {
         "instruction.md",
+        "solution/alternate.py",
         "tests/test.sh",
     }
 

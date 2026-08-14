@@ -1,0 +1,71 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {},
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "implement",
+        "path": "tasks/state/watch-subscription/steps/implement/instruction.md",
+        "sha256": "794beb019ff58d8ae9c52f4eb7ea94258b748a4c4f93e8b4514c8478e5530bf0"
+      },
+      {
+        "name": "review",
+        "path": "tasks/state/watch-subscription/steps/review/instruction.md",
+        "sha256": "24dec03ac7ed96f1adc3ad4fabdf0d467fa42452a377e500d4ef4ca87c6b933e"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": [
+      {
+        "name": "python",
+        "settings": {},
+        "version": "3.13.15"
+      }
+    ]
+  },
+  "attack_fixture_id": "known-invalid",
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "state-watch-subscription-attack-known-invalid",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/state/watch-subscription/slopbench-task.json",
+    "contract_sha256": "038da4e34f68084ab3b5d9602877ed1ea4be312deee9812367d3a35797987918",
+    "harbor_task_checksum": "c61b52dd9ee91d9575378f45b2c0ecd94cde1d9f535995b8a32498dcfaa9b344",
+    "task_digest": "a6949156535e4c5622d75a777b7fcf77ede288705f1d669c68c1868f6270a252",
+    "task_id": "slopbench/state/watch-subscription",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "state-watch-subscription-attack-known-invalid",
+    "seed": 1
+  }
+}

@@ -10,7 +10,7 @@ import pytest
 from harbor.models.agent.context import AgentContext
 from harbor.models.task.id import LocalTaskId
 from harbor.models.task.task import Task as HarborTask
-from harbor.models.trial.result import AgentInfo, ExceptionInfo, TrialResult
+from harbor.models.trial.result import AgentInfo, ExceptionInfo, StepResult, TrialResult
 from harbor.models.verifier.result import VerifierResult
 
 from slopbench import runner
@@ -118,14 +118,29 @@ def test_image_validation_requires_digests_and_declared_pins(tmp_path: Path) -> 
     runner._validate_images(task_dir, parse_json(RunManifest, payload).runtime)
 
 
-def write_harbor_task(task_dir: Path, isolation: str = "separate") -> None:
+def write_harbor_task(
+    task_dir: Path, isolation: str = "separate", *, sequential: bool = False
+) -> None:
     (task_dir / "environment").mkdir(exist_ok=True)
     tests_dir = task_dir / "tests"
     tests_dir.mkdir(exist_ok=True)
     (tests_dir / "test.sh").write_text("#!/bin/sh\n")
+    steps = ""
+    if sequential:
+        for name, minimum in (("implement", "min_reward = 1.0\n"), ("review", "")):
+            step_dir = task_dir / "steps" / name
+            step_dir.mkdir(parents=True)
+            (step_dir / "instruction.md").write_text(f"{name}\n")
+            steps += (
+                f'[[steps]]\nname = "{name}"\n{minimum}'
+                f'[steps.verifier]\nenv = {{ SLOPBENCH_PHASE = "{name}" }}\n\n'
+            )
+    strategy = 'multi_step_reward_strategy = "final"\n\n' if sequential else ""
     (task_dir / "task.toml").write_text(
         'version = "1.3"\n\n'
-        '[metadata]\nslopbench_task_id = "slopbench/tracer/example"\n'
+        + strategy
+        + steps
+        + '[metadata]\nslopbench_task_id = "slopbench/tracer/example"\n'
         'slopbench_task_version = "1.0.0"\n\n'
         '[agent]\nnetwork_mode = "allowlist"\nallowed_hosts = ["cursor.com"]\n\n'
         f'[verifier]\nenvironment_mode = "{isolation}"\nnetwork_mode = "no-network"\n\n'
@@ -193,6 +208,60 @@ def test_harbor_boundary_rejects_policy_drift(tmp_path: Path, mutation: str, mes
 
     with pytest.raises(ContractError, match=message):
         runner._validate_harbor_boundary(harbor_task, manifest, task, task_dir)
+
+
+def test_harbor_boundary_accepts_bound_sequential_steps(tmp_path: Path) -> None:
+    task_dir = tmp_path / "task"
+    task_dir.mkdir()
+    write_harbor_task(task_dir, sequential=True)
+
+    runner._validate_harbor_boundary(
+        HarborTask(task_dir), run_manifest(), task_contract(sequential=True), task_dir
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("order", "sealed phase order"),
+        ("strategy", "final-step reward"),
+        ("checkpoint", "checkpoints"),
+        ("phase-env", "phase binding"),
+        ("step-override", "execution override"),
+    ],
+)
+def test_harbor_boundary_rejects_sequential_step_drift(
+    tmp_path: Path, mutation: str, message: str
+) -> None:
+    task_dir = tmp_path / "task"
+    task_dir.mkdir()
+    write_harbor_task(task_dir, sequential=True)
+    task_toml = task_dir / "task.toml"
+    rendered = task_toml.read_text()
+    if mutation == "order":
+        rendered = rendered.replace('name = "implement"', 'name = "temporary"', 1)
+        rendered = rendered.replace('name = "review"', 'name = "implement"', 1)
+        rendered = rendered.replace('name = "temporary"', 'name = "review"', 1)
+    elif mutation == "strategy":
+        rendered = rendered.replace(
+            'multi_step_reward_strategy = "final"', 'multi_step_reward_strategy = "mean"'
+        )
+    elif mutation == "checkpoint":
+        rendered = rendered.replace("min_reward = 1.0\n", "")
+    elif mutation == "phase-env":
+        rendered = rendered.replace('SLOPBENCH_PHASE = "implement"', 'SLOPBENCH_PHASE = "other"')
+    else:
+        rendered = rendered.replace(
+            '[steps.verifier]\nenv = { SLOPBENCH_PHASE = "implement" }',
+            "[steps.agent]\ntimeout_sec = 1\n[steps.verifier]\n"
+            'env = { SLOPBENCH_PHASE = "implement" }',
+        )
+    task_toml.write_text(rendered)
+
+    with pytest.raises(ContractError, match=message):
+        runner._validate_harbor_boundary(
+            HarborTask(task_dir), run_manifest(), task_contract(sequential=True), task_dir
+        )
 
 
 def test_run_binding_checks_contract_runtime_and_resources(tmp_path: Path) -> None:
@@ -370,6 +439,13 @@ def task_with_attack_fixture() -> TaskContract:
                 "classification": "valid_agent_failure",
                 "failed_gates": ["authority"],
             },
+        }
+    ]
+    payload["design"]["traps"] = [
+        {
+            "id": "tamper",
+            "fixture_id": "tamper",
+            "description": "Attempts to replace trusted verifier evidence.",
         }
     ]
     return parse_json(TaskContract, payload)
@@ -728,21 +804,54 @@ def test_artifact_digests_hash_symlink_identity_without_following_target(tmp_pat
 
 def make_trial_result(
     manifest: RunManifest,
+    task: TaskContract,
     task_dir: Path,
     trial_dir: Path,
     *,
     rewards: dict[str, int] | None = None,
     exception_type: str | None = None,
+    reached_steps: list[str] | None = None,
+    step_exception_type: str | None = None,
 ) -> TrialResult:
-    config = runner._harbor_config(manifest, task_contract(), task_dir, trial_dir.parent, SHA_B)
-    exception = None
-    if exception_type is not None:
-        exception = ExceptionInfo(
-            exception_type=exception_type,
+    config = runner._harbor_config(manifest, task, task_dir, trial_dir.parent, SHA_B)
+
+    def exception(kind: str | None) -> ExceptionInfo | None:
+        if kind is None:
+            return None
+        return ExceptionInfo(
+            exception_type=kind,
             exception_message="failure",
             exception_traceback="traceback",
             occurred_at=datetime(2026, 1, 1, tzinfo=UTC),
         )
+
+    agent_context = AgentContext(
+        n_input_tokens=10,
+        n_cache_tokens=2,
+        n_output_tokens=3,
+        cost_usd=0.25,
+    )
+    agent_result: AgentContext | None = agent_context
+    verifier_result = VerifierResult(rewards=rewards)
+    step_results: list[StepResult] | None = None
+    if reached_steps is not None:
+        agent_result = None
+        step_results = [
+            StepResult(
+                step_name=name,
+                agent_result=agent_context,
+                verifier_result=(
+                    None
+                    if step_exception_type is not None and index == len(reached_steps) - 1
+                    else VerifierResult(rewards=rewards)
+                ),
+                exception_info=(
+                    exception(step_exception_type) if index == len(reached_steps) - 1 else None
+                ),
+            )
+            for index, name in enumerate(reached_steps)
+        ]
+        verifier_result = step_results[-1].verifier_result if step_results else None
     return TrialResult(
         task_name="task",
         trial_name=manifest.trial.id,
@@ -751,16 +860,12 @@ def make_trial_result(
         task_checksum=manifest.task.harbor_task_checksum,
         config=config,
         agent_info=AgentInfo(name=manifest.agent.harness, version="1.0.0"),
-        agent_result=AgentContext(
-            n_input_tokens=10,
-            n_cache_tokens=2,
-            n_output_tokens=3,
-            cost_usd=0.25,
-        ),
-        verifier_result=VerifierResult(rewards=rewards),
-        exception_info=exception,
+        agent_result=agent_result,
+        verifier_result=verifier_result,
+        exception_info=exception(exception_type),
         started_at=datetime(2026, 1, 1, tzinfo=UTC),
         finished_at=datetime(2026, 1, 1, tzinfo=UTC) + timedelta(seconds=4),
+        step_results=step_results,
     )
 
 
@@ -772,22 +877,30 @@ def prepare_bundle(
     verification_mode: str = "valid",
     reward_mode: str = "valid",
     exception_type: str | None = None,
+    sequential: bool = False,
+    reached_steps: list[str] | None = None,
+    step_exception_type: str | None = None,
 ) -> tuple[Path, RunManifest, TaskContract]:
     bundle = tmp_path / "bundle"
     manifest = run_manifest()
-    task = task_contract()
+    task = task_contract(sequential=sequential)
     trial_dir = bundle / "harbor" / manifest.trial.id
     trial_dir.mkdir(parents=True)
+    if sequential and reached_steps is None:
+        reached_steps = ["implement", "review"]
+    output_dir = (
+        trial_dir / "steps" / reached_steps[-1] if sequential and reached_steps else trial_dir
+    )
     verification_payload_value = verification_payload(requested_passed=requested_passed)
     if verification_mode == "wrong-digest":
         verification_payload_value["task_digest"] = "9" * 64
     if report_mode == "valid":
         write_json(
-            trial_dir / "artifacts" / "app" / "slopbench-report.json",
+            output_dir / "artifacts" / "app" / "slopbench-report.json",
             report_payload(public_passed=requested_passed),
         )
     elif report_mode == "malformed":
-        path = trial_dir / "artifacts" / "app" / "slopbench-report.json"
+        path = output_dir / "artifacts" / "app" / "slopbench-report.json"
         path.parent.mkdir(parents=True)
         path.write_text("{}\n")
     rewards = reward_vector(requested_passed=requested_passed)
@@ -805,26 +918,29 @@ def prepare_bundle(
         rewards["reward"] = 1 - rewards["reward"]
     if verification_mode != "missing":
         for check in verification_payload_value["checks"]:
-            log_path = trial_dir / "verifier" / check["log_path"]
+            log_path = output_dir / "verifier" / check["log_path"]
             log_path.parent.mkdir(parents=True, exist_ok=True)
             log_path.write_text(f"{check['id']}\n")
             check["log_sha256"] = sha256_file(log_path)
         write_json(
-            trial_dir / "verifier" / "slopbench-verification.json",
+            output_dir / "verifier" / "slopbench-verification.json",
             verification_payload_value,
         )
-    write_json(trial_dir / "verifier" / "reward.json", rewards)
+    write_json(output_dir / "verifier" / "reward.json", rewards)
     result = make_trial_result(
         manifest,
+        task,
         tmp_path / "task",
         trial_dir,
         rewards=rewards,
         exception_type=exception_type,
+        reached_steps=reached_steps if sequential else None,
+        step_exception_type=step_exception_type,
     )
     (trial_dir / "result.json").write_text(result.model_dump_json(indent=2) + "\n")
     (trial_dir / "config.json").write_text(result.config.model_dump_json(indent=2) + "\n")
-    (trial_dir / "agent").mkdir(exist_ok=True)
-    (trial_dir / "agent" / "trajectory.json").write_text("{}\n")
+    (output_dir / "agent").mkdir(exist_ok=True)
+    (output_dir / "agent" / "trajectory.json").write_text("{}\n")
     (bundle / "slopbench-run.json").write_text("{}\n")
     return bundle, manifest, task
 
@@ -847,6 +963,102 @@ def test_finalize_valid_pass_captures_evidence_usage_and_timing(tmp_path: Path) 
     assert result.harbor.trajectory_sha256 is not None
     assert (bundle / "result.json").is_file()
     assert "result.json" not in {artifact.path for artifact in result.artifacts}
+
+
+def test_finalize_valid_sequential_pass_uses_last_step_outputs(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path, sequential=True)
+    trajectory = (
+        bundle / "harbor" / manifest.trial.id / "steps" / "review" / "agent" / "trajectory.json"
+    )
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.VALID_PASS
+    assert result.receipt.valid
+    assert result.usage.input_tokens == 20
+    assert result.usage.cache_tokens == 4
+    assert result.usage.output_tokens == 6
+    assert result.usage.cost_usd == 0.5
+    assert result.harbor.trajectory_sha256 == sha256_file(trajectory)
+
+
+def test_finalize_accepts_failed_sequential_checkpoint_as_agent_failure(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(
+        tmp_path,
+        sequential=True,
+        reached_steps=["implement"],
+        requested_passed=False,
+    )
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.VALID_AGENT_FAILURE
+    assert result.failure_reason == FailureReason.GATE_FAILURE
+    assert result.receipt.valid
+
+
+def test_finalize_rejects_passing_incomplete_sequential_result(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(
+        tmp_path,
+        sequential=True,
+        reached_steps=["implement"],
+    )
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.BENCHMARK_DEFECT
+    assert result.failure_reason == FailureReason.HARBOR_RESULT_INVALID
+    assert result.receipt.valid
+    assert any("sealed sequence" in error for error in result.receipt.errors)
+
+
+@pytest.mark.parametrize(
+    "reached_steps",
+    [[], ["review"], ["implement", "review", "extra"]],
+)
+def test_finalize_rejects_invalid_sequential_step_layout(
+    tmp_path: Path,
+    reached_steps: list[str],
+) -> None:
+    bundle, manifest, task = prepare_bundle(
+        tmp_path,
+        sequential=True,
+        reached_steps=reached_steps,
+    )
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.BENCHMARK_DEFECT
+    assert result.failure_reason == FailureReason.HARBOR_RESULT_INVALID
+    assert result.receipt.errors
+
+
+def test_finalize_classifies_sequential_step_exception(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(
+        tmp_path,
+        sequential=True,
+        reached_steps=["implement"],
+        step_exception_type="AgentTimeoutError",
+    )
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 1)
+
+    assert result.classification == FailureClassification.VALID_AGENT_FAILURE
+    assert result.failure_reason == FailureReason.AGENT_TIMEOUT
+
+
+def test_finalize_rejects_step_results_for_single_phase_task(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    result_path = bundle / "harbor" / manifest.trial.id / "result.json"
+    payload = json.loads(result_path.read_text())
+    payload["step_results"] = []
+    write_json(result_path, payload)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.BENCHMARK_DEFECT
+    assert result.failure_reason == FailureReason.HARBOR_RESULT_INVALID
+    assert "single-phase" in result.receipt.errors[0]
 
 
 def test_finalize_classifies_expected_agent_failures(tmp_path: Path) -> None:
@@ -1117,7 +1329,9 @@ def test_finalize_emits_bundle_for_invalid_harbor_result(tmp_path: Path) -> None
 def make_bound_task(tmp_path: Path) -> tuple[Path, str, str, TaskContract]:
     task_dir = tmp_path / "task"
     (task_dir / "tests").mkdir(parents=True)
+    (task_dir / "solution").mkdir()
     (task_dir / "instruction.md").write_text("Do the work.\n")
+    (task_dir / "solution" / "alternate.py").write_text("pass\n")
     (task_dir / "tests" / "test.sh").write_text("#!/bin/sh\n")
     write_harbor_task(task_dir)
     write_json(task_dir / "slopbench-task.json", task_payload(sealed=False))

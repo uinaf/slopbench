@@ -1,5 +1,97 @@
 {
   "$defs": {
+    "AdmissionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "no_op_rejected": {
+          "title": "No Op Rejected",
+          "type": "boolean"
+        },
+        "oracle_repeated": {
+          "title": "Oracle Repeated",
+          "type": "boolean"
+        },
+        "prompt_checks_aligned": {
+          "title": "Prompt Checks Aligned",
+          "type": "boolean"
+        },
+        "traps_rejected": {
+          "title": "Traps Rejected",
+          "type": "boolean"
+        },
+        "valid_alternative_passed": {
+          "title": "Valid Alternative Passed",
+          "type": "boolean"
+        },
+        "verification_note": {
+          "minLength": 1,
+          "title": "Verification Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "oracle_repeated",
+        "no_op_rejected",
+        "valid_alternative_passed",
+        "traps_rejected",
+        "prompt_checks_aligned",
+        "deterministic",
+        "verification_note"
+      ],
+      "title": "AdmissionEvidence",
+      "type": "object"
+    },
+    "AdmissionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approval Ref"
+        },
+        "approved_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
+        },
+        "evidence": {
+          "$ref": "#/$defs/AdmissionEvidence"
+        },
+        "status": {
+          "enum": [
+            "candidate",
+            "approved",
+            "retired"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence"
+      ],
+      "title": "AdmissionRecord",
+      "type": "object"
+    },
     "AttackExpectation": {
       "additionalProperties": false,
       "properties": {
@@ -67,6 +159,19 @@
         "grader_exploitation"
       ],
       "title": "AttackKind",
+      "type": "string"
+    },
+    "CapabilityCategory": {
+      "enum": [
+        "tracer",
+        "diagnosis_repair",
+        "feature",
+        "restraint",
+        "composition_domain_evolution",
+        "state_effects",
+        "code_review"
+      ],
+      "title": "CapabilityCategory",
       "type": "string"
     },
     "CapabilityEnvelope": {
@@ -333,6 +438,46 @@
       "title": "Provenance",
       "type": "object"
     },
+    "TaskDesignRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "admission": {
+          "$ref": "#/$defs/AdmissionRecord"
+        },
+        "category": {
+          "$ref": "#/$defs/CapabilityCategory"
+        },
+        "owner": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Owner",
+          "type": "string"
+        },
+        "traps": {
+          "items": {
+            "$ref": "#/$defs/TrapRecord"
+          },
+          "title": "Traps",
+          "type": "array"
+        },
+        "valid_alternatives": {
+          "items": {
+            "$ref": "#/$defs/ValidAlternativeRecord"
+          },
+          "minItems": 1,
+          "title": "Valid Alternatives",
+          "type": "array"
+        }
+      },
+      "required": [
+        "category",
+        "owner",
+        "traps",
+        "valid_alternatives",
+        "admission"
+      ],
+      "title": "TaskDesignRecord",
+      "type": "object"
+    },
     "TaskKind": {
       "enum": [
         "patch",
@@ -340,6 +485,63 @@
       ],
       "title": "TaskKind",
       "type": "string"
+    },
+    "TrapRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "fixture_id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Fixture Id",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fixture_id",
+        "description"
+      ],
+      "title": "TrapRecord",
+      "type": "object"
+    },
+    "ValidAlternativeRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "solution_paths": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Solution Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "solution_paths",
+        "description"
+      ],
+      "title": "ValidAlternativeRecord",
+      "type": "object"
     },
     "VerifierContract": {
       "additionalProperties": false,
@@ -391,6 +593,9 @@
     },
     "capabilities": {
       "$ref": "#/$defs/CapabilityEnvelope"
+    },
+    "design": {
+      "$ref": "#/$defs/TaskDesignRecord"
     },
     "environment": {
       "$ref": "#/$defs/EnvironmentContract"
@@ -453,7 +658,8 @@
     "capabilities",
     "applicable_gates",
     "provenance",
-    "license"
+    "license",
+    "design"
   ],
   "title": "TaskContract",
   "type": "object"
