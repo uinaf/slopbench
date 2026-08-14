@@ -16,6 +16,11 @@
         "name": "review",
         "path": "tasks/state/watch-subscription/steps/review/instruction.md",
         "sha256": "24dec03ac7ed96f1adc3ad4fabdf0d467fa42452a377e500d4ef4ca87c6b933e"
+      },
+      {
+        "name": "harden",
+        "path": "tasks/state/watch-subscription/steps/harden/instruction.md",
+        "sha256": "38031ccb59b6a7d2c07276d9f30d51a475192d6b954efe861b21601c27bef722"
       }
     ],
     "model": null,
@@ -54,11 +59,11 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/state/watch-subscription/slopbench-task.json",
-    "contract_sha256": "b7ed7fafb8c1bb9c807e51f25de14ea82478e67fd1176141ecbef15b1ad5e98d",
-    "harbor_task_checksum": "ce92f2342146ebfa48c79a639408bacf75d74feda3a082e93f6794ec771abc01",
-    "task_digest": "9b912203a82e5080ec2c064adaefe5872b8ab29fd6f7fb69e9ea1c84faed29db",
+    "contract_sha256": "3c237e5f2ee619d8483973e74f6c2b3cf67c84d417ffa1bcf49e54883217c624",
+    "harbor_task_checksum": "1eb88696673519341e73f52571ec9d87d3ec4f69e8960f46dcb64d6e537ee1f6",
+    "task_digest": "f0187ef04ff70fcb35973573b057906cd0db934ee17da0001c1eab24af03ca73",
     "task_id": "slopbench/state/watch-subscription",
-    "task_version": "1.0.0"
+    "task_version": "1.1.0"
   },
   "trial": {
     "attempt": 1,

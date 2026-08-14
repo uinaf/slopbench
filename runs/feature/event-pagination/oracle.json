@@ -18,6 +18,11 @@
         "name": "review",
         "path": "tasks/feature/event-pagination/steps/review/instruction.md",
         "sha256": "3a9f2a383076993b2b394a4b23c48a5e73b3dde069f41406e26d709be3f2b5f3"
+      },
+      {
+        "name": "integrate",
+        "path": "tasks/feature/event-pagination/steps/integrate/instruction.md",
+        "sha256": "047470a3aca4f79a15eb861b0b9fffcea491724404c12caa96d2f8c4f5f52034"
       }
     ],
     "model": null,
@@ -62,11 +67,11 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/feature/event-pagination/slopbench-task.json",
-    "contract_sha256": "55c87248eda69829b58cfc477fe6e773d594dd150e1b6369a9cd34b3d3d8b25e",
-    "harbor_task_checksum": "fb4c31125f45e0a4463788cd6302be172d813de8f74fe4d664ccecba98066881",
-    "task_digest": "8a72081a016bf7100eb678e8aab69450d225eea759a40b229e496e84d07b1152",
+    "contract_sha256": "5d39251568ff0bcc994dd4c81fe728afaf6b5f6049a2ded1264efbd45024a697",
+    "harbor_task_checksum": "ffc0eff68eefd78dce930cb81910f1ba2afd4f87b50134974ddc8a656975c332",
+    "task_digest": "c2821f128a35875020bf5b05b99af047c2f22d71b92d818e9bf41f84a7cf2c3f",
     "task_id": "slopbench/feature/event-pagination",
-    "task_version": "1.0.0"
+    "task_version": "1.1.0"
   },
   "trial": {
     "attempt": 1,

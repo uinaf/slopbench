@@ -3,14 +3,14 @@ multi_step_reward_strategy = "final"
 
 [task]
 name = "uinaf/watch-subscription"
-description = "Evolve subscription state transitions through reconnect scheduling"
+description = "Evolve subscription state through bounded, observable reconnect failures"
 
 [[task.authors]]
 name = "uinaf"
 
 [metadata]
 slopbench_task_id = "slopbench/state/watch-subscription"
-slopbench_task_version = "1.0.0"
+slopbench_task_version = "1.1.0"
 
 [[steps]]
 name = "implement"
@@ -21,9 +21,16 @@ env = { SLOPBENCH_PHASE = "implement" }
 
 [[steps]]
 name = "review"
+min_reward = 1.0
 
 [steps.verifier]
 env = { SLOPBENCH_PHASE = "review" }
+
+[[steps]]
+name = "harden"
+
+[steps.verifier]
+env = { SLOPBENCH_PHASE = "harden" }
 
 [agent]
 timeout_sec = 300.0

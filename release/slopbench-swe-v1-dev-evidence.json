@@ -48,7 +48,7 @@
     },
     {
       "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
-      "sha256": "565db69f3ea3909875842e8c89afa727e66098115fcd520bbea9a7fc9edc39e4"
+      "sha256": "ab1d1f4c654e795b67b81663d310c103bd7d268ba8305b4bf61fc30ad946e238"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -56,11 +56,11 @@
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "2af557845771ac8b22b6a98854bb6ea94997918cbff99fecc0ba00084314b586"
+      "sha256": "d98063768e5f8c2ea10a838017525d79d9ff41ec5df1f05433e5683c4ae67f8f"
     },
     {
       "path": "docs/METHODOLOGY.md",
-      "sha256": "0ee383fb2b73055efa98811e9a92ceafaa06a37b56abdd97a9f6fb7f8a67efe8"
+      "sha256": "f8bcd6ad8e90c0062624034834e39082e1c7cf09ae700310f33debeaa4eb1d7f"
     },
     {
       "path": "docs/REPRODUCING.md",
@@ -179,11 +179,11 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "390c62b3734d09fb44e3411ff44d54e3496dcf107862eda22bcc4258b89a1254"
+    "sha256": "561168ebbc0ef944e60777199ba3708ed8589b444b5d16528ac397b31ee32f0a"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",
     "sha256": "ddb808249205741365980be40967e0d7f3ee1e7ec773399f94f83d7d5a567825"
   },
-  "version": "0.1.1"
+  "version": "0.2.0"
 }
