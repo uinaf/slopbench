@@ -171,7 +171,7 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "af2722de24eb0c394516424182192e87db20a73c6c9998cbf8d67c041388c410"
+    "sha256": "390c62b3734d09fb44e3411ff44d54e3496dcf107862eda22bcc4258b89a1254"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",

@@ -50,6 +50,13 @@ def test_type_escape_verifier_rejects_semantic_aliases(verifier: Path) -> None:
     assert find_type_escapes('value: "typing.Any" = 1\n') == ("line 1: typing.Any",)
     assert find_type_escapes("from typing import *\n") == ("line 1: typing.*",)
     assert find_type_escapes("value = 1  # type: ignore[assignment]\n") == ("line 1: type: ignore",)
+    assert find_type_escapes("import typing as t\nvalue = 1  # type: t.Any\n") == (
+        "line 2: typing.Any",
+    )
+    assert find_type_escapes(
+        "import typing_extensions as te\ndef convert(value):  # type: (te.Any) -> int\n"
+        "    return 1\n"
+    ) == ("line 2: typing_extensions.Any",)
 
 
 @pytest.mark.parametrize("verifier", VERIFIERS, ids=lambda path: path.parent.parent.name)

@@ -54,6 +54,17 @@ def _annotation_strings(tree: ast.AST) -> list[tuple[int, str]]:
     ]
 
 
+def _type_comments(tree: ast.AST) -> list[tuple[int, str, str]]:
+    comments: list[tuple[int, str, str]] = []
+    for node in ast.walk(tree):
+        comment = getattr(node, "type_comment", None)
+        if not isinstance(comment, str):
+            continue
+        mode = "func_type" if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) else "eval"
+        comments.append((node.lineno, comment, mode))
+    return comments
+
+
 def _symbol_violations(
     tree: ast.AST,
     module_aliases: dict[str, str],
@@ -99,6 +110,12 @@ def find_type_escapes(source: str) -> tuple[str, ...]:
     for lineno, annotation in _annotation_strings(tree):
         try:
             expression = ast.parse(annotation, mode="eval")
+        except SyntaxError:
+            continue
+        violations.update(_symbol_violations(expression, module_aliases, line_offset=lineno - 1))
+    for lineno, comment, mode in _type_comments(tree):
+        try:
+            expression = ast.parse(comment, mode=mode)
         except SyntaxError:
             continue
         violations.update(_symbol_violations(expression, module_aliases, line_offset=lineno - 1))

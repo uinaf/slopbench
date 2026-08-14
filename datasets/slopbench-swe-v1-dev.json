@@ -359,7 +359,7 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "93f10574f0986c997f6d18e5dfc7419a9eeb22e63b28b461934082378c53db6b",
+      "task_digest": "a188e5cace9a496532b394d2916dc444afb9c36cabbfb79a5d157115ff83b53a",
       "task_id": "slopbench/restraint/config-overrides",
       "task_version": "1.0.1"
     },
@@ -411,7 +411,7 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "29d1a3fd6b4b782bc89ed93d2aa6d9c6c61e76b8fd1e27d4d2a126e906ba9716",
+      "task_digest": "630260546befebbd4529b063cf51655782a25120b47d2a7b02ef77c00332be45",
       "task_id": "slopbench/restraint/header-lookup",
       "task_version": "1.0.1"
     },
