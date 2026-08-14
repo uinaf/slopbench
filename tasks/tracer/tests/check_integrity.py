@@ -8,6 +8,7 @@ from pathlib import Path
 
 EXPECTED = {
     "check_authority.py",
+    "check_grader.py",
     "check_integrity.py",
     "check_network.py",
     "check_receipt.py",

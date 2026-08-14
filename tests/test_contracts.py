@@ -13,7 +13,13 @@ from slopbench.contracts import (
     VerificationEvidence,
     validate_relative_path,
 )
-from tests.helpers import report_payload, result_payload, run_payload, task_payload
+from tests.helpers import (
+    report_payload,
+    result_payload,
+    run_payload,
+    task_payload,
+    verification_payload,
+)
 
 
 def validate(model: type[object], payload: dict[str, object]) -> object:
@@ -196,9 +202,18 @@ def test_agent_configuration_accepts_a_pinned_model() -> None:
     assert manifest.agent.model.harbor_name == "cursor/composer-2.5"
 
 
-def test_agent_configuration_rejects_runner_reserved_environment() -> None:
+@pytest.mark.parametrize(
+    "name",
+    [
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPYCACHEPREFIX",
+        "SLOPBENCH_ATTACK_FIXTURE",
+        "SLOPBENCH_TASK_DIGEST",
+    ],
+)
+def test_agent_configuration_rejects_runner_reserved_environment(name: str) -> None:
     payload = run_payload()
-    payload["agent"]["environment"] = {"SLOPBENCH_TASK_DIGEST": "forged"}
+    payload["agent"]["environment"] = {name: "forged"}
 
     with pytest.raises(ValidationError, match="runner-reserved"):
         validate(RunManifest, payload)
@@ -328,6 +343,14 @@ def test_verification_rejects_duplicate_log_paths() -> None:
     }
 
     with pytest.raises(ValidationError, match="log paths must be unique"):
+        validate(VerificationEvidence, payload)
+
+
+def test_verification_rejects_nested_log_paths() -> None:
+    payload = verification_payload()
+    payload["checks"][0]["log_path"] = "nested/check.txt"
+
+    with pytest.raises(ValidationError, match="direct file"):
         validate(VerificationEvidence, payload)
 
 

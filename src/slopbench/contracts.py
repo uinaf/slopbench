@@ -408,7 +408,12 @@ class AgentConfiguration(ContractModel):
             raise ValueError("model is required for non-utility harnesses")
         if len(self.credential_env) != len(set(self.credential_env)):
             raise ValueError("credential_env values must be unique")
-        reserved = {"SLOPBENCH_TASK_DIGEST", "SLOPBENCH_ATTACK_FIXTURE"}
+        reserved = {
+            "PYTHONDONTWRITEBYTECODE",
+            "PYTHONPYCACHEPREFIX",
+            "SLOPBENCH_ATTACK_FIXTURE",
+            "SLOPBENCH_TASK_DIGEST",
+        }
         if reserved & self.environment.keys():
             raise ValueError("agent.environment contains runner-reserved values")
         tool_names = [tool.name for tool in self.tools]
@@ -536,7 +541,13 @@ class CheckEvidence(ContractModel):
     log_path: str
     log_sha256: Sha256Hex
 
-    _log_path = field_validator("log_path")(validate_relative_path)
+    @field_validator("log_path")
+    @classmethod
+    def direct_log_path(cls, value: str) -> str:
+        value = validate_relative_path(value)
+        if PurePosixPath(value).parent != PurePosixPath("."):
+            raise ValueError("verifier check log must be a direct file")
+        return value
 
 
 class VerificationEvidence(ContractModel):

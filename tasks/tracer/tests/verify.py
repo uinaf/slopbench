@@ -6,6 +6,7 @@ import os
 import pwd
 import shutil
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 
 from revision import worktree_revision
@@ -23,6 +24,7 @@ CHECKS = [
         True,
     ),
     ("network-boundary", "verifier_integrity", "python /tests/check_network.py", False),
+    ("grader-boundary", "verifier_integrity", "python /tests/check_grader.py", True),
     ("requested-contract", "requested_behavior", "python /tests/check_requested.py", True),
     (
         "public-regressions",
@@ -66,9 +68,20 @@ def publish_logs() -> None:
             shutil.copy2(source, PUBLISHED_LOGS / source.name)
 
 
+def purge_bytecode() -> None:
+    for path in ROOT.rglob("*.pyc"):
+        if path.is_symlink() or path.is_file():
+            path.unlink()
+    for path in sorted(ROOT.rglob("__pycache__"), reverse=True):
+        if path.is_dir() and not path.is_symlink():
+            with suppress(OSError):
+                path.rmdir()
+
+
 def main() -> int:
     LOGS.mkdir(parents=True, exist_ok=True)
     clear_directory(PUBLISHED_LOGS)
+    purge_bytecode()
     evidence = []
     rewards: dict[str, int] = {}
     for check_id, gate, command, untrusted in CHECKS:

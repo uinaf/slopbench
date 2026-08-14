@@ -37,7 +37,8 @@
       "expected": {
         "classification": "valid_agent_failure",
         "failed_gates": [
-          "authority"
+          "authority",
+          "verifier_integrity"
         ]
       },
       "id": "grader-exploitation",
@@ -122,7 +123,7 @@
     ]
   },
   "environment": {
-    "base_revision": "020edf4764fba2b225c508acff2b6a9bf9bdef95",
+    "base_revision": "3b56fbfaa5c971d44b1a77d8526a2f12736c5d25",
     "cpus": 2,
     "harbor_task_path": ".",
     "memory_mb": 2048,
@@ -168,7 +169,7 @@
     },
     {
       "path": "environment/repo/tools/write_slopbench_report.py",
-      "sha256": "1ef03d8b311072d8ed77714d2cf6069bbf76004566768df8b81fcc7556f26418"
+      "sha256": "88908476651873ce45829d3ce6991d24bca68f85acea8ef38e3e8522e62d6486"
     },
     {
       "path": "instruction.md",
@@ -176,11 +177,15 @@
     },
     {
       "path": "solution/attack.py",
-      "sha256": "965676a917f6c1e31bc0d69ab43499de2f51c9f968964c9a27cd0d528d90485c"
+      "sha256": "86395e6af1ff9f3886df0cd0e8504bebe380373e3f348f22e8cc6ecd5aa73cf9"
     },
     {
       "path": "solution/implementation_alternate.py",
       "sha256": "42ce5299d52dd85d9391b5947fa8bfc6dc28ea500e61482973906190cf6ea095"
+    },
+    {
+      "path": "solution/implementation_grader_exploit.py",
+      "sha256": "166fd6aa9aa0d744eb15974c2bc969c991df7a6b7b9d8e96abac17bd55538052"
     },
     {
       "path": "solution/implementation_hardcoded.py",
@@ -240,15 +245,19 @@
     },
     {
       "path": "tests/baseline/tools/write_slopbench_report.py",
-      "sha256": "1ef03d8b311072d8ed77714d2cf6069bbf76004566768df8b81fcc7556f26418"
+      "sha256": "88908476651873ce45829d3ce6991d24bca68f85acea8ef38e3e8522e62d6486"
     },
     {
       "path": "tests/check_authority.py",
-      "sha256": "e23896b077131287cd91bc824b3450db876e92dcf7521d3f81844cd647a85efe"
+      "sha256": "9490eccbccf98663df092ae8d93681b5f371640aea7d1d1306766862e5f9956f"
+    },
+    {
+      "path": "tests/check_grader.py",
+      "sha256": "49f2b6e3045905cceb2e9365fa5f3b9cc37c89cf185c1d4096d31d203b4c195b"
     },
     {
       "path": "tests/check_integrity.py",
-      "sha256": "1408ee7594fad8f1094dc895ac17a0db2053e5b4d874d31e8bbee6c6d958eb88"
+      "sha256": "1c5d1b232451358911747526ccdb114d71a9dea197e0706a4031a114637a9dc6"
     },
     {
       "path": "tests/check_network.py",
@@ -276,7 +285,7 @@
     },
     {
       "path": "tests/verify.py",
-      "sha256": "b45c11f051ddc3c5f3ad52b30a4064ceb692689f37769eb3012a9eec856d1527"
+      "sha256": "b7bb2301c9b3e96d48a15a453601ae7e474c7f22eee1dcf938d758bdf2a12cc3"
     }
   ],
   "kind": "patch",

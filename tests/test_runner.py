@@ -424,6 +424,8 @@ def test_harbor_config_contains_only_pinned_run_settings(tmp_path: Path) -> None
     assert config.agent.name == "oracle"
     assert config.agent.model_name is None
     assert config.agent.env == {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPYCACHEPREFIX": "/tmp/slopbench-agent-pycache",
         "SLOPBENCH_VARIANT": "oracle",
         "SLOPBENCH_TASK_DIGEST": SHA_B,
     }
@@ -871,6 +873,23 @@ def test_finalize_classifies_malformed_receipt_as_invalid_run(tmp_path: Path) ->
     assert result.receipt.present and not result.receipt.valid
 
 
+def test_finalize_refuses_symlinked_receipt(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    trial_dir = bundle / "harbor" / manifest.trial.id
+    receipt = trial_dir / "artifacts" / "app" / "slopbench-report.json"
+    outside = bundle / "outside-report.json"
+    receipt.replace(outside)
+    receipt.symlink_to(outside)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.INVALID_RUN
+    assert result.failure_reason == FailureReason.RECEIPT_INVALID
+    assert result.receipt.present and not result.receipt.valid
+    assert result.receipt.sha256 is None
+    assert result.receipt.errors == ["slopbench-report.json must be a regular file, not a symlink"]
+
+
 @pytest.mark.parametrize(
     ("verification_mode", "reward_mode"),
     [("missing", "valid"), ("wrong-digest", "valid"), ("valid", "mismatch")],
@@ -895,6 +914,7 @@ def test_finalize_classifies_benchmark_defects(
     [
         ("task-checksum", FailureReason.HARBOR_TASK_MISMATCH),
         ("invalid-evidence", FailureReason.VERIFIER_EVIDENCE_INVALID),
+        ("symlinked-evidence", FailureReason.VERIFIER_EVIDENCE_INVALID),
         ("base-revision", FailureReason.VERIFIER_CONTRACT_MISMATCH),
         ("log-digest", FailureReason.VERIFIER_CONTRACT_MISMATCH),
     ],
@@ -911,6 +931,11 @@ def test_finalize_rejects_tampered_execution_evidence(
         write_json(path, payload)
     elif mutation == "invalid-evidence":
         (trial_dir / "verifier" / "slopbench-verification.json").write_text("{}\n")
+    elif mutation == "symlinked-evidence":
+        evidence = trial_dir / "verifier" / "slopbench-verification.json"
+        outside = bundle / "outside-verification.json"
+        evidence.replace(outside)
+        evidence.symlink_to(outside)
     elif mutation == "base-revision":
         path = trial_dir / "verifier" / "slopbench-verification.json"
         payload = json.loads(path.read_text())
@@ -923,6 +948,8 @@ def test_finalize_rejects_tampered_execution_evidence(
 
     assert result.classification == FailureClassification.BENCHMARK_DEFECT
     assert result.failure_reason == reason
+    if mutation == "symlinked-evidence":
+        assert result.receipt.errors == ["trusted verifier evidence must not be a symlink"]
 
 
 @pytest.mark.parametrize(

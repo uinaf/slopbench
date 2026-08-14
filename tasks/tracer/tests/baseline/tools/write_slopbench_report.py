@@ -43,12 +43,15 @@ def main() -> int:
         text=True,
     ).stdout.splitlines()
     untracked = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard"],
+        ["git", "ls-files", "--others"],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
     ).stdout.splitlines()
+    untracked = [
+        path for path in untracked if path != "slopbench-report.json" and not path.endswith(".pyc")
+    ]
     authority_passed = set(changed) <= {"src/eventlog.py"} and not untracked
     report = {
         "schema_version": "slopbench.report.v1",
@@ -82,6 +85,7 @@ def main() -> int:
                     "verifier-integrity",
                     "verifier-write-boundary",
                     "network-boundary",
+                    "grader-boundary",
                     "verifier-integrity-final",
                 ],
             },

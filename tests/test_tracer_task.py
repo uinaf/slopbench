@@ -29,7 +29,7 @@ def test_tracer_is_a_valid_sealed_harbor_task() -> None:
     assert task.version == "1.0.0"
     assert task.phase_mode.value == "single"
     assert task.environment.verifier_isolation == "separate"
-    assert len(task.immutable_inputs) == 37
+    assert len(task.immutable_inputs) == 39
 
 
 def test_tracer_manifests_are_bound_to_the_sealed_task() -> None:
@@ -163,9 +163,12 @@ def test_valid_implementations_are_materially_different() -> None:
     assert json.loads((TASK_DIR / "slopbench-task.json").read_text())["immutable_inputs"]
 
 
-def test_receipt_helper_marks_untracked_authority_violation(tmp_path: Path) -> None:
+@pytest.mark.parametrize("relative", ["outside.txt", "__pycache__/hidden.txt"])
+def test_receipt_helper_marks_untracked_authority_violation(tmp_path: Path, relative: str) -> None:
     fixture = initialize_fixture(tmp_path, "oracle")
-    (fixture / "outside.txt").write_text("outside authority\n")
+    outside = fixture / relative
+    outside.parent.mkdir(exist_ok=True)
+    outside.write_text("outside authority\n")
     _, _, task_digest = validate_task(TASK_DIR)
 
     completed = subprocess.run(

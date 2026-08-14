@@ -397,6 +397,8 @@ def _harbor_config(
         ) from exc
     agent_environment = {
         **manifest.agent.environment,
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPYCACHEPREFIX": "/tmp/slopbench-agent-pycache",
         "SLOPBENCH_TASK_DIGEST": task_digest,
     }
     verifier_environment = {
@@ -556,6 +558,17 @@ def _validate_receipt(
     task: TaskContract,
     verification: VerificationEvidence,
 ) -> tuple[ReceiptValidation, AgentReport | None, bool]:
+    if report_path.is_symlink():
+        return (
+            ReceiptValidation(
+                present=True,
+                valid=False,
+                sha256=None,
+                errors=["slopbench-report.json must be a regular file, not a symlink"],
+            ),
+            None,
+            True,
+        )
     if not report_path.is_file():
         return (
             ReceiptValidation(
@@ -833,7 +846,13 @@ def _finalize(
                 verification_path = (
                     trial_dir / "verifier" / PurePosixPath(task.verifier.evidence_path).name
                 )
-                if not verification_path.is_file():
+                if verification_path.is_symlink():
+                    classification = FailureClassification.BENCHMARK_DEFECT
+                    failure_reason = FailureReason.VERIFIER_EVIDENCE_INVALID
+                    receipt = receipt.model_copy(
+                        update={"errors": ["trusted verifier evidence must not be a symlink"]}
+                    )
+                elif not verification_path.is_file():
                     classification = FailureClassification.BENCHMARK_DEFECT
                     failure_reason = FailureReason.VERIFIER_EVIDENCE_MISSING
                     receipt = receipt.model_copy(

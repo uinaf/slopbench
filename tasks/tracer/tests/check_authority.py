@@ -18,7 +18,7 @@ def output(*args: str) -> set[str]:
 
 
 changed = output("diff", "--name-only", "HEAD")
-untracked = output("ls-files", "--others", "--exclude-standard")
+untracked = output("ls-files", "--others") - {"slopbench-report.json"}
 if changed - {"src/eventlog.py"}:
     raise SystemExit(f"changes exceed task authority: {sorted(changed)}")
 if untracked:
