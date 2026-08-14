@@ -1,0 +1,366 @@
+{
+  "$defs": {
+    "CapabilityEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "external_writes": {
+          "const": "none",
+          "default": "none",
+          "title": "External Writes",
+          "type": "string"
+        },
+        "live_credentials": {
+          "const": false,
+          "default": false,
+          "title": "Live Credentials",
+          "type": "boolean"
+        },
+        "network": {
+          "enum": [
+            "none",
+            "model-only",
+            "declared"
+          ],
+          "title": "Network",
+          "type": "string"
+        },
+        "repository": {
+          "enum": [
+            "read-write",
+            "read-only"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "shell": {
+          "title": "Shell",
+          "type": "boolean"
+        },
+        "tests": {
+          "title": "Tests",
+          "type": "boolean"
+        },
+        "tools": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "repository",
+        "shell",
+        "tests",
+        "network"
+      ],
+      "title": "CapabilityEnvelope",
+      "type": "object"
+    },
+    "EnvironmentContract": {
+      "additionalProperties": false,
+      "properties": {
+        "cpus": {
+          "minimum": 1,
+          "title": "Cpus",
+          "type": "integer"
+        },
+        "harbor_task_path": {
+          "default": ".",
+          "title": "Harbor Task Path",
+          "type": "string"
+        },
+        "memory_mb": {
+          "minimum": 128,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "storage_mb": {
+          "minimum": 256,
+          "title": "Storage Mb",
+          "type": "integer"
+        },
+        "verifier_isolation": {
+          "enum": [
+            "shared",
+            "separate"
+          ],
+          "title": "Verifier Isolation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifier_isolation",
+        "cpus",
+        "memory_mb",
+        "storage_mb"
+      ],
+      "title": "EnvironmentContract",
+      "type": "object"
+    },
+    "FileDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "FileDigest",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "LicenseContract": {
+      "additionalProperties": false,
+      "properties": {
+        "holder": {
+          "title": "Holder",
+          "type": "string"
+        },
+        "spdx": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$",
+          "title": "Spdx",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spdx",
+        "holder"
+      ],
+      "title": "LicenseContract",
+      "type": "object"
+    },
+    "PhaseContract": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "const": "fresh",
+          "default": "fresh",
+          "title": "Context",
+          "type": "string"
+        },
+        "instruction_path": {
+          "title": "Instruction Path",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "instruction_path"
+      ],
+      "title": "PhaseContract",
+      "type": "object"
+    },
+    "PhaseMode": {
+      "enum": [
+        "single",
+        "sequential"
+      ],
+      "title": "PhaseMode",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_assistance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ai Assistance"
+        },
+        "origin": {
+          "enum": [
+            "slopbench-authored",
+            "public-upstream",
+            "transformed-private"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Revision"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "transformed": {
+          "default": false,
+          "title": "Transformed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "TaskKind": {
+      "enum": [
+        "patch",
+        "review"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "VerifierContract": {
+      "additionalProperties": false,
+      "properties": {
+        "entrypoint": {
+          "title": "Entrypoint",
+          "type": "string"
+        },
+        "evidence_path": {
+          "title": "Evidence Path",
+          "type": "string"
+        },
+        "kind": {
+          "const": "deterministic",
+          "default": "deterministic",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reward_path": {
+          "title": "Reward Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entrypoint",
+        "evidence_path",
+        "reward_path"
+      ],
+      "title": "VerifierContract",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "applicable_gates": {
+      "items": {
+        "$ref": "#/$defs/GateName"
+      },
+      "minItems": 1,
+      "title": "Applicable Gates",
+      "type": "array"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/CapabilityEnvelope"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentContract"
+    },
+    "immutable_inputs": {
+      "items": {
+        "$ref": "#/$defs/FileDigest"
+      },
+      "title": "Immutable Inputs",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/TaskKind"
+    },
+    "license": {
+      "$ref": "#/$defs/LicenseContract"
+    },
+    "phase_mode": {
+      "$ref": "#/$defs/PhaseMode"
+    },
+    "phases": {
+      "items": {
+        "$ref": "#/$defs/PhaseContract"
+      },
+      "minItems": 1,
+      "title": "Phases",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "schema_version": {
+      "const": "slopbench.task.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "verifier": {
+      "$ref": "#/$defs/VerifierContract"
+    },
+    "version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "version",
+    "kind",
+    "phase_mode",
+    "phases",
+    "environment",
+    "verifier",
+    "capabilities",
+    "applicable_gates",
+    "provenance",
+    "license"
+  ],
+  "title": "TaskContract",
+  "type": "object"
+}

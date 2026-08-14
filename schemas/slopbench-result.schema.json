@@ -1,0 +1,366 @@
+{
+  "$defs": {
+    "ArtifactDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactDigest",
+      "type": "object"
+    },
+    "FailureClassification": {
+      "enum": [
+        "valid_pass",
+        "valid_agent_failure",
+        "benchmark_defect",
+        "infrastructure_failure",
+        "invalid_run"
+      ],
+      "title": "FailureClassification",
+      "type": "string"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "GateOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "check_ids": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "title": "Check Ids",
+          "type": "array"
+        },
+        "gate": {
+          "$ref": "#/$defs/GateName"
+        },
+        "status": {
+          "$ref": "#/$defs/OutcomeStatus"
+        }
+      },
+      "required": [
+        "gate",
+        "status",
+        "check_ids"
+      ],
+      "title": "GateOutcome",
+      "type": "object"
+    },
+    "HarborEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Config Sha256"
+        },
+        "result_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result Sha256"
+        },
+        "task_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Task Checksum"
+        },
+        "trajectory_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Trajectory Sha256"
+        },
+        "version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "task_checksum",
+        "result_sha256",
+        "config_sha256",
+        "trajectory_sha256"
+      ],
+      "title": "HarborEvidence",
+      "type": "object"
+    },
+    "OutcomeStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_applicable"
+      ],
+      "title": "OutcomeStatus",
+      "type": "string"
+    },
+    "ReceiptValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "present": {
+          "title": "Present",
+          "type": "boolean"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sha256"
+        },
+        "valid": {
+          "title": "Valid",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "present",
+        "valid",
+        "sha256",
+        "errors"
+      ],
+      "title": "ReceiptValidation",
+      "type": "object"
+    },
+    "TimingMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finished At"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Started At"
+        }
+      },
+      "required": [
+        "started_at",
+        "finished_at"
+      ],
+      "title": "TimingMetrics",
+      "type": "object"
+    },
+    "UsageMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "cache_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Tokens"
+        },
+        "cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Usd"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        }
+      },
+      "title": "UsageMetrics",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactDigest"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "classification": {
+      "$ref": "#/$defs/FailureClassification"
+    },
+    "completed": {
+      "title": "Completed",
+      "type": "boolean"
+    },
+    "harbor": {
+      "$ref": "#/$defs/HarborEvidence"
+    },
+    "outcomes": {
+      "items": {
+        "$ref": "#/$defs/GateOutcome"
+      },
+      "title": "Outcomes",
+      "type": "array"
+    },
+    "receipt": {
+      "$ref": "#/$defs/ReceiptValidation"
+    },
+    "run_id": {
+      "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "run_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Run Manifest Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.result.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Task Digest",
+      "type": "string"
+    },
+    "timing": {
+      "$ref": "#/$defs/TimingMetrics"
+    },
+    "usage": {
+      "$ref": "#/$defs/UsageMetrics"
+    }
+  },
+  "required": [
+    "schema_version",
+    "run_id",
+    "task_digest",
+    "run_manifest_sha256",
+    "classification",
+    "completed",
+    "outcomes",
+    "receipt",
+    "usage",
+    "timing",
+    "harbor",
+    "artifacts"
+  ],
+  "title": "ResultBundle",
+  "type": "object"
+}

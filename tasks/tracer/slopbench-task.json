@@ -1,0 +1,197 @@
+{
+  "applicable_gates": [
+    "requested_behavior",
+    "regressions",
+    "build_and_types",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "capabilities": {
+    "external_writes": "none",
+    "live_credentials": false,
+    "network": "model-only",
+    "repository": "read-write",
+    "shell": true,
+    "tests": true,
+    "tools": [
+      "git",
+      "python",
+      "shell"
+    ]
+  },
+  "environment": {
+    "cpus": 2,
+    "harbor_task_path": ".",
+    "memory_mb": 2048,
+    "storage_mb": 4096,
+    "verifier_isolation": "separate"
+  },
+  "immutable_inputs": [
+    {
+      "path": "environment/Dockerfile",
+      "sha256": "4f8fbfc86b144178db63cc2e989cf3d8d5dc58f0c22dfdfe7755e444bc6e6d5b"
+    },
+    {
+      "path": "environment/repo/.gitignore",
+      "sha256": "45794f547435f24c405207ce868982d4ace2fdc12bba06189ec2ea17f8ced076"
+    },
+    {
+      "path": "environment/repo/AGENTS.md",
+      "sha256": "f66f93745d12c7c6e4ca42be33af09620e8a7f99f6945b5ed052d0203f48dc5a"
+    },
+    {
+      "path": "environment/repo/README.md",
+      "sha256": "dc463183fdabeeeb8f9da0b3b74ee2762e75dd21ab24b3f0efe79e05d4c1e550"
+    },
+    {
+      "path": "environment/repo/pyproject.toml",
+      "sha256": "14a73c8fb592ebeccbd645bbf59b9eb8bdcc7d706b11491f9fb8018801d7530c"
+    },
+    {
+      "path": "environment/repo/src/eventlog.py",
+      "sha256": "5403b8e6407309e74e25428f2001909fd5052d652e5e6485d2eb64b8a09a8e09"
+    },
+    {
+      "path": "environment/repo/tests/__init__.py",
+      "sha256": "30854392ccae4c2c51c2643f46010f2800d49d2341898d50c112f24e45f38380"
+    },
+    {
+      "path": "environment/repo/tests/test_eventlog.py",
+      "sha256": "c3b5eb5ea0253817428f743c2c2af80fc2487a4862f0a03a8f0b8e4629082a62"
+    },
+    {
+      "path": "environment/repo/tools/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "environment/repo/tools/write_slopbench_report.py",
+      "sha256": "b5723648547f2ebcac2d2ff195281ceb860d3d57c68d21a34d8334d0d70ad9ce"
+    },
+    {
+      "path": "instruction.md",
+      "sha256": "33d1c57d934fe83f07f29ceb91e5e07c9d7e30b606eb9850b48c2536300080a9"
+    },
+    {
+      "path": "solution/implementation_alternate.py",
+      "sha256": "42ce5299d52dd85d9391b5947fa8bfc6dc28ea500e61482973906190cf6ea095"
+    },
+    {
+      "path": "solution/implementation_invalid.py",
+      "sha256": "24da352889a0b4f7c1fec6a82778630de1d59e53ac60a743888c2d72de69fb45"
+    },
+    {
+      "path": "solution/implementation_oracle.py",
+      "sha256": "012c1c6010078b8d8852490eec1e987ae517e25f2e1474407e405de62ce3b263"
+    },
+    {
+      "path": "solution/solve.sh",
+      "sha256": "45b1259ec3270717e7667fa5753ef4d670242da41f81881e3c1d2730e6e3d83f"
+    },
+    {
+      "path": "task.toml",
+      "sha256": "a21bc813722198f9c24db221e37ceae7eb7f111d84703a61612b574aae555b3f"
+    },
+    {
+      "path": "tests/Dockerfile",
+      "sha256": "c26ddf5c7b3181b989287d2c313e5fe4a90eaea98d225151e9be819c77e0ac0e"
+    },
+    {
+      "path": "tests/baseline/.gitignore",
+      "sha256": "45794f547435f24c405207ce868982d4ace2fdc12bba06189ec2ea17f8ced076"
+    },
+    {
+      "path": "tests/baseline/AGENTS.md",
+      "sha256": "f66f93745d12c7c6e4ca42be33af09620e8a7f99f6945b5ed052d0203f48dc5a"
+    },
+    {
+      "path": "tests/baseline/README.md",
+      "sha256": "dc463183fdabeeeb8f9da0b3b74ee2762e75dd21ab24b3f0efe79e05d4c1e550"
+    },
+    {
+      "path": "tests/baseline/pyproject.toml",
+      "sha256": "14a73c8fb592ebeccbd645bbf59b9eb8bdcc7d706b11491f9fb8018801d7530c"
+    },
+    {
+      "path": "tests/baseline/src/eventlog.py",
+      "sha256": "5403b8e6407309e74e25428f2001909fd5052d652e5e6485d2eb64b8a09a8e09"
+    },
+    {
+      "path": "tests/baseline/tests/__init__.py",
+      "sha256": "30854392ccae4c2c51c2643f46010f2800d49d2341898d50c112f24e45f38380"
+    },
+    {
+      "path": "tests/baseline/tests/test_eventlog.py",
+      "sha256": "c3b5eb5ea0253817428f743c2c2af80fc2487a4862f0a03a8f0b8e4629082a62"
+    },
+    {
+      "path": "tests/baseline/tools/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "tests/baseline/tools/write_slopbench_report.py",
+      "sha256": "b5723648547f2ebcac2d2ff195281ceb860d3d57c68d21a34d8334d0d70ad9ce"
+    },
+    {
+      "path": "tests/check_authority.py",
+      "sha256": "e23896b077131287cd91bc824b3450db876e92dcf7521d3f81844cd647a85efe"
+    },
+    {
+      "path": "tests/check_integrity.py",
+      "sha256": "0759ee6903a4e129010ab56dcdca5280108307d4dd51408a7090aa406b8b1ad0"
+    },
+    {
+      "path": "tests/check_receipt.py",
+      "sha256": "5f7050079e9054bfa51e0b66656619b5c12579317165f3be3cd8ddcc8a7d1a9a"
+    },
+    {
+      "path": "tests/check_requested.py",
+      "sha256": "c9886ce429d3b6c75a34d1cb779c8b6d37567424b5a40f5e94a3f639a0c60ca4"
+    },
+    {
+      "path": "tests/check_write_boundary.py",
+      "sha256": "0a3e851d39103d169b435638f9b8ad2a370f5a0e55518f408cb893a39bdc12f5"
+    },
+    {
+      "path": "tests/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "tests/test.sh",
+      "sha256": "15b70256fdbf8b2f3689c8be5f5cc9b9c79b65c65f3a3a6f76c6aaeb70ea5386"
+    },
+    {
+      "path": "tests/verify.py",
+      "sha256": "1586736b679eca07d2875ee2bb15cb312997b3d0dc5b6f426fc6c924fa4f6f03"
+    }
+  ],
+  "kind": "patch",
+  "license": {
+    "holder": "uinaf contributors",
+    "spdx": "MIT"
+  },
+  "phase_mode": "single",
+  "phases": [
+    {
+      "context": "fresh",
+      "instruction_path": "instruction.md",
+      "name": "implement"
+    }
+  ],
+  "provenance": {
+    "ai_assistance": "OpenAI Codex assisted implementation and review.",
+    "origin": "slopbench-authored",
+    "source_revision": null,
+    "source_url": null,
+    "transformed": false
+  },
+  "schema_version": "slopbench.task.v1",
+  "task_id": "slopbench/tracer/event-summary",
+  "verifier": {
+    "entrypoint": "tests/test.sh",
+    "evidence_path": "/logs/verifier/slopbench-verification.json",
+    "kind": "deterministic",
+    "reward_path": "/logs/verifier/reward.json"
+  },
+  "version": "1.0.0"
+}

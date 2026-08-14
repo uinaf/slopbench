@@ -1,0 +1,50 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {},
+    "harness": "nop",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "task",
+        "path": "tasks/tracer/instruction.md",
+        "sha256": "33d1c57d934fe83f07f29ceb91e5e07c9d7e30b606eb9850b48c2536300080a9"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": []
+  },
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "run_id": "tracer-nop",
+  "runtime": {
+    "cpus": 2,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-slim-bookworm@sha256:00faa2debb87529f9f0764e9491d8ba400a3678976616c3bd7cb193745ac20d1",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 2048,
+    "storage_mb": 4096
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/tracer/slopbench-task.json",
+    "contract_sha256": "2a0b9152bfb5867a91d6e61bc2e3895b51bbf29d6f43154e747b1d83892b5b96",
+    "task_digest": "74b858ad94ea65d07ea02d311cbebadca0b4636a33ad5c1e97415139ece34284",
+    "task_id": "slopbench/tracer/event-summary",
+    "task_version": "1.0.0"
+  },
+  "trial": {"attempt": 1, "id": "tracer-nop", "seed": 1}
+}

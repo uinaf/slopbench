@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "gate": {
+          "$ref": "#/$defs/GateName"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        }
+      },
+      "required": [
+        "gate",
+        "status",
+        "evidence_ids"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "ClaimStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "uncertain"
+      ],
+      "title": "ClaimStatus",
+      "type": "string"
+    },
+    "CommandClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "command",
+        "exit_code"
+      ],
+      "title": "CommandClaim",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "requested_behavior",
+        "regressions",
+        "build_and_types",
+        "authority",
+        "verifier_integrity",
+        "safety_type_escapes",
+        "evidence_receipt"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "Uncertainty": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "detail"
+      ],
+      "title": "Uncertainty",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "commands": {
+      "items": {
+        "$ref": "#/$defs/CommandClaim"
+      },
+      "title": "Commands",
+      "type": "array"
+    },
+    "final_revision": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Final Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "slopbench.report.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "uncertainty": {
+      "items": {
+        "$ref": "#/$defs/Uncertainty"
+      },
+      "title": "Uncertainty",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "claims",
+    "commands",
+    "uncertainty",
+    "final_revision"
+  ],
+  "title": "AgentReport",
+  "type": "object"
+}

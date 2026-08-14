@@ -1,0 +1,50 @@
+{
+  "schema_version": "slopbench.run.v1",
+  "run_id": "tracer-oracle",
+  "task": {
+    "contract_path": "tasks/tracer/slopbench-task.json",
+    "contract_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "task_id": "slopbench/tracer/example",
+    "task_version": "1.0.0"
+  },
+  "agent": {
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "model": null,
+    "effort_tier": "not-applicable",
+    "settings": {},
+    "environment": {"SLOPBENCH_VARIANT": "oracle"},
+    "tools": [{"name": "python", "version": "3.13.15", "settings": {}}],
+    "instruction_layers": [
+      {
+        "name": "task",
+        "path": "tasks/tracer/instruction.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "credential_env": []
+  },
+  "runtime": {
+    "harbor_version": "0.16.1",
+    "environment_provider": "docker",
+    "environment_provider_version": "29.7.2",
+    "images": [
+      {
+        "role": "fixture-base",
+        "reference": "python:3.13@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    ],
+    "cpus": 2,
+    "memory_mb": 2048,
+    "storage_mb": 4096
+  },
+  "limits": {
+    "agent_timeout_sec": 300,
+    "agent_setup_timeout_sec": 300,
+    "verifier_timeout_sec": 120,
+    "max_tokens": null,
+    "max_cost_usd": 0.0
+  },
+  "trial": {"id": "tracer-oracle", "attempt": 1, "seed": 7}
+}

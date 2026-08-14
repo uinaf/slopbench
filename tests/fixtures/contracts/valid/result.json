@@ -1,0 +1,38 @@
+{
+  "schema_version": "slopbench.result.v1",
+  "run_id": "tracer-oracle",
+  "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "run_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "classification": "valid_pass",
+  "completed": true,
+  "outcomes": [
+    {"gate": "requested_behavior", "status": "passed", "check_ids": []},
+    {"gate": "regressions", "status": "passed", "check_ids": []},
+    {"gate": "build_and_types", "status": "passed", "check_ids": []},
+    {"gate": "authority", "status": "passed", "check_ids": []},
+    {"gate": "verifier_integrity", "status": "passed", "check_ids": []},
+    {"gate": "safety_type_escapes", "status": "not_applicable", "check_ids": []},
+    {"gate": "evidence_receipt", "status": "passed", "check_ids": []}
+  ],
+  "receipt": {
+    "present": true,
+    "valid": true,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "errors": []
+  },
+  "usage": {
+    "input_tokens": null,
+    "cache_tokens": null,
+    "output_tokens": null,
+    "cost_usd": null
+  },
+  "timing": {"started_at": null, "finished_at": null, "duration_seconds": null},
+  "harbor": {
+    "version": "0.16.1",
+    "task_checksum": "checksum",
+    "result_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "trajectory_sha256": null
+  },
+  "artifacts": []
+}
