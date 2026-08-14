@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from slopbench import calibration
 from slopbench.calibration import (
@@ -24,6 +24,7 @@ from slopbench.calibration import (
     ReferenceComparisonRecord,
     RegressionFlag,
     RegressionKind,
+    RegressionReport,
     ReleaseAudit,
     ReleaseEvidenceManifest,
     ReleaseGate,
@@ -80,6 +81,18 @@ from tests.test_release import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_PATH = ROOT / "release" / "slopbench-swe-v1-dev-evidence.json"
+
+VERSIONED_CALIBRATION_MODELS: list[type[BaseModel]] = [
+    ReleaseEvidenceManifest,
+    ReleaseReadinessReport,
+    RegressionReport,
+]
+
+
+@pytest.mark.parametrize("model", VERSIONED_CALIBRATION_MODELS)
+def test_calibration_schema_version_is_required(model: type[BaseModel]) -> None:
+    assert model.model_fields["schema_version"].is_required()
+    assert "schema_version" in model.model_json_schema()["required"]
 
 
 def candidate_evidence() -> ReleaseEvidenceManifest:
@@ -681,6 +694,7 @@ def comparison_fixture(
     result_path = fixture["result_path"]
     statement = build_attestation_statement(evaluation_path, result_path)
     attestation = ReferenceAttestation(
+        schema_version="slopbench.attestation.v1",
         statement=statement,
         signature=SshSignature(
             signer="maintainer@example.test",
@@ -692,6 +706,7 @@ def comparison_fixture(
     allowed_signers_path = tmp_path / "allowed_signers"
     allowed_signers_path.write_text("maintainer@example.test ssh-ed25519 AAAAfixture\n")
     verification = ReferenceVerification(
+        schema_version="slopbench.reference-verification.v1",
         signer="maintainer@example.test",
         attestation_sha256=sha256_file(attestation_path),
         statement_sha256=digest("statement"),

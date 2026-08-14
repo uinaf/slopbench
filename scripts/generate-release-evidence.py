@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from slopbench.calibration import (
+    RELEASE_EVIDENCE_SCHEMA_VERSION,
     BoundDocument,
     CommonHarnessDecision,
     CommonHarnessDisposition,
@@ -33,6 +34,7 @@ def main() -> int:
     ]
 
     manifest = ReleaseEvidenceManifest(
+        schema_version=RELEASE_EVIDENCE_SCHEMA_VERSION,
         release_id="slopbench-swe-v1-dev",
         version="0.1.0",
         stage=ReleaseStage.PROVISIONAL,

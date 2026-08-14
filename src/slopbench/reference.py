@@ -9,6 +9,7 @@ from pathlib import Path
 from harbor.models.task.task import Task as HarborTask
 
 from slopbench.contracts import (
+    RUN_SCHEMA_VERSION,
     AgentConfiguration,
     ImagePin,
     InstructionLayer,
@@ -80,6 +81,7 @@ def build_reference_run(
     if configuration.adapter.version != harbor_version:
         raise ContractError("reference adapter version does not match installed Harbor")
     return RunManifest(
+        schema_version=RUN_SCHEMA_VERSION,
         run_id=run_id,
         task=TaskBinding(
             contract_path=f"{task_path}/slopbench-task.json",

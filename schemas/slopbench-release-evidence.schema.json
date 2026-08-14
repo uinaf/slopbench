@@ -460,7 +460,6 @@
     },
     "schema_version": {
       "const": "slopbench.release-evidence.v1",
-      "default": "slopbench.release-evidence.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -480,6 +479,7 @@
     }
   },
   "required": [
+    "schema_version",
     "release_id",
     "version",
     "stage",

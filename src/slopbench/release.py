@@ -232,9 +232,7 @@ class ProfileDefinition(ContractModel):
 
 
 class ReferenceConfiguration(ContractModel):
-    schema_version: Literal["slopbench.reference-configuration.v1"] = (
-        REFERENCE_CONFIGURATION_SCHEMA_VERSION
-    )
+    schema_version: Literal["slopbench.reference-configuration.v1"]
     configuration_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
     version: Version
     harness: ComponentPin

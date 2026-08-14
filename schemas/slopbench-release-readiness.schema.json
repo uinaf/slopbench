@@ -247,7 +247,6 @@
     },
     "schema_version": {
       "const": "slopbench.release-readiness.v1",
-      "default": "slopbench.release-readiness.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -268,6 +267,7 @@
     }
   },
   "required": [
+    "schema_version",
     "release_id",
     "version",
     "stage",

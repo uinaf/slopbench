@@ -182,7 +182,6 @@
         },
         "schema_version": {
           "const": "slopbench.reference-configuration.v1",
-          "default": "slopbench.reference-configuration.v1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -214,6 +213,7 @@
         }
       },
       "required": [
+        "schema_version",
         "configuration_id",
         "version",
         "harness",

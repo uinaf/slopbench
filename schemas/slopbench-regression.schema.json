@@ -111,7 +111,6 @@
         },
         "schema_version": {
           "const": "slopbench.reference-configuration.v1",
-          "default": "slopbench.reference-configuration.v1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -143,6 +142,7 @@
         }
       },
       "required": [
+        "schema_version",
         "configuration_id",
         "version",
         "harness",
@@ -300,7 +300,6 @@
     },
     "schema_version": {
       "const": "slopbench.regression.v1",
-      "default": "slopbench.regression.v1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -309,6 +308,7 @@
     }
   },
   "required": [
+    "schema_version",
     "before_result_sha256",
     "after_result_sha256",
     "task_set",

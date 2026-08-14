@@ -12,6 +12,7 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -77,9 +78,9 @@ def _reject_sensitive_values(value: JsonValue, location: str = "settings") -> No
             _reject_sensitive_values(child, f"{location}[{index}]")
 
 
-def validate_network_hosts(value: list[str]) -> list[str]:
+def validate_network_hosts(value: list[str], info: ValidationInfo) -> list[str]:
     if len(value) != len(set(value)):
-        raise ValueError("network_allowed_hosts must be unique")
+        raise ValueError(f"{info.field_name} must be unique")
     for host in value:
         candidate = host[2:] if host.startswith("*.") else host
         if (
@@ -234,8 +235,8 @@ class CapabilityEnvelope(ContractModel):
 
     @field_validator("network_allowed_hosts")
     @classmethod
-    def valid_network_hosts(cls, value: list[str]) -> list[str]:
-        return validate_network_hosts(value)
+    def valid_network_hosts(cls, value: list[str], info: ValidationInfo) -> list[str]:
+        return validate_network_hosts(value, info)
 
     @model_validator(mode="after")
     def validate_network(self) -> Self:

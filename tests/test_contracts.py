@@ -431,6 +431,16 @@ def test_run_manifest_rejects_secret_material(location: str) -> None:
     [
         ("credential_env", ["CURSOR_API_KEY", "CURSOR_API_KEY"], "must be unique"),
         (
+            "setup_network_allowed_hosts",
+            ["cursor.com", "cursor.com"],
+            "setup_network_allowed_hosts must be unique",
+        ),
+        (
+            "network_allowed_hosts",
+            ["cursor.com", "cursor.com"],
+            "network_allowed_hosts must be unique",
+        ),
+        (
             "tools",
             [
                 {"name": "python", "version": "1", "settings": {}},

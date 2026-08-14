@@ -279,7 +279,7 @@ class CrossVersionClaim(ContractModel):
 
 
 class ReleaseEvidenceManifest(ContractModel):
-    schema_version: Literal["slopbench.release-evidence.v1"] = RELEASE_EVIDENCE_SCHEMA_VERSION
+    schema_version: Literal["slopbench.release-evidence.v1"]
     release_id: Identifier
     version: Version
     stage: ReleaseStage
@@ -347,7 +347,7 @@ class GateAssessment(ContractModel):
 
 
 class ReleaseReadinessReport(ContractModel):
-    schema_version: Literal["slopbench.release-readiness.v1"] = RELEASE_READINESS_SCHEMA_VERSION
+    schema_version: Literal["slopbench.release-readiness.v1"]
     release_id: Identifier
     version: Version
     stage: ReleaseStage
@@ -396,7 +396,7 @@ class RegressionFlag(ContractModel):
 
 
 class RegressionReport(ContractModel):
-    schema_version: Literal["slopbench.regression.v1"] = REGRESSION_SCHEMA_VERSION
+    schema_version: Literal["slopbench.regression.v1"]
     before_result_sha256: Sha256Hex
     after_result_sha256: Sha256Hex
     task_set: VersionBinding
@@ -808,6 +808,7 @@ def audit_release(
     if evidence.stage == ReleaseStage.STABLE and blockers:
         raise ContractError(f"stable release is blocked by: {[gate.value for gate in blockers]}")
     return ReleaseReadinessReport(
+        schema_version=RELEASE_READINESS_SCHEMA_VERSION,
         release_id=evidence.release_id,
         version=evidence.version,
         stage=evidence.stage,
@@ -931,6 +932,7 @@ def build_regression_report(
                     )
                 )
     return RegressionReport(
+        schema_version=REGRESSION_SCHEMA_VERSION,
         before_result_sha256=before_result_sha256,
         after_result_sha256=after_result_sha256,
         task_set=before.task_set,

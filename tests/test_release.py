@@ -94,6 +94,7 @@ VERSIONED_LIFECYCLE_MODELS: list[type[BaseModel]] = [
     RetirementManifest,
     AttestationStatement,
     ReferenceAttestation,
+    ReferenceConfiguration,
     ReferenceVerification,
 ]
 
@@ -139,6 +140,7 @@ def one_task_set(
 def reference_configuration() -> ReferenceConfiguration:
     manifest = parse_json(RunManifest, run_payload())
     return ReferenceConfiguration(
+        schema_version="slopbench.reference-configuration.v1",
         configuration_id="oracle-reference",
         version="0.1.0",
         harness=ComponentPin(name=manifest.agent.harness, version=manifest.agent.harness_version),

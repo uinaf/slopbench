@@ -72,83 +72,83 @@
     },
     {
       "path": "schemas/slopbench-attestation-statement.schema.json",
-      "sha256": "2b7dacb8be0de915df239dcc00fa35260d1a1761bd9a4a6359d2f0c6c0c6d07d"
+      "sha256": "e61c2aa9c245c55834e8ecbcd9c80093bf61418288038299280675ac37646e9b"
     },
     {
       "path": "schemas/slopbench-attestation.schema.json",
-      "sha256": "6241bbfbc999efbaa12c90fbaff1b8ccae1ac30cc88148db9c5f4b4c95f5044c"
+      "sha256": "8ec21b1dc350021ff12abf2a18c47e9af8ecf4ceb2bdc1a9fd70e2ed3894e0d5"
     },
     {
       "path": "schemas/slopbench-bridge.schema.json",
-      "sha256": "ab0165fbec5f1d2186cd2e5b4b002b7b86e32a6b75d3bf7a086623822205b640"
+      "sha256": "974d46d13d62f1ca64140c3eb667537e1a1509c56e82ae4f83d39ebde060b306"
     },
     {
       "path": "schemas/slopbench-disclosure.schema.json",
-      "sha256": "b242673b2ee4b550d7ca22c2b76a29e8fcb9cb82efff3e51767486ec0d166bc8"
+      "sha256": "861a7634dcffb0190540b82b1c0e286be1ffbb416af3c522490f1ea14624c4d2"
     },
     {
       "path": "schemas/slopbench-evaluation-result.schema.json",
-      "sha256": "89d143e5ddc77b408a8a428e47a266c57578278b87e037d581c5e45b1c51a35f"
+      "sha256": "6835ddd2af71c85cfe5a734cdb84a91302ce86d2947c0bef7e4e52a54801f0db"
     },
     {
       "path": "schemas/slopbench-evaluation.schema.json",
-      "sha256": "e7b5a2f7978eaae2ae9ba140a2fd073ac57926046262bd685e5141ea3731ca20"
+      "sha256": "f09d5948d62fbb0a89d16c3e653d725cc8ba698daf77ee6486b0124ee91085b7"
     },
     {
       "path": "schemas/slopbench-profile.schema.json",
-      "sha256": "9f053f6731b125634490f9a9dc09dd68394afb366114d9a1b8918e956d475e84"
+      "sha256": "711fc948b6ae918074efc8d37dece68d1df5ce4574b45a0f578d82348fbbbb7b"
     },
     {
       "path": "schemas/slopbench-reference-configuration.schema.json",
-      "sha256": "cabb566e94ee4a3b7d222d43fee346f1b155d386debf6f143eaa7a60a4566284"
+      "sha256": "3ff68fc4af4c2db6284cf8d04aac67e71908bd00223c0f7607d59dbee6ed7eca"
     },
     {
       "path": "schemas/slopbench-reference-verification.schema.json",
-      "sha256": "10b36676aba670e54e13af1363d64c28498abf3c4e355e77f934e3ce6ccdb452"
+      "sha256": "b94a6ccd61b85ded1db50eeffd7c7ea1e7140acc63cab01cced934ebc345a678"
     },
     {
       "path": "schemas/slopbench-regression.schema.json",
-      "sha256": "e16fdd923f03272b61a88a3390977a5f4314ce17dfd813dc9586d12f6702aefe"
+      "sha256": "bc7eda46c69a495236a9bb89c2088785ba82a7172e26a61428a89a38bd96087d"
     },
     {
       "path": "schemas/slopbench-release-evidence.schema.json",
-      "sha256": "37b3ae63f2fb95a9e96f0aea542ed7e5549fc1ea64f6f49208622422da0bfbd4"
+      "sha256": "09f1f5e2e68e96c083c11fa63bb490addc4bd34a0e460ccccbc0821b1eee7603"
     },
     {
       "path": "schemas/slopbench-release-readiness.schema.json",
-      "sha256": "d4a38a1779c47618491c47bd2ed066e03c09191a3885149645d4ecbfabea1dcf"
+      "sha256": "4ee6a9167a741196241c56b4534c1548e23453f8a22ddc337b74eca6471b58b2"
     },
     {
       "path": "schemas/slopbench-report.schema.json",
-      "sha256": "9b2a64c8d4bc60e3176fd4deb5f89c91139207d29feb18cf765a3ed74ebfb491"
+      "sha256": "3ca9e0822e4b1e9065e981543b6d1c9133216a898840dab23bea1b00c89a29a8"
     },
     {
       "path": "schemas/slopbench-result.schema.json",
-      "sha256": "33d31047734caf26c2c03d4541357ec4cb49daee6bf28e0a1f573e3cda699f31"
+      "sha256": "2b9325e9456a15aac91a7820907ae0199c64dd0489c23cfdcdf17c01bbd84b37"
     },
     {
       "path": "schemas/slopbench-retirement.schema.json",
-      "sha256": "9f4f35f48727e0169103425f59fe54daf37daa8c41635960a646b859ac924356"
+      "sha256": "4f920cdf7f86a99c0d11e0c92b67745360a7aea32e23e846308efcc1588bf3c3"
     },
     {
       "path": "schemas/slopbench-review.schema.json",
-      "sha256": "508cf55f7c4270288edb56d12b4b3efd25013774aa61676351f1aaa8f2722a82"
+      "sha256": "70f8e91d60c3bf49975b1eea31a91378bfebd1b01dc6229495e6d846cb7fc62b"
     },
     {
       "path": "schemas/slopbench-run.schema.json",
-      "sha256": "1b2e3f0ef03ecdbaffce6473d8901ac57f166f15ef1f09fe1a57831f26ce9570"
+      "sha256": "a25994422f9a349237e88aaa1d75704c92484be590d8b21872cc9a3fbdc1f4fb"
     },
     {
       "path": "schemas/slopbench-task-set.schema.json",
-      "sha256": "1ba33826802e9bbfbc059415b284c36aabed0e8f4cadb1a3ed09086cc5964899"
+      "sha256": "046393a61218ae9cceb15fb6747997cbdfa4f408fea4c17e41ccd16ebcd23694"
     },
     {
       "path": "schemas/slopbench-task.schema.json",
-      "sha256": "6b6f2500be62705c3ead0b7fc8d5f6a8b9419431998e2b1fad01d110bb22fbc3"
+      "sha256": "d1ead8af4a78a473e25201bfda0dc907a5a86b0c8568d7c74383a1209eeba182"
     },
     {
       "path": "schemas/slopbench-verification.schema.json",
-      "sha256": "77bdbb178884dc34f98e793da915959e6399a3166416def9ba184139ff6aa9fb"
+      "sha256": "4bcd99ca573455f1a44be4ae3ca0e4df69b0e0bf0956293bbc1fab449af27306"
     }
   ],
   "reference_comparisons": [],
@@ -171,7 +171,7 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "b07d47816e81fe2fdcb34f1ce563b2a2570cd6303285932f6a9dd710b721d45a"
+    "sha256": "012f1110ea368b643f5e74218034b93f7d1fb589d34bc1442c9e815a7ddcb9bd"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",
