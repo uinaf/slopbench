@@ -116,6 +116,14 @@ def test_task_inputs_reject_symlinks(tmp_path: Path) -> None:
         task_input_paths(task_dir)
 
 
+def test_task_inputs_reject_special_files(tmp_path: Path) -> None:
+    task_dir = make_task_dir(tmp_path)
+    os.mkfifo(task_dir / "pipe")
+
+    with pytest.raises(ContractError, match="regular file or directory"):
+        task_input_paths(task_dir)
+
+
 def test_task_inputs_exclude_only_the_root_contract(tmp_path: Path) -> None:
     task_dir = make_task_dir(tmp_path)
     nested = task_dir / "nested"

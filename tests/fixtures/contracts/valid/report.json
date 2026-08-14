@@ -1,5 +1,7 @@
 {
   "schema_version": "slopbench.report.v1",
+  "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "base_revision": "dddddddddddddddddddddddddddddddddddddddd",
   "claims": [
     {
       "gate": "requested_behavior",

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import importlib.metadata
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Mapping
@@ -12,7 +14,7 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 from harbor.models.environment_type import EnvironmentType
-from harbor.models.task.config import VerifierEnvironmentMode
+from harbor.models.task.config import NetworkMode, VerifierEnvironmentMode
 from harbor.models.task.task import Task as HarborTask
 from harbor.models.task.verifier_mode import resolve_task_verifier_mode
 from harbor.models.trial.config import (
@@ -24,6 +26,7 @@ from harbor.models.trial.config import (
 )
 from harbor.models.trial.config import (
     ResourceMode,
+    ServiceVolumeConfig,
     TrialConfig,
     VerifierConfig,
 )
@@ -31,6 +34,8 @@ from harbor.models.trial.config import (
     TaskConfig as HarborTaskConfig,
 )
 from harbor.models.trial.result import TrialResult
+from harbor.trial.network_policy import resolve_trial_network_plan
+from pydantic import ValidationError
 
 from slopbench.contracts import (
     RESULT_SCHEMA_VERSION,
@@ -38,12 +43,15 @@ from slopbench.contracts import (
     ArtifactDigest,
     ClaimStatus,
     FailureClassification,
+    FailureReason,
     GateName,
     GateOutcome,
     HarborEvidence,
     OutcomeStatus,
     ReceiptValidation,
     ResultBundle,
+    RetryDecision,
+    RetryDisposition,
     RunManifest,
     RuntimeConfiguration,
     TaskContract,
@@ -54,6 +62,7 @@ from slopbench.contracts import (
 from slopbench.hashing import (
     ContractError,
     load_model,
+    sha256_bytes,
     sha256_file,
     validate_task,
     write_model,
@@ -77,7 +86,21 @@ _SAFE_ENV_NAMES = {
 }
 _AGENT_FAILURE_EXCEPTIONS = {
     "AgentTimeoutError",
-    "AgentSetupTimeoutError",
+    "ContextLengthExceededError",
+    "NonZeroAgentExitCodeError",
+    "OutputLengthExceededError",
+}
+_PROVIDER_FAILURE_EXCEPTIONS = {
+    "ApiRateLimitError": FailureReason.PROVIDER_RATE_LIMIT,
+    "ApiUsageLimitError": FailureReason.PROVIDER_USAGE_LIMIT,
+}
+_BENCHMARK_FAILURE_EXCEPTIONS = {
+    "AddTestsDirError",
+    "DownloadVerifierDirError",
+    "RewardFileEmptyError",
+    "RewardFileNotFoundError",
+    "VerifierOutputParseError",
+    "VerifierTimeoutError",
 }
 
 
@@ -151,6 +174,127 @@ def _validate_images(task_dir: Path, runtime: RuntimeConfiguration) -> None:
         raise ContractError(f"run manifest is missing image pins: {sorted(missing)}")
 
 
+def _validate_policy(
+    label: str,
+    actual_mode: NetworkMode,
+    actual_hosts: list[str],
+    expected_mode: NetworkMode,
+    expected_hosts: list[str],
+) -> None:
+    if actual_mode != expected_mode or actual_hosts != expected_hosts:
+        raise ContractError(
+            f"{label} network policy mismatch: expected "
+            f"{expected_mode.value} {expected_hosts}, got {actual_mode.value} {actual_hosts}"
+        )
+
+
+def _validate_harbor_boundary(
+    harbor_task: HarborTask,
+    manifest: RunManifest,
+    task: TaskContract,
+    task_dir: Path,
+) -> None:
+    if manifest.runtime.environment_provider != EnvironmentType.DOCKER.value:
+        raise ContractError("official v1 runs require the Docker environment provider")
+    compose_path = task_dir / "environment" / "docker-compose.yaml"
+    if compose_path.exists():
+        raise ContractError("task-authored Docker Compose is outside the official v1 boundary")
+
+    config = harbor_task.config
+    metadata = config.metadata or {}
+    if (
+        metadata.get("slopbench_task_id") != task.task_id
+        or metadata.get("slopbench_task_version") != task.version
+    ):
+        raise ContractError("Harbor metadata does not match the sealed task identity")
+    if (
+        config.environment.cpus != task.environment.cpus
+        or config.environment.memory_mb != task.environment.memory_mb
+        or config.environment.storage_mb != task.environment.storage_mb
+        or config.environment.workdir != "/app"
+    ):
+        raise ContractError("Harbor environment does not match sealed resources or workdir")
+    if config.environment.env or config.environment.mcp_servers or config.artifacts:
+        raise ContractError("Harbor task declares unapproved environment inputs or artifacts")
+    if config.solution.env or config.verifier.env:
+        raise ContractError("Harbor task declares unapproved solution or verifier environment")
+
+    expected_agent_mode = (
+        NetworkMode.NO_NETWORK if task.capabilities.network == "none" else NetworkMode.ALLOWLIST
+    )
+    expected_agent_hosts = list(task.capabilities.network_allowed_hosts)
+    trial_agent = HarborAgentConfig()
+    trial_environment = HarborEnvironmentConfig()
+    steps = list(config.steps or [None])
+    for index, step in enumerate(steps):
+        plan = resolve_trial_network_plan(
+            config,
+            trial_agent,
+            trial_environment,
+            step,
+            verifier_mode=VerifierEnvironmentMode.SEPARATE,
+        )
+        suffix = f"step {index + 1}" if step is not None else "task"
+        _validate_policy(
+            f"{suffix} agent baseline",
+            plan.agent_env_baseline.network_mode,
+            plan.agent_env_baseline.allowed_hosts,
+            NetworkMode.NO_NETWORK,
+            [],
+        )
+        _validate_policy(
+            f"{suffix} agent phase",
+            plan.agent_phase.network_mode,
+            plan.agent_phase.allowed_hosts,
+            expected_agent_mode,
+            expected_agent_hosts,
+        )
+        if plan.verifier_env_baseline is None:
+            raise ContractError("official verifier must have a separate environment baseline")
+        _validate_policy(
+            f"{suffix} verifier baseline",
+            plan.verifier_env_baseline.network_mode,
+            plan.verifier_env_baseline.allowed_hosts,
+            NetworkMode.NO_NETWORK,
+            [],
+        )
+        _validate_policy(
+            f"{suffix} verifier phase",
+            plan.verifier_phase.network_mode,
+            plan.verifier_phase.allowed_hosts,
+            NetworkMode.NO_NETWORK,
+            [],
+        )
+
+
+def _validate_capability_binding(manifest: RunManifest, task: TaskContract) -> None:
+    unexpected_environment = set(manifest.agent.environment) - set(task.capabilities.environment)
+    if unexpected_environment:
+        raise ContractError(
+            f"agent environment exceeds the capability envelope: {sorted(unexpected_environment)}"
+        )
+    unexpected_tools = {tool.name for tool in manifest.agent.tools} - set(task.capabilities.tools)
+    if unexpected_tools:
+        raise ContractError(
+            f"agent tools exceed the capability envelope: {sorted(unexpected_tools)}"
+        )
+    if manifest.agent.harness in {"oracle", "nop"} and manifest.agent.credential_env:
+        raise ContractError("utility harnesses cannot receive credential environment variables")
+
+    fixtures = {fixture.id: fixture for fixture in task.attack_fixtures}
+    if manifest.attack_fixture_id is None:
+        return
+    if manifest.attack_fixture_id not in fixtures:
+        raise ContractError(f"unknown attack fixture: {manifest.attack_fixture_id}")
+    if (
+        manifest.agent.harness != "oracle"
+        or manifest.agent.model is not None
+        or manifest.agent.credential_env
+        or manifest.limits.max_cost_usd != 0.0
+    ):
+        raise ContractError("attack fixtures require the zero-cost oracle harness")
+
+
 def _validate_run_binding(
     manifest: RunManifest,
     task: TaskContract,
@@ -189,6 +333,7 @@ def _validate_run_binding(
         raise ContractError(f"run manifest binding mismatch: {mismatches}")
     _validate_images(task_dir, manifest.runtime)
     _validate_instruction_layers(manifest, task, task_dir, project_root)
+    _validate_capability_binding(manifest, task)
     try:
         harbor_task = HarborTask(task_dir)
     except Exception as exc:
@@ -200,6 +345,12 @@ def _validate_run_binding(
             "Harbor verifier isolation does not match the task contract: "
             f"expected {expected_isolation.value}, got {harbor_isolation.value}"
         )
+    if harbor_task.checksum != manifest.task.harbor_task_checksum:
+        raise ContractError(
+            "Harbor task checksum mismatch: "
+            f"expected {manifest.task.harbor_task_checksum}, got {harbor_task.checksum}"
+        )
+    _validate_harbor_boundary(harbor_task, manifest, task, task_dir)
 
 
 def _validate_instruction_layers(
@@ -244,6 +395,20 @@ def _harbor_config(
         raise RunError(
             f"unsupported Harbor environment provider: {manifest.runtime.environment_provider}"
         ) from exc
+    agent_environment = {
+        **manifest.agent.environment,
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPYCACHEPREFIX": "/tmp/slopbench-agent-pycache",
+        "SLOPBENCH_TASK_DIGEST": task_digest,
+    }
+    verifier_environment = {
+        "SLOPBENCH_TASK_DIGEST": task_digest,
+        "SLOPBENCH_VERIFIER_ISOLATION": task.environment.verifier_isolation,
+    }
+    if manifest.attack_fixture_id is not None:
+        agent_environment["SLOPBENCH_ATTACK_FIXTURE"] = manifest.attack_fixture_id
+        verifier_environment["SLOPBENCH_ATTACK_FIXTURE"] = manifest.attack_fixture_id
+    verifier_log_dir = (trials_dir / manifest.trial.id / "verifier").resolve()
     return TrialConfig(
         task=HarborTaskConfig(path=task_dir),
         trial_name=manifest.trial.id,
@@ -254,7 +419,7 @@ def _harbor_config(
             override_timeout_sec=manifest.limits.agent_timeout_sec,
             override_setup_timeout_sec=manifest.limits.agent_setup_timeout_sec,
             kwargs=manifest.agent.settings,
-            env=manifest.agent.environment,
+            env=agent_environment,
             include_logs=["trajectory.json", "*.txt"],
         ),
         environment=HarborEnvironmentConfig(
@@ -266,14 +431,19 @@ def _harbor_config(
             override_cpus=manifest.runtime.cpus,
             override_memory_mb=manifest.runtime.memory_mb,
             override_storage_mb=manifest.runtime.storage_mb,
+            mounts=[
+                ServiceVolumeConfig(
+                    type="bind",
+                    source=verifier_log_dir.as_posix(),
+                    target="/logs/verifier",
+                    read_only=True,
+                )
+            ],
         ),
         verifier=VerifierConfig(
             override_timeout_sec=manifest.limits.verifier_timeout_sec,
             include_logs=["reward.json", "slopbench-verification.json", "test-*.txt"],
-            env={
-                "SLOPBENCH_TASK_DIGEST": task_digest,
-                "SLOPBENCH_VERIFIER_ISOLATION": task.environment.verifier_isolation,
-            },
+            env=verifier_environment,
         ),
         artifacts=(
             [HarborArtifactConfig(source="/app", exclude=[".git"])]
@@ -286,6 +456,29 @@ def _harbor_config(
 def _write_harbor_config(path: Path, config: TrialConfig) -> None:
     rendered = config.model_dump_json(indent=2, exclude_none=True) + "\n"
     path.write_text(rendered)
+
+
+def _snapshot_task(
+    source: Path,
+    destination: Path,
+    expected_contract_sha256: str,
+    expected_task_digest: str,
+    expected_harbor_checksum: str,
+) -> None:
+    shutil.copytree(source, destination, symlinks=True)
+    _, contract_sha256, task_digest = validate_task(destination)
+    harbor_checksum = HarborTask(destination).checksum
+    if (
+        contract_sha256 != expected_contract_sha256
+        or task_digest != expected_task_digest
+        or harbor_checksum != expected_harbor_checksum
+    ):
+        raise ContractError("task changed while the immutable run snapshot was created")
+    for path in sorted(destination.rglob("*"), reverse=True):
+        path.chmod(path.stat().st_mode & ~0o222)
+    destination.chmod(destination.stat().st_mode & ~0o222)
+    if HarborTask(destination).checksum != expected_harbor_checksum:
+        raise ContractError("read-only task snapshot changed the Harbor task checksum")
 
 
 def _duration_seconds(started: datetime | None, finished: datetime | None) -> float | None:
@@ -304,6 +497,8 @@ def _check_outcomes(
     for gate in GateName:
         checks = [check for check in verification.checks if check.gate == gate]
         if gate not in task.applicable_gates:
+            if checks:
+                errors.append(f"non-applicable gate has verifier checks: {gate.value}")
             outcomes.append(
                 GateOutcome(gate=gate, status=OutcomeStatus.NOT_APPLICABLE, check_ids=[])
             )
@@ -332,6 +527,11 @@ def _validate_rewards(
         return ["Harbor result has no reward vector"]
     errors: list[str] = []
     applicable = [outcome for outcome in outcomes if outcome.status != OutcomeStatus.NOT_APPLICABLE]
+    expected_keys = {"reward", *(outcome.gate.value for outcome in applicable)}
+    if set(rewards) != expected_keys:
+        missing = sorted(expected_keys - set(rewards))
+        unexpected = sorted(set(rewards) - expected_keys)
+        errors.append(f"Harbor reward keys mismatch: missing={missing}, unexpected={unexpected}")
     for outcome in applicable:
         expected = 1 if outcome.status == OutcomeStatus.PASSED else 0
         actual = rewards.get(outcome.gate.value)
@@ -358,6 +558,17 @@ def _validate_receipt(
     task: TaskContract,
     verification: VerificationEvidence,
 ) -> tuple[ReceiptValidation, AgentReport | None, bool]:
+    if report_path.is_symlink():
+        return (
+            ReceiptValidation(
+                present=True,
+                valid=False,
+                sha256=None,
+                errors=["slopbench-report.json must be a regular file, not a symlink"],
+            ),
+            None,
+            True,
+        )
     if not report_path.is_file():
         return (
             ReceiptValidation(
@@ -385,14 +596,25 @@ def _validate_receipt(
         )
     checks = {check.id: check for check in verification.checks}
     errors: list[str] = []
+    if report.task_digest != verification.task_digest:
+        errors.append("task_digest does not match verifier evidence")
+    if report.base_revision != verification.base_revision:
+        errors.append("base_revision does not match verifier evidence")
     if report.final_revision != verification.final_revision:
         errors.append("final_revision does not match verifier evidence")
     claims = {claim.gate: claim for claim in report.claims}
+    expected_claims = set(task.applicable_gates)
+    if set(claims) != expected_claims:
+        missing = sorted(gate.value for gate in expected_claims - set(claims))
+        unexpected = sorted(gate.value for gate in set(claims) - expected_claims)
+        errors.append(f"receipt gate coverage mismatch: missing={missing}, unexpected={unexpected}")
     for gate in task.applicable_gates:
         claim = claims.get(gate)
         if claim is None:
-            errors.append(f"missing claim for applicable gate: {gate.value}")
             continue
+        expected_evidence_ids = {check.id for check in verification.checks if check.gate == gate}
+        if set(claim.evidence_ids) != expected_evidence_ids:
+            errors.append(f"claim evidence coverage mismatch: {gate.value}")
         evidence = [checks.get(evidence_id) for evidence_id in claim.evidence_ids]
         if any(item is None for item in evidence):
             errors.append(f"claim references unknown evidence: {gate.value}")
@@ -414,6 +636,12 @@ def _validate_receipt(
             errors.append(f"command references unknown captured id: {command.id}")
         elif check.command != command.command or check.exit_code != command.exit_code:
             errors.append(f"command does not match captured evidence: {command.id}")
+    claimed_evidence = {
+        evidence_id for claim in report.claims for evidence_id in claim.evidence_ids
+    }
+    for command in report.commands:
+        if command.id not in claimed_evidence:
+            errors.append(f"command is not referenced by a claim: {command.id}")
     return (
         ReceiptValidation(
             present=True,
@@ -426,15 +654,48 @@ def _validate_receipt(
     )
 
 
+def _validate_verification_logs(trial_dir: Path, verification: VerificationEvidence) -> list[str]:
+    verifier_dir = trial_dir / "verifier"
+    errors: list[str] = []
+    for check in verification.checks:
+        path = verifier_dir.joinpath(*PurePosixPath(check.log_path).parts)
+        if path.is_symlink() or not path.is_file():
+            errors.append(f"verifier check log is missing: {check.log_path}")
+        elif sha256_file(path) != check.log_sha256:
+            errors.append(f"verifier check log digest mismatch: {check.log_path}")
+    return errors
+
+
+def _validate_reward_artifact(
+    trial_dir: Path,
+    task: TaskContract,
+    rewards: dict[str, float | int] | None,
+) -> list[str]:
+    reward_path = trial_dir / "verifier" / PurePosixPath(task.verifier.reward_path).name
+    if reward_path.is_symlink() or not reward_path.is_file():
+        return ["trusted verifier reward artifact is missing"]
+    try:
+        raw = json.loads(reward_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"trusted verifier reward artifact is invalid: {exc}"]
+    if raw != rewards:
+        return ["trusted verifier reward artifact does not match Harbor result"]
+    return []
+
+
 def _artifact_digests(bundle_dir: Path) -> list[ArtifactDigest]:
     excluded = {bundle_dir / "result.json"}
     return [
         ArtifactDigest(
             path=path.relative_to(bundle_dir).as_posix(),
-            sha256=sha256_file(path),
+            sha256=(
+                sha256_bytes(b"slopbench.symlink.v1\0" + os.fsencode(os.readlink(path)))
+                if path.is_symlink()
+                else sha256_file(path)
+            ),
         )
         for path in sorted(bundle_dir.rglob("*"))
-        if path.is_file() and path not in excluded
+        if (path.is_file() or path.is_symlink()) and path not in excluded
     ]
 
 
@@ -443,6 +704,59 @@ def _not_applicable_outcomes() -> list[GateOutcome]:
         GateOutcome(gate=gate, status=OutcomeStatus.NOT_APPLICABLE, check_ids=[])
         for gate in GateName
     ]
+
+
+def _classify_exception(exception_type: str) -> tuple[FailureClassification, FailureReason]:
+    provider_reason = _PROVIDER_FAILURE_EXCEPTIONS.get(exception_type)
+    if provider_reason is not None:
+        return FailureClassification.INFRASTRUCTURE_FAILURE, provider_reason
+    if exception_type in _AGENT_FAILURE_EXCEPTIONS:
+        reasons = {"AgentTimeoutError": FailureReason.AGENT_TIMEOUT}
+        return (
+            FailureClassification.VALID_AGENT_FAILURE,
+            reasons.get(exception_type, FailureReason.AGENT_EXIT),
+        )
+    if exception_type == "AgentSetupTimeoutError":
+        return (
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.AGENT_SETUP_TIMEOUT,
+        )
+    if exception_type in _BENCHMARK_FAILURE_EXCEPTIONS:
+        reason = (
+            FailureReason.VERIFIER_TIMEOUT
+            if exception_type == "VerifierTimeoutError"
+            else FailureReason.VERIFIER_EVIDENCE_INVALID
+        )
+        return FailureClassification.BENCHMARK_DEFECT, reason
+    if exception_type == "EnvironmentStartTimeoutError":
+        return (
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.ENVIRONMENT_START_TIMEOUT,
+        )
+    return FailureClassification.INFRASTRUCTURE_FAILURE, FailureReason.HARBOR_EXCEPTION
+
+
+def _retry_disposition(
+    manifest: RunManifest,
+    classification: FailureClassification,
+    failure_reason: FailureReason,
+) -> RetryDisposition:
+    remaining = manifest.retry_policy.max_attempts - manifest.trial.attempt
+    if classification != FailureClassification.INFRASTRUCTURE_FAILURE:
+        decision = RetryDecision.CLASSIFICATION_NOT_RETRYABLE
+    elif failure_reason.value not in {
+        reason.value for reason in manifest.retry_policy.retryable_reasons
+    }:
+        decision = RetryDecision.REASON_NOT_ALLOWED
+    elif remaining == 0:
+        decision = RetryDecision.ATTEMPTS_EXHAUSTED
+    else:
+        decision = RetryDecision.RETRY_ALLOWED
+    return RetryDisposition(
+        eligible=decision == RetryDecision.RETRY_ALLOWED,
+        decision=decision,
+        remaining_attempts=remaining,
+    )
 
 
 def _harbor_evidence(trial_dir: Path, result: TrialResult | None) -> HarborEvidence:
@@ -493,6 +807,11 @@ def _finalize(
         errors=[trial_result_error or "run did not reach receipt validation"],
     )
     classification = FailureClassification.INFRASTRUCTURE_FAILURE
+    failure_reason = (
+        FailureReason.HARBOR_RESULT_INVALID
+        if trial_result_error
+        else FailureReason.HARBOR_PROCESS_FAILURE
+    )
     outcomes = _not_applicable_outcomes()
 
     if trial_result is not None:
@@ -513,66 +832,115 @@ def _finalize(
             duration_seconds=_duration_seconds(trial_result.started_at, trial_result.finished_at),
         )
         if trial_result.exception_info is not None:
-            if trial_result.exception_info.exception_type in _AGENT_FAILURE_EXCEPTIONS:
-                classification = FailureClassification.VALID_AGENT_FAILURE
+            classification, failure_reason = _classify_exception(
+                trial_result.exception_info.exception_type
+            )
         else:
-            verification_path = trial_dir / "verifier" / "slopbench-verification.json"
-            if not verification_path.is_file():
+            if trial_result.task_checksum != manifest.task.harbor_task_checksum:
                 classification = FailureClassification.BENCHMARK_DEFECT
+                failure_reason = FailureReason.HARBOR_TASK_MISMATCH
                 receipt = receipt.model_copy(
-                    update={"errors": ["trusted verifier evidence is missing"]}
+                    update={"errors": ["Harbor executed task checksum does not match the run"]}
                 )
             else:
-                try:
-                    verification = load_model(verification_path, VerificationEvidence)
-                except ContractError as exc:
+                verification_path = (
+                    trial_dir / "verifier" / PurePosixPath(task.verifier.evidence_path).name
+                )
+                if verification_path.is_symlink():
                     classification = FailureClassification.BENCHMARK_DEFECT
-                    receipt = receipt.model_copy(update={"errors": [str(exc)]})
+                    failure_reason = FailureReason.VERIFIER_EVIDENCE_INVALID
+                    receipt = receipt.model_copy(
+                        update={"errors": ["trusted verifier evidence must not be a symlink"]}
+                    )
+                elif not verification_path.is_file():
+                    classification = FailureClassification.BENCHMARK_DEFECT
+                    failure_reason = FailureReason.VERIFIER_EVIDENCE_MISSING
+                    receipt = receipt.model_copy(
+                        update={"errors": ["trusted verifier evidence is missing"]}
+                    )
                 else:
-                    if verification.task_digest != task_digest:
+                    try:
+                        verification = load_model(verification_path, VerificationEvidence)
+                    except ContractError as exc:
                         classification = FailureClassification.BENCHMARK_DEFECT
-                        receipt = receipt.model_copy(
-                            update={"errors": ["verifier task digest mismatch"]}
-                        )
+                        failure_reason = FailureReason.VERIFIER_EVIDENCE_INVALID
+                        receipt = receipt.model_copy(update={"errors": [str(exc)]})
                     else:
-                        receipt, _, invalid_receipt = _validate_receipt(
-                            _receipt_path(trial_dir), task, verification
-                        )
-                        trusted_outcomes, benchmark_errors = _check_outcomes(
-                            task, verification, True
-                        )
-                        outcomes, receipt_errors = _check_outcomes(
-                            task, verification, receipt.valid
-                        )
-                        benchmark_errors.extend(receipt_errors)
-                        reward_errors = _validate_rewards(
-                            trusted_outcomes,
-                            (
+                        contract_errors: list[str] = []
+                        if verification.task_digest != task_digest:
+                            contract_errors.append("verifier task digest mismatch")
+                        if verification.base_revision != task.environment.base_revision:
+                            contract_errors.append("verifier base revision mismatch")
+                        contract_errors.extend(_validate_verification_logs(trial_dir, verification))
+                        if contract_errors:
+                            classification = FailureClassification.BENCHMARK_DEFECT
+                            failure_reason = FailureReason.VERIFIER_CONTRACT_MISMATCH
+                            receipt = receipt.model_copy(update={"errors": contract_errors})
+                        else:
+                            receipt, _, invalid_receipt = _validate_receipt(
+                                _receipt_path(trial_dir), task, verification
+                            )
+                            trusted_outcomes, benchmark_errors = _check_outcomes(
+                                task, verification, True
+                            )
+                            outcomes, receipt_errors = _check_outcomes(
+                                task, verification, receipt.valid
+                            )
+                            benchmark_errors.extend(receipt_errors)
+                            rewards = (
                                 trial_result.verifier_result.rewards
                                 if trial_result.verifier_result
                                 else None
-                            ),
-                        )
-                        if benchmark_errors or reward_errors:
-                            classification = FailureClassification.BENCHMARK_DEFECT
-                            receipt = receipt.model_copy(
-                                update={
-                                    "errors": [
-                                        *receipt.errors,
-                                        *benchmark_errors,
-                                        *reward_errors,
-                                    ]
-                                }
                             )
-                        elif invalid_receipt:
-                            classification = FailureClassification.INVALID_RUN
-                        elif all(
-                            outcome.status in {OutcomeStatus.PASSED, OutcomeStatus.NOT_APPLICABLE}
-                            for outcome in outcomes
-                        ):
-                            classification = FailureClassification.VALID_PASS
-                        else:
-                            classification = FailureClassification.VALID_AGENT_FAILURE
+                            reward_errors = _validate_rewards(trusted_outcomes, rewards)
+                            reward_errors.extend(
+                                _validate_reward_artifact(trial_dir, task, rewards)
+                            )
+                            if benchmark_errors or reward_errors:
+                                classification = FailureClassification.BENCHMARK_DEFECT
+                                failure_reason = (
+                                    FailureReason.REWARD_MISMATCH
+                                    if reward_errors
+                                    else FailureReason.VERIFIER_CONTRACT_MISMATCH
+                                )
+                                receipt = receipt.model_copy(
+                                    update={
+                                        "errors": [
+                                            *receipt.errors,
+                                            *benchmark_errors,
+                                            *reward_errors,
+                                        ]
+                                    }
+                                )
+                            elif invalid_receipt:
+                                classification = FailureClassification.INVALID_RUN
+                                failure_reason = FailureReason.RECEIPT_INVALID
+                            elif all(
+                                outcome.status
+                                in {OutcomeStatus.PASSED, OutcomeStatus.NOT_APPLICABLE}
+                                for outcome in outcomes
+                            ):
+                                classification = FailureClassification.VALID_PASS
+                                failure_reason = FailureReason.NONE
+                            else:
+                                classification = FailureClassification.VALID_AGENT_FAILURE
+                                failure_reason = (
+                                    FailureReason.RECEIPT_MISSING
+                                    if not receipt.present
+                                    else FailureReason.GATE_FAILURE
+                                )
+
+        if process_exit_code != 0 and trial_result.exception_info is None:
+            classification = FailureClassification.INFRASTRUCTURE_FAILURE
+            failure_reason = FailureReason.HARBOR_PROCESS_FAILURE
+            receipt = receipt.model_copy(
+                update={
+                    "errors": [
+                        *receipt.errors,
+                        f"Harbor process exited {process_exit_code} despite a completed result",
+                    ]
+                }
+            )
 
     if process_exit_code != 0 and trial_result is None:
         process_error = f"Harbor process exited {process_exit_code} without a result"
@@ -585,13 +953,17 @@ def _finalize(
         )
 
     completed = classification == FailureClassification.VALID_PASS
+    retry = _retry_disposition(manifest, classification, failure_reason)
     result = ResultBundle(
         schema_version=RESULT_SCHEMA_VERSION,
         run_id=manifest.run_id,
         task_digest=task_digest,
         run_manifest_sha256=run_manifest_sha256,
         classification=classification,
+        failure_reason=failure_reason,
         completed=completed,
+        attempt=manifest.trial.attempt,
+        retry=retry,
         outcomes=outcomes,
         receipt=receipt,
         usage=usage,
@@ -613,8 +985,14 @@ def execute_run(
     task_dir = task_dir.resolve()
     manifest_path = manifest_path.resolve()
     output_root = output_root.resolve()
+    if output_root == task_dir or output_root.is_relative_to(task_dir):
+        raise RunError("run output must be outside the sealed task directory")
     task, contract_sha256, task_digest = validate_task(task_dir)
-    manifest = load_model(manifest_path, RunManifest)
+    manifest_bytes = manifest_path.read_bytes()
+    try:
+        manifest = RunManifest.model_validate_json(manifest_bytes)
+    except ValidationError as exc:
+        raise ContractError(f"invalid RunManifest at {manifest_path}: {exc}") from exc
     _validate_run_binding(
         manifest,
         task,
@@ -627,11 +1005,19 @@ def execute_run(
         raise RunError(f"run output already exists: {bundle_dir}")
     bundle_dir.mkdir(parents=True)
     copied_manifest = bundle_dir / "slopbench-run.json"
-    copied_manifest.write_bytes(manifest_path.read_bytes())
+    copied_manifest.write_bytes(manifest_bytes)
     manifest_sha256 = sha256_file(copied_manifest)
+    task_snapshot = bundle_dir / "inputs" / "task"
+    _snapshot_task(
+        task_dir,
+        task_snapshot,
+        contract_sha256,
+        task_digest,
+        manifest.task.harbor_task_checksum,
+    )
     harbor_dir = bundle_dir / "harbor"
     harbor_dir.mkdir()
-    harbor_config = _harbor_config(manifest, task, task_dir, harbor_dir, task_digest)
+    harbor_config = _harbor_config(manifest, task, task_snapshot, harbor_dir, task_digest)
     harbor_config_path = bundle_dir / "harbor-input.json"
     _write_harbor_config(harbor_config_path, harbor_config)
     command = [
@@ -643,7 +1029,7 @@ def execute_run(
     ]
     process_exit_code = process_runner(
         command,
-        task_dir.parent,
+        task_snapshot.parent,
         _process_environment(manifest),
         bundle_dir / "harbor.stdout.log",
         bundle_dir / "harbor.stderr.log",

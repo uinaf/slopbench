@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from harbor.models.agent.context import AgentContext
 from harbor.models.task.id import LocalTaskId
+from harbor.models.task.task import Task as HarborTask
 from harbor.models.trial.result import AgentInfo, ExceptionInfo, TrialResult
 from harbor.models.verifier.result import VerifierResult
 
@@ -16,8 +17,10 @@ from slopbench import runner
 from slopbench.contracts import (
     AgentReport,
     FailureClassification,
+    FailureReason,
     GateName,
     OutcomeStatus,
+    RetryDecision,
     RunManifest,
     TaskContract,
     VerificationEvidence,
@@ -115,14 +118,81 @@ def test_image_validation_requires_digests_and_declared_pins(tmp_path: Path) -> 
     runner._validate_images(task_dir, parse_json(RunManifest, payload).runtime)
 
 
-def write_harbor_task(task_dir: Path, isolation: str = "shared") -> None:
+def write_harbor_task(task_dir: Path, isolation: str = "separate") -> None:
     (task_dir / "environment").mkdir(exist_ok=True)
     tests_dir = task_dir / "tests"
     tests_dir.mkdir(exist_ok=True)
     (tests_dir / "test.sh").write_text("#!/bin/sh\n")
     (task_dir / "task.toml").write_text(
-        f'version = "1.3"\n\n[verifier]\nenvironment_mode = "{isolation}"\n\n[environment]\n'
+        'version = "1.3"\n\n'
+        '[metadata]\nslopbench_task_id = "slopbench/tracer/example"\n'
+        'slopbench_task_version = "1.0.0"\n\n'
+        '[agent]\nnetwork_mode = "allowlist"\nallowed_hosts = ["cursor.com"]\n\n'
+        f'[verifier]\nenvironment_mode = "{isolation}"\nnetwork_mode = "no-network"\n\n'
+        '[environment]\nnetwork_mode = "no-network"\ncpus = 2\n'
+        'memory_mb = 2048\nstorage_mb = 4096\nworkdir = "/app"\n'
     )
+
+
+def harbor_boundary_fixture(tmp_path: Path) -> tuple[HarborTask, RunManifest, TaskContract, Path]:
+    task_dir = tmp_path / "task"
+    task_dir.mkdir()
+    (task_dir / "instruction.md").write_text("instruction\n")
+    write_harbor_task(task_dir)
+    return HarborTask(task_dir), run_manifest(), task_contract(), task_dir
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("provider", "require the Docker"),
+        ("compose", "Docker Compose"),
+        ("metadata", "metadata does not match"),
+        ("resources", "resources or workdir"),
+        ("environment", "unapproved environment inputs"),
+        ("agent-network", "agent phase network policy mismatch"),
+        ("verifier-network", "verifier phase network policy mismatch"),
+    ],
+)
+def test_harbor_boundary_rejects_policy_drift(tmp_path: Path, mutation: str, message: str) -> None:
+    harbor_task, manifest, task, task_dir = harbor_boundary_fixture(tmp_path)
+    payload = manifest.model_dump(mode="json")
+    task_toml = task_dir / "task.toml"
+    if mutation == "provider":
+        payload["runtime"]["environment_provider"] = "modal"
+        manifest = RunManifest.model_validate(payload)
+    elif mutation == "compose":
+        (task_dir / "environment" / "docker-compose.yaml").write_text("services: {}\n")
+    elif mutation == "metadata":
+        task_toml.write_text(
+            task_toml.read_text().replace("slopbench/tracer/example", "slopbench/tracer/other")
+        )
+        harbor_task = HarborTask(task_dir)
+    elif mutation == "resources":
+        task_toml.write_text(task_toml.read_text().replace("memory_mb = 2048", "memory_mb = 1024"))
+        harbor_task = HarborTask(task_dir)
+    elif mutation == "environment":
+        task_toml.write_text(task_toml.read_text() + 'env = { FOO = "bar" }\n')
+        harbor_task = HarborTask(task_dir)
+    elif mutation == "agent-network":
+        task_toml.write_text(
+            task_toml.read_text().replace(
+                'network_mode = "allowlist"\nallowed_hosts = ["cursor.com"]',
+                'network_mode = "public"',
+            )
+        )
+        harbor_task = HarborTask(task_dir)
+    else:
+        task_toml.write_text(
+            task_toml.read_text().replace(
+                '[verifier]\nenvironment_mode = "separate"\nnetwork_mode = "no-network"',
+                '[verifier]\nenvironment_mode = "separate"\nnetwork_mode = "public"',
+            )
+        )
+        harbor_task = HarborTask(task_dir)
+
+    with pytest.raises(ContractError, match=message):
+        runner._validate_harbor_boundary(harbor_task, manifest, task, task_dir)
 
 
 def test_run_binding_checks_contract_runtime_and_resources(tmp_path: Path) -> None:
@@ -133,6 +203,7 @@ def test_run_binding_checks_contract_runtime_and_resources(tmp_path: Path) -> No
     instruction = task_dir / "instruction.md"
     instruction.write_text("instruction\n")
     write_harbor_task(task_dir)
+    payload["task"]["harbor_task_checksum"] = HarborTask(task_dir).checksum
     payload["task"].update(
         contract_path="parent/task/slopbench-task.json",
         contract_sha256=SHA_A,
@@ -288,6 +359,60 @@ def test_run_binding_rejects_instruction_symlink_escape(tmp_path: Path) -> None:
         runner._validate_run_binding(parse_json(RunManifest, payload), task, SHA_A, SHA_B, task_dir)
 
 
+def task_with_attack_fixture() -> TaskContract:
+    payload = task_payload(sealed=False)
+    payload["attack_fixtures"] = [
+        {
+            "id": "tamper",
+            "kind": "verifier_tampering",
+            "entrypoint": "solution/attack.py",
+            "expected": {
+                "classification": "valid_agent_failure",
+                "failed_gates": ["authority"],
+            },
+        }
+    ]
+    return parse_json(TaskContract, payload)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("environment", "environment exceeds"),
+        ("tool", "tools exceed"),
+        ("utility-credential", "utility harnesses cannot"),
+        ("unknown-attack", "unknown attack fixture"),
+        ("paid-attack", "zero-cost oracle"),
+    ],
+)
+def test_capability_binding_rejects_manifest_escalation(mutation: str, message: str) -> None:
+    payload = run_payload()
+    task = task_with_attack_fixture()
+    if mutation == "environment":
+        payload["agent"]["environment"]["UNDECLARED"] = "value"
+    elif mutation == "tool":
+        payload["agent"]["tools"].append({"name": "node", "version": "1.0.0", "settings": {}})
+    elif mutation == "utility-credential":
+        payload["agent"]["credential_env"] = ["CURSOR_API_KEY"]
+    elif mutation == "unknown-attack":
+        payload["attack_fixture_id"] = "unknown"
+    else:
+        payload["attack_fixture_id"] = "tamper"
+        payload["limits"]["max_cost_usd"] = 1.0
+
+    with pytest.raises(ContractError, match=message):
+        runner._validate_capability_binding(parse_json(RunManifest, payload), task)
+
+
+def test_capability_binding_accepts_declared_zero_cost_attack() -> None:
+    payload = run_payload()
+    payload["attack_fixture_id"] = "tamper"
+
+    runner._validate_capability_binding(
+        parse_json(RunManifest, payload), task_with_attack_fixture()
+    )
+
+
 def test_harbor_config_contains_only_pinned_run_settings(tmp_path: Path) -> None:
     manifest = run_manifest()
 
@@ -298,28 +423,38 @@ def test_harbor_config_contains_only_pinned_run_settings(tmp_path: Path) -> None
     assert config.trial_name == manifest.trial.id
     assert config.agent.name == "oracle"
     assert config.agent.model_name is None
-    assert config.agent.env == {"SLOPBENCH_VARIANT": "oracle"}
+    assert config.agent.env == {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPYCACHEPREFIX": "/tmp/slopbench-agent-pycache",
+        "SLOPBENCH_VARIANT": "oracle",
+        "SLOPBENCH_TASK_DIGEST": SHA_B,
+    }
     assert config.environment.type.value == "docker"
     assert config.environment.override_cpus == 2
     assert config.environment.override_memory_mb == 2048
     assert config.environment.override_storage_mb == 4096
     assert config.verifier.env == {
         "SLOPBENCH_TASK_DIGEST": SHA_B,
-        "SLOPBENCH_VERIFIER_ISOLATION": "shared",
+        "SLOPBENCH_VERIFIER_ISOLATION": "separate",
     }
-    assert config.artifacts == ["/app/slopbench-report.json"]
-
-    payload = task_payload()
-    payload["environment"]["verifier_isolation"] = "separate"
-    separate_task = parse_json(TaskContract, payload)
-    separate = runner._harbor_config(
-        manifest, separate_task, tmp_path / "task", tmp_path / "trials", SHA_B
-    )
-    assert len(separate.artifacts) == 1
-    artifact = separate.artifacts[0]
+    assert len(config.artifacts) == 1
+    artifact = config.artifacts[0]
     assert not isinstance(artifact, str)
     assert artifact.source == "/app"
     assert artifact.exclude == [".git"]
+
+
+def test_harbor_config_binds_attack_identity_to_both_phases(tmp_path: Path) -> None:
+    payload = run_payload()
+    payload["attack_fixture_id"] = "tamper"
+    manifest = parse_json(RunManifest, payload)
+
+    config = runner._harbor_config(
+        manifest, task_with_attack_fixture(), tmp_path / "task", tmp_path / "trials", SHA_B
+    )
+
+    assert config.agent.env["SLOPBENCH_ATTACK_FIXTURE"] == "tamper"
+    assert config.verifier.env["SLOPBENCH_ATTACK_FIXTURE"] == "tamper"
 
 
 def test_harbor_config_rejects_unknown_environment_provider(tmp_path: Path) -> None:
@@ -386,6 +521,27 @@ def test_outcome_vector_detects_missing_checks_and_invalid_receipt() -> None:
     )
 
 
+def test_outcome_vector_rejects_checks_for_non_applicable_gates() -> None:
+    payload = verification_payload()
+    payload["checks"].append(
+        {
+            "id": "unsafe-cast",
+            "gate": "safety_type_escapes",
+            "passed": True,
+            "command": "true",
+            "exit_code": 0,
+            "log_path": "test-unsafe-cast.txt",
+            "log_sha256": SHA_A,
+        }
+    )
+
+    _, errors = runner._check_outcomes(
+        task_contract(), parse_json(VerificationEvidence, payload), receipt_valid=True
+    )
+
+    assert errors == ["non-applicable gate has verifier checks: safety_type_escapes"]
+
+
 def reward_vector(*, requested_passed: bool = True) -> dict[str, int]:
     rewards = {
         gate.value: int(
@@ -405,7 +561,11 @@ def test_reward_validation_matches_outcomes() -> None:
 
     assert runner._validate_rewards(outcomes, reward_vector()) == []
     assert runner._validate_rewards(outcomes, None) == ["Harbor result has no reward vector"]
-    assert len(runner._validate_rewards(outcomes, {"reward": 0})) == 7
+    assert len(runner._validate_rewards(outcomes, {"reward": 0})) == 8
+    with_extra = {**reward_vector(), "undeclared": 1}
+    assert runner._validate_rewards(outcomes, with_extra) == [
+        "Harbor reward keys mismatch: missing=[], unexpected=['undeclared']"
+    ]
 
 
 def receipt_fixture(
@@ -444,7 +604,7 @@ def test_receipt_validation_distinguishes_missing_malformed_and_valid(tmp_path: 
     ("mutation", "message"),
     [
         ("revision", "final_revision"),
-        ("missing-claim", "missing claim"),
+        ("missing-claim", "gate coverage mismatch"),
         ("unknown-evidence", "unknown evidence"),
         ("wrong-gate", "different gate"),
         ("passed-contradiction", "contradicts failing"),
@@ -489,6 +649,83 @@ def test_receipt_validation_reports_claim_mismatches(
     assert any(message in error for error in result.errors)
 
 
+def test_receipt_validation_binds_task_base_and_command_coverage(tmp_path: Path) -> None:
+    report_payload_value = report_payload()
+    report_payload_value["task_digest"] = "9" * 64
+    report_payload_value["base_revision"] = "8" * 40
+    report_payload_value["commands"].append(
+        {"id": "requested-extra", "command": "true", "exit_code": 0}
+    )
+    verification_payload_value = verification_payload()
+    verification_payload_value["checks"].append(
+        {
+            "id": "requested-extra",
+            "gate": "requested_behavior",
+            "passed": True,
+            "command": "true",
+            "exit_code": 0,
+            "log_path": "test-requested-extra.txt",
+            "log_sha256": SHA_A,
+        }
+    )
+    path = receipt_fixture(tmp_path, report=parse_json(AgentReport, report_payload_value))
+
+    result, _, invalid = runner._validate_receipt(
+        path,
+        task_contract(),
+        parse_json(VerificationEvidence, verification_payload_value),
+    )
+
+    assert invalid
+    assert any("task_digest" in error for error in result.errors)
+    assert any("base_revision" in error for error in result.errors)
+    assert any("not referenced by a claim" in error for error in result.errors)
+
+
+def test_verifier_log_digests_detect_missing_and_changed_files(tmp_path: Path) -> None:
+    payload = verification_payload()
+    for check in payload["checks"]:
+        path = tmp_path / "verifier" / check["log_path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{check['id']}\n")
+        check["log_sha256"] = sha256_file(path)
+    verification = parse_json(VerificationEvidence, payload)
+
+    assert runner._validate_verification_logs(tmp_path, verification) == []
+    first = tmp_path / "verifier" / verification.checks[0].log_path
+    first.write_text("changed\n")
+    assert "digest mismatch" in runner._validate_verification_logs(tmp_path, verification)[0]
+    first.unlink()
+    assert "is missing" in runner._validate_verification_logs(tmp_path, verification)[0]
+
+
+def test_reward_artifact_must_match_harbor_result(tmp_path: Path) -> None:
+    rewards = reward_vector()
+    path = tmp_path / "verifier" / "reward.json"
+    write_json(path, rewards)
+
+    assert runner._validate_reward_artifact(tmp_path, task_contract(), rewards) == []
+    path.write_text("not-json\n")
+    assert "is invalid" in runner._validate_reward_artifact(tmp_path, task_contract(), rewards)[0]
+    write_json(path, {"reward": 0})
+    assert (
+        "does not match" in runner._validate_reward_artifact(tmp_path, task_contract(), rewards)[0]
+    )
+    path.unlink()
+    assert "is missing" in runner._validate_reward_artifact(tmp_path, task_contract(), rewards)[0]
+
+
+def test_artifact_digests_hash_symlink_identity_without_following_target(tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-secret"
+    outside.write_text("secret\n")
+    (tmp_path / "link").symlink_to(outside)
+
+    artifacts = runner._artifact_digests(tmp_path)
+
+    assert [artifact.path for artifact in artifacts] == ["link"]
+    assert artifacts[0].sha256 != sha256_file(outside)
+
+
 def make_trial_result(
     manifest: RunManifest,
     task_dir: Path,
@@ -511,7 +748,7 @@ def make_trial_result(
         trial_name=manifest.trial.id,
         trial_uri="file:///trial",
         task_id=LocalTaskId(path=task_dir),
-        task_checksum="task-checksum",
+        task_checksum=manifest.task.harbor_task_checksum,
         config=config,
         agent_info=AgentInfo(name=manifest.agent.harness, version="1.0.0"),
         agent_result=AgentContext(
@@ -544,11 +781,6 @@ def prepare_bundle(
     verification_payload_value = verification_payload(requested_passed=requested_passed)
     if verification_mode == "wrong-digest":
         verification_payload_value["task_digest"] = "9" * 64
-    if verification_mode != "missing":
-        write_json(
-            trial_dir / "verifier" / "slopbench-verification.json",
-            verification_payload_value,
-        )
     if report_mode == "valid":
         write_json(
             trial_dir / "artifacts" / "app" / "slopbench-report.json",
@@ -567,14 +799,21 @@ def prepare_bundle(
         )
         evidence["passed"] = False
         evidence["exit_code"] = 1
-        write_json(
-            trial_dir / "verifier" / "slopbench-verification.json",
-            verification_payload_value,
-        )
         rewards["evidence_receipt"] = 0
         rewards["reward"] = 0
     if reward_mode == "mismatch":
         rewards["reward"] = 1 - rewards["reward"]
+    if verification_mode != "missing":
+        for check in verification_payload_value["checks"]:
+            log_path = trial_dir / "verifier" / check["log_path"]
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path.write_text(f"{check['id']}\n")
+            check["log_sha256"] = sha256_file(log_path)
+        write_json(
+            trial_dir / "verifier" / "slopbench-verification.json",
+            verification_payload_value,
+        )
+    write_json(trial_dir / "verifier" / "reward.json", rewards)
     result = make_trial_result(
         manifest,
         tmp_path / "task",
@@ -634,6 +873,39 @@ def test_finalize_classifies_malformed_receipt_as_invalid_run(tmp_path: Path) ->
     assert result.receipt.present and not result.receipt.valid
 
 
+def test_finalize_refuses_symlinked_receipt(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    trial_dir = bundle / "harbor" / manifest.trial.id
+    receipt = trial_dir / "artifacts" / "app" / "slopbench-report.json"
+    outside = bundle / "outside-report.json"
+    receipt.replace(outside)
+    receipt.symlink_to(outside)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.INVALID_RUN
+    assert result.failure_reason == FailureReason.RECEIPT_INVALID
+    assert result.receipt.present and not result.receipt.valid
+    assert result.receipt.sha256 is None
+    assert result.receipt.errors == ["slopbench-report.json must be a regular file, not a symlink"]
+
+
+def test_finalize_treats_agent_base_revision_rewrite_as_invalid_run(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    report_path = (
+        bundle / "harbor" / manifest.trial.id / "artifacts" / "app" / "slopbench-report.json"
+    )
+    report = json.loads(report_path.read_text())
+    report["base_revision"] = "9" * 40
+    write_json(report_path, report)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.INVALID_RUN
+    assert result.failure_reason == FailureReason.RECEIPT_INVALID
+    assert result.receipt.errors == ["base_revision does not match verifier evidence"]
+
+
 @pytest.mark.parametrize(
     ("verification_mode", "reward_mode"),
     [("missing", "valid"), ("wrong-digest", "valid"), ("valid", "mismatch")],
@@ -654,23 +926,147 @@ def test_finalize_classifies_benchmark_defects(
 
 
 @pytest.mark.parametrize(
-    ("exception_type", "classification"),
+    ("mutation", "reason"),
     [
-        ("AgentTimeoutError", FailureClassification.VALID_AGENT_FAILURE),
-        ("AgentSetupTimeoutError", FailureClassification.VALID_AGENT_FAILURE),
-        ("DockerError", FailureClassification.INFRASTRUCTURE_FAILURE),
+        ("task-checksum", FailureReason.HARBOR_TASK_MISMATCH),
+        ("invalid-evidence", FailureReason.VERIFIER_EVIDENCE_INVALID),
+        ("symlinked-evidence", FailureReason.VERIFIER_EVIDENCE_INVALID),
+        ("base-revision", FailureReason.VERIFIER_CONTRACT_MISMATCH),
+        ("log-digest", FailureReason.VERIFIER_CONTRACT_MISMATCH),
+    ],
+)
+def test_finalize_rejects_tampered_execution_evidence(
+    tmp_path: Path, mutation: str, reason: FailureReason
+) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+    trial_dir = bundle / "harbor" / manifest.trial.id
+    if mutation == "task-checksum":
+        path = trial_dir / "result.json"
+        payload = json.loads(path.read_text())
+        payload["task_checksum"] = "9" * 64
+        write_json(path, payload)
+    elif mutation == "invalid-evidence":
+        (trial_dir / "verifier" / "slopbench-verification.json").write_text("{}\n")
+    elif mutation == "symlinked-evidence":
+        evidence = trial_dir / "verifier" / "slopbench-verification.json"
+        outside = bundle / "outside-verification.json"
+        evidence.replace(outside)
+        evidence.symlink_to(outside)
+    elif mutation == "base-revision":
+        path = trial_dir / "verifier" / "slopbench-verification.json"
+        payload = json.loads(path.read_text())
+        payload["base_revision"] = "9" * 40
+        write_json(path, payload)
+    else:
+        (trial_dir / "verifier" / "test-requested-contract.txt").write_text("tampered\n")
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 0)
+
+    assert result.classification == FailureClassification.BENCHMARK_DEFECT
+    assert result.failure_reason == reason
+    if mutation == "symlinked-evidence":
+        assert result.receipt.errors == ["trusted verifier evidence must not be a symlink"]
+
+
+@pytest.mark.parametrize(
+    ("exception_type", "classification", "reason"),
+    [
+        (
+            "AgentTimeoutError",
+            FailureClassification.VALID_AGENT_FAILURE,
+            FailureReason.AGENT_TIMEOUT,
+        ),
+        (
+            "AgentSetupTimeoutError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.AGENT_SETUP_TIMEOUT,
+        ),
+        (
+            "NonZeroAgentExitCodeError",
+            FailureClassification.VALID_AGENT_FAILURE,
+            FailureReason.AGENT_EXIT,
+        ),
+        (
+            "ApiRateLimitError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.PROVIDER_RATE_LIMIT,
+        ),
+        (
+            "ApiUsageLimitError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.PROVIDER_USAGE_LIMIT,
+        ),
+        (
+            "VerifierTimeoutError",
+            FailureClassification.BENCHMARK_DEFECT,
+            FailureReason.VERIFIER_TIMEOUT,
+        ),
+        (
+            "RewardFileNotFoundError",
+            FailureClassification.BENCHMARK_DEFECT,
+            FailureReason.VERIFIER_EVIDENCE_INVALID,
+        ),
+        (
+            "EnvironmentStartTimeoutError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.ENVIRONMENT_START_TIMEOUT,
+        ),
+        (
+            "DockerError",
+            FailureClassification.INFRASTRUCTURE_FAILURE,
+            FailureReason.HARBOR_EXCEPTION,
+        ),
     ],
 )
 def test_finalize_classifies_harbor_exceptions(
     tmp_path: Path,
     exception_type: str,
     classification: FailureClassification,
+    reason: FailureReason,
 ) -> None:
     bundle, manifest, task = prepare_bundle(tmp_path, exception_type=exception_type)
 
     result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 1)
 
     assert result.classification == classification
+    assert result.failure_reason == reason
+
+
+def test_retry_decision_requires_classified_allowed_infrastructure_and_budget() -> None:
+    payload = run_payload()
+    payload["retry_policy"] = {
+        "max_attempts": 2,
+        "retryable_reasons": ["provider_rate_limit"],
+    }
+    manifest = parse_json(RunManifest, payload)
+
+    allowed = runner._retry_disposition(
+        manifest,
+        FailureClassification.INFRASTRUCTURE_FAILURE,
+        FailureReason.PROVIDER_RATE_LIMIT,
+    )
+    disallowed = runner._retry_disposition(
+        manifest,
+        FailureClassification.INFRASTRUCTURE_FAILURE,
+        FailureReason.PROVIDER_USAGE_LIMIT,
+    )
+    agent = runner._retry_disposition(
+        manifest,
+        FailureClassification.VALID_AGENT_FAILURE,
+        FailureReason.AGENT_TIMEOUT,
+    )
+    exhausted_payload = payload.copy()
+    exhausted_payload["trial"] = {**payload["trial"], "attempt": 2}
+    exhausted = runner._retry_disposition(
+        parse_json(RunManifest, exhausted_payload),
+        FailureClassification.INFRASTRUCTURE_FAILURE,
+        FailureReason.PROVIDER_RATE_LIMIT,
+    )
+
+    assert allowed.eligible and allowed.decision == RetryDecision.RETRY_ALLOWED
+    assert disallowed.decision == RetryDecision.REASON_NOT_ALLOWED
+    assert agent.decision == RetryDecision.CLASSIFICATION_NOT_RETRYABLE
+    assert exhausted.decision == RetryDecision.ATTEMPTS_EXHAUSTED
 
 
 def test_finalize_without_harbor_result_is_infrastructure_failure(tmp_path: Path) -> None:
@@ -682,6 +1078,17 @@ def test_finalize_without_harbor_result_is_infrastructure_failure(tmp_path: Path
     assert result.classification == FailureClassification.INFRASTRUCTURE_FAILURE
     assert result.receipt.errors == ["Harbor process exited 7 without a result"]
     assert result.harbor.result_sha256 is None
+
+
+def test_finalize_rejects_nonzero_harbor_process_with_completed_result(tmp_path: Path) -> None:
+    bundle, manifest, task = prepare_bundle(tmp_path)
+
+    result = runner._finalize(bundle, manifest, task, SHA_B, SHA_A, 9)
+
+    assert result.classification == FailureClassification.INFRASTRUCTURE_FAILURE
+    assert result.failure_reason == FailureReason.HARBOR_PROCESS_FAILURE
+    assert result.receipt.valid
+    assert result.receipt.errors == ["Harbor process exited 9 despite a completed result"]
 
 
 def test_load_trial_result_rejects_invalid_harbor_json(tmp_path: Path) -> None:
@@ -719,6 +1126,37 @@ def make_bound_task(tmp_path: Path) -> tuple[Path, str, str, TaskContract]:
     return task_dir, contract_sha, digest, task
 
 
+def test_task_snapshot_is_revalidated_and_made_read_only(tmp_path: Path) -> None:
+    task_dir, contract_sha, task_digest, _ = make_bound_task(tmp_path)
+    harbor_checksum = HarborTask(task_dir).checksum
+    snapshot = tmp_path / "snapshot"
+
+    runner._snapshot_task(task_dir, snapshot, contract_sha, task_digest, harbor_checksum)
+
+    assert validate_task(snapshot)[1:] == (contract_sha, task_digest)
+    assert HarborTask(snapshot).checksum == harbor_checksum
+    assert not (snapshot / "instruction.md").stat().st_mode & 0o222
+    with pytest.raises(ContractError, match="task changed while"):
+        runner._snapshot_task(
+            task_dir,
+            tmp_path / "wrong-snapshot",
+            contract_sha,
+            task_digest,
+            "9" * 64,
+        )
+
+
+def test_execute_run_rejects_in_task_output_and_invalid_manifest(tmp_path: Path) -> None:
+    task_dir, _, _, _ = make_bound_task(tmp_path)
+    with pytest.raises(runner.RunError, match="outside the sealed task"):
+        runner.execute_run(task_dir, tmp_path / "missing.json", task_dir / "artifacts")
+
+    invalid = tmp_path / "invalid.json"
+    invalid.write_text("{}\n")
+    with pytest.raises(ContractError, match="invalid RunManifest"):
+        runner.execute_run(task_dir, invalid, tmp_path / "output")
+
+
 def test_execute_run_builds_bundle_and_finalizes_process_failure(tmp_path: Path) -> None:
     task_dir, contract_sha, task_digest, task = make_bound_task(tmp_path)
     payload = run_payload()
@@ -728,6 +1166,7 @@ def test_execute_run_builds_bundle_and_finalizes_process_failure(tmp_path: Path)
         task_digest=task_digest,
         task_id=task.task_id,
         task_version=task.version,
+        harbor_task_checksum=HarborTask(task_dir).checksum,
     )
     payload["agent"]["instruction_layers"] = [
         {
@@ -747,7 +1186,7 @@ def test_execute_run_builds_bundle_and_finalizes_process_failure(tmp_path: Path)
         stderr: Path,
     ) -> int:
         assert command[1:3] == ["trial", "start"]
-        assert cwd == task_dir.parent
+        assert cwd == tmp_path / "output" / "tracer-oracle" / "inputs"
         stdout.write_text("stdout\n")
         stderr.write_text("stderr\n")
         return 9

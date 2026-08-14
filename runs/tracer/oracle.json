@@ -1,4 +1,5 @@
 {
+  "attack_fixture_id": null,
   "agent": {
     "credential_env": [],
     "effort_tier": "not-applicable",
@@ -23,6 +24,7 @@
     "max_tokens": null,
     "verifier_timeout_sec": 120
   },
+  "retry_policy": {"max_attempts": 1, "retryable_reasons": []},
   "run_id": "tracer-oracle",
   "runtime": {
     "cpus": 2,
@@ -31,7 +33,7 @@
     "harbor_version": "0.16.1",
     "images": [
       {
-        "reference": "python:3.13.15-slim-bookworm@sha256:00faa2debb87529f9f0764e9491d8ba400a3678976616c3bd7cb193745ac20d1",
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
         "role": "fixture-base"
       }
     ],
@@ -41,8 +43,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/tracer/slopbench-task.json",
-    "contract_sha256": "2a0b9152bfb5867a91d6e61bc2e3895b51bbf29d6f43154e747b1d83892b5b96",
-    "task_digest": "74b858ad94ea65d07ea02d311cbebadca0b4636a33ad5c1e97415139ece34284",
+    "contract_sha256": "141f9160f2b496244d1cca2a168c4e65252567d2106dd2b5b49b12cac56f0f42",
+    "harbor_task_checksum": "bf0ebc6d3b056d2d4b937c1c495cc79a2532ec66cecc5a461ad1ed4bca7b38d2",
+    "task_digest": "75b847df57fabfd539bfac2695e9c1f5ad5d7d2d3966ef6e829d486fa72a84d1",
     "task_id": "slopbench/tracer/event-summary",
     "task_version": "1.0.0"
   },

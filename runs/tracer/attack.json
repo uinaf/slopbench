@@ -1,10 +1,10 @@
 {
-  "attack_fixture_id": null,
+  "attack_fixture_id": "behavior-bypass",
   "agent": {
     "credential_env": [],
     "effort_tier": "not-applicable",
     "environment": {},
-    "harness": "nop",
+    "harness": "oracle",
     "harness_version": "1.0.0",
     "instruction_layers": [
       {
@@ -15,7 +15,7 @@
     ],
     "model": null,
     "settings": {},
-    "tools": []
+    "tools": [{"name": "python", "settings": {}, "version": "3.13.15"}]
   },
   "limits": {
     "agent_setup_timeout_sec": 120,
@@ -25,7 +25,7 @@
     "verifier_timeout_sec": 120
   },
   "retry_policy": {"max_attempts": 1, "retryable_reasons": []},
-  "run_id": "tracer-nop",
+  "run_id": "tracer-attack-behavior-bypass",
   "runtime": {
     "cpus": 2,
     "environment_provider": "docker",
@@ -49,5 +49,5 @@
     "task_id": "slopbench/tracer/event-summary",
     "task_version": "1.0.0"
   },
-  "trial": {"attempt": 1, "id": "tracer-nop", "seed": 1}
+  "trial": {"attempt": 1, "id": "tracer-attack-behavior-bypass", "seed": 1}
 }

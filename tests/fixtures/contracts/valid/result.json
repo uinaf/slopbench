@@ -4,7 +4,14 @@
   "task_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "run_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "classification": "valid_pass",
+  "failure_reason": "none",
   "completed": true,
+  "attempt": 1,
+  "retry": {
+    "eligible": false,
+    "decision": "classification_not_retryable",
+    "remaining_attempts": 0
+  },
   "outcomes": [
     {"gate": "requested_behavior", "status": "passed", "check_ids": []},
     {"gate": "regressions", "status": "passed", "check_ids": []},

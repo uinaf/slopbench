@@ -5,6 +5,7 @@
 - Install with `uv sync --locked --all-groups`.
 - Run the repository gate with `make verify`.
 - Run the Docker-backed deterministic proof with `make tracer`.
+- Run the Docker-backed attack proof with `make hardening`.
 
 ## Sources of truth
 
@@ -22,4 +23,6 @@ hash and task digest, then run `make verify` and the relevant Harbor proof.
 
 Keep credentials out of tasks, manifests, logs, fixtures, and committed results. Add agent or
 environment behavior through Harbor configuration unless a repeated, documented blocker proves
-the thin boundary insufficient.
+the thin boundary insufficient. Every official task must keep its Harbor environment and verifier
+offline, use a separate verifier, declare the exact agent allowlist, and carry deterministic
+known-invalid fixtures for its task format.

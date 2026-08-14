@@ -31,6 +31,31 @@
       "title": "FailureClassification",
       "type": "string"
     },
+    "FailureReason": {
+      "enum": [
+        "none",
+        "gate_failure",
+        "receipt_missing",
+        "receipt_invalid",
+        "agent_timeout",
+        "agent_setup_timeout",
+        "agent_exit",
+        "provider_rate_limit",
+        "provider_usage_limit",
+        "environment_start_timeout",
+        "verifier_timeout",
+        "verifier_evidence_missing",
+        "verifier_evidence_invalid",
+        "verifier_contract_mismatch",
+        "harbor_task_mismatch",
+        "reward_mismatch",
+        "harbor_process_failure",
+        "harbor_result_invalid",
+        "harbor_exception"
+      ],
+      "title": "FailureReason",
+      "type": "string"
+    },
     "GateName": {
       "enum": [
         "requested_behavior",
@@ -185,6 +210,40 @@
       "title": "ReceiptValidation",
       "type": "object"
     },
+    "RetryDecision": {
+      "enum": [
+        "retry_allowed",
+        "classification_not_retryable",
+        "reason_not_allowed",
+        "attempts_exhausted"
+      ],
+      "title": "RetryDecision",
+      "type": "string"
+    },
+    "RetryDisposition": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/RetryDecision"
+        },
+        "eligible": {
+          "title": "Eligible",
+          "type": "boolean"
+        },
+        "remaining_attempts": {
+          "minimum": 0,
+          "title": "Remaining Attempts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "eligible",
+        "decision",
+        "remaining_attempts"
+      ],
+      "title": "RetryDisposition",
+      "type": "object"
+    },
     "TimingMetrics": {
       "additionalProperties": false,
       "properties": {
@@ -300,12 +359,20 @@
       "title": "Artifacts",
       "type": "array"
     },
+    "attempt": {
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
+    },
     "classification": {
       "$ref": "#/$defs/FailureClassification"
     },
     "completed": {
       "title": "Completed",
       "type": "boolean"
+    },
+    "failure_reason": {
+      "$ref": "#/$defs/FailureReason"
     },
     "harbor": {
       "$ref": "#/$defs/HarborEvidence"
@@ -319,6 +386,9 @@
     },
     "receipt": {
       "$ref": "#/$defs/ReceiptValidation"
+    },
+    "retry": {
+      "$ref": "#/$defs/RetryDisposition"
     },
     "run_id": {
       "pattern": "^[a-z0-9][a-z0-9._:-]*$",
@@ -353,7 +423,10 @@
     "task_digest",
     "run_manifest_sha256",
     "classification",
+    "failure_reason",
     "completed",
+    "attempt",
+    "retry",
     "outcomes",
     "receipt",
     "usage",
