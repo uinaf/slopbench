@@ -3,14 +3,14 @@ multi_step_reward_strategy = "final"
 
 [task]
 name = "uinaf/event-pagination"
-description = "Add deterministic opaque event pagination and filter-bound cursors"
+description = "Add deterministic pagination and consolidate repository automation"
 
 [[task.authors]]
 name = "uinaf"
 
 [metadata]
 slopbench_task_id = "slopbench/feature/event-pagination"
-slopbench_task_version = "1.0.0"
+slopbench_task_version = "1.1.0"
 
 [[steps]]
 name = "implement"
@@ -21,9 +21,16 @@ env = { SLOPBENCH_PHASE = "implement" }
 
 [[steps]]
 name = "review"
+min_reward = 1.0
 
 [steps.verifier]
 env = { SLOPBENCH_PHASE = "review" }
+
+[[steps]]
+name = "integrate"
+
+[steps.verifier]
+env = { SLOPBENCH_PHASE = "integrate" }
 
 [agent]
 timeout_sec = 300.0

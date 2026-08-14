@@ -1,5 +1,11 @@
 {
-  "allowed_paths": ["src/events.py"],
+  "allowed_paths": ["scripts/verify.sh", "src/events.py", "src/task_graph.py"],
   "build_command": "python -m compileall -q src tests tools",
+  "phase_removals": {"integrate": ["scripts/verify.sh"]},
+  "phase_targets": {
+    "implement": "src/events.py",
+    "integrate": "src/task_graph.py",
+    "review": "src/events.py"
+  },
   "public_command": "python -m unittest discover -s tests -v"
 }

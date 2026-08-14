@@ -34,9 +34,9 @@ def test_checked_in_coverage_is_bound_and_explicit_about_gaps() -> None:
     assert coverage.task_set == task_set_binding(task_set)
     assert coverage.coverage_id == "slopbench-swe-v1-dev-agent-rules"
     assert Counter(rule.disposition for rule in coverage.rules) == {
-        CoverageDisposition.MEASURED: 8,
-        CoverageDisposition.PARTIAL: 5,
-        CoverageDisposition.OUT_OF_SCOPE: 10,
+        CoverageDisposition.MEASURED: 11,
+        CoverageDisposition.PARTIAL: 3,
+        CoverageDisposition.OUT_OF_SCOPE: 9,
     }
     assert all(
         rule.limitation is None

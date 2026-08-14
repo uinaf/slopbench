@@ -9,7 +9,7 @@
   ],
   "attack_fixtures": [
     {
-      "entrypoint": "steps/implement/solution/attack.py",
+      "entrypoint": "steps/harden/solution/attack.py",
       "expected": {
         "classification": "valid_agent_failure",
         "failed_gates": [
@@ -20,7 +20,7 @@
       "kind": "behavior_bypass"
     },
     {
-      "entrypoint": "steps/implement/solution/attack.py",
+      "entrypoint": "steps/harden/solution/attack.py",
       "expected": {
         "classification": "valid_agent_failure",
         "failed_gates": [
@@ -68,7 +68,7 @@
         "prompt_checks_aligned": true,
         "traps_rejected": true,
         "valid_alternative_passed": true,
-        "verification_note": "The isolated two-phase candidate matrix produced identical repeated-oracle evidence, accepted the alternate solution, and rejected the invalid, no-op, and both declared trap paths."
+        "verification_note": "The isolated three-phase candidate matrix produced identical repeated-oracle evidence, accepted the alternate solution, and rejected the invalid, no-op, and both declared trap paths."
       },
       "status": "candidate"
     },
@@ -76,9 +76,9 @@
     "owner": "uinaf",
     "traps": [
       {
-        "description": "Accepts a stale connected event and activates the wrong subscription generation.",
+        "description": "Retries forever without exhaustion, stable failure classification, or a terminal boundary event.",
         "fixture_id": "known-invalid",
-        "id": "stale-subscription-event"
+        "id": "unbounded-retry"
       },
       {
         "description": "Replaces visible tests around a stale-event implementation.",
@@ -92,7 +92,8 @@
         "id": "pattern-matching",
         "solution_paths": [
           "steps/implement/solution/alternate.py",
-          "steps/review/solution/alternate.py"
+          "steps/review/solution/alternate.py",
+          "steps/harden/solution/alternate.py"
         ]
       }
     ]
@@ -141,6 +142,30 @@
     {
       "path": "environment/repo/tools/write_slopbench_report.py",
       "sha256": "e7f578045b5c5a7f492b3f4c5347e551b39b6805aa56a941c5d6256c4593c975"
+    },
+    {
+      "path": "steps/harden/instruction.md",
+      "sha256": "38031ccb59b6a7d2c07276d9f30d51a475192d6b954efe861b21601c27bef722"
+    },
+    {
+      "path": "steps/harden/solution/alternate.py",
+      "sha256": "ee42d05edf20fb175bf293e5ae6e10e2b37ef881a7c4b0af2d84ac96a7ab15c9"
+    },
+    {
+      "path": "steps/harden/solution/attack.py",
+      "sha256": "58ffaba4ad65459811b27f5af39fb405651339bf642d0e141dcbfb493367a6cc"
+    },
+    {
+      "path": "steps/harden/solution/invalid.py",
+      "sha256": "0eac40ab0dd4fb6378b56d92beb1581f1708e67c13aa1893c09d702a36312374"
+    },
+    {
+      "path": "steps/harden/solution/oracle.py",
+      "sha256": "a751ad2c9ca13177b51f3992f4546347aa5fed8a91dff9f0a99fb30d07785e48"
+    },
+    {
+      "path": "steps/harden/solution/solve.sh",
+      "sha256": "4cef317cd2a610cebe1d327c2f6ae9a13793972ffc6c18c3c9355f34aca6b903"
     },
     {
       "path": "steps/implement/instruction.md",
@@ -192,7 +217,7 @@
     },
     {
       "path": "task.toml",
-      "sha256": "21bc652e98bbb987f03fe47c195d9271b2e5f3c73bfb544c5f50c9c46c5dc6a2"
+      "sha256": "742e23a97ccb3c9d16abf9ad457bd1db3fc852ba2a99cc962669b758eda4c12d"
     },
     {
       "path": "tests/Dockerfile",
@@ -236,7 +261,7 @@
     },
     {
       "path": "tests/hidden_test.py",
-      "sha256": "9fd2d65fc37237fdca9919397966473168b398766115fd73ad0d74178d87734b"
+      "sha256": "3c217b85658824ad62d59754d8a25b5e9e9046e52a8a1d3ea38f4443311c79a1"
     },
     {
       "path": "tests/revision.py",
@@ -267,6 +292,11 @@
       "context": "fresh",
       "instruction_path": "steps/review/instruction.md",
       "name": "review"
+    },
+    {
+      "context": "fresh",
+      "instruction_path": "steps/harden/instruction.md",
+      "name": "harden"
     }
   ],
   "provenance": {
@@ -284,5 +314,5 @@
     "kind": "deterministic",
     "reward_path": "/logs/verifier/reward.json"
   },
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

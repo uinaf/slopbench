@@ -252,13 +252,13 @@
       "provenance": {
         "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
         "origin": "slopbench-authored",
-        "source_revision": "ecb370ebd21485f8c07a0192fb71e3a7479e858d",
+        "source_revision": "25390ce73cf2efd751bd585e49747917f999aff4",
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "8a72081a016bf7100eb678e8aab69450d225eea759a40b229e496e84d07b1152",
+      "task_digest": "15b54f2594590c35bf9e79e384b4f9395a2d1c7e8d4ec7aa7d7e56b74d4e627a",
       "task_id": "slopbench/feature/event-pagination",
-      "task_version": "1.0.0"
+      "task_version": "1.1.0"
     },
     {
       "applicable_gates": [
@@ -608,11 +608,11 @@
         "source_url": null,
         "transformed": false
       },
-      "task_digest": "9b912203a82e5080ec2c064adaefe5872b8ab29fd6f7fb69e9ea1c84faed29db",
+      "task_digest": "1d4c66d30d0137fa0f7455411796ff4efe202132dc44a076dabd36461bdb37e8",
       "task_id": "slopbench/state/watch-subscription",
-      "task_version": "1.0.0"
+      "task_version": "1.1.0"
     }
   ],
-  "version": "0.1.1",
+  "version": "0.2.0",
   "visibility": "public"
 }

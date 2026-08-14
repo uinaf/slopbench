@@ -1,6 +1,6 @@
 # Limitations
 
-The checked-in `0.1.1` evidence is provisional. Machine admission and adversarial fixture coverage
+The checked-in `0.2.0` evidence is provisional. Machine admission and adversarial fixture coverage
 are complete, but owner approval, independent human review, expert calibration, private held-out
 execution, signed five-trial references, release audits, and clean-room reproduction are not.
 The generated readiness report is the authoritative blocker list.
@@ -11,10 +11,11 @@ design quality, or operational competence. Deterministic verifiers can still enc
 or incorrect task specification, which is why human admission remains mandatory.
 
 The [agent-rule coverage manifest](../coverage/slopbench-swe-v1-dev-agent-rules.json) is the
-authoritative scope map. Structured-owner integration, retries and recovery, error taxonomy, and
-structured events are only partially covered. Communication, delegation, external approvals,
-interface quality, performance evidence, documentation style, secret-bearing observability,
-technology choice, and delivery workflow are outside the current score.
+authoritative scope map. Structured-owner integration, bounded retry and recovery, and structured
+failure events are measured. Exception cause chains, mixed-success batches, and live
+secret-bearing logger transports are only partially covered. Communication, delegation, external
+approvals, interface quality, performance evidence, documentation style, technology choice, and
+delivery workflow are outside the current score.
 
 Model sampling and provider infrastructure can vary even with a fixed model identifier and trial
 seed. Five trials measure observed reliability; they do not make inference deterministic.

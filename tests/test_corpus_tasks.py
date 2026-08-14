@@ -188,7 +188,14 @@ def test_corpus_solutions_have_expected_behavior(
     repo = initialize_repo(task_dir, tmp_path)
     meta = json.loads((repo / "tools" / "task_meta.json").read_text())
     allowed_paths = meta["allowed_paths"]
-    assert len(allowed_paths) == 1
+    phase_targets = meta.get("phase_targets")
+    phase_removals = meta.get("phase_removals", {})
+    if phase_targets is None:
+        assert len(allowed_paths) == 1
+    else:
+        assert set(phase_targets) == {phase.name for phase in task.phases}
+        assert set(phase_targets.values()) <= set(allowed_paths)
+        assert {path for paths in phase_removals.values() for path in paths} <= set(allowed_paths)
     environment = {
         **os.environ,
         "PYTHONDONTWRITEBYTECODE": "1",
@@ -201,7 +208,10 @@ def test_corpus_solutions_have_expected_behavior(
             if task.phase_mode == PhaseMode.SINGLE
             else task_dir / "steps" / phase.name / "solution"
         )
-        shutil.copyfile(solution_dir / f"{variant}.py", repo / allowed_paths[0])
+        target = allowed_paths[0] if phase_targets is None else phase_targets[phase.name]
+        shutil.copyfile(solution_dir / f"{variant}.py", repo / target)
+        for removed_path in phase_removals.get(phase.name, []):
+            (repo / removed_path).unlink()
         public = run_command(meta["public_command"], repo, environment)
         assert public.returncode == 0, public.stdout + public.stderr
         hidden = subprocess.run(

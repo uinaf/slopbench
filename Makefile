@@ -38,7 +38,7 @@ verify:
 	trap 'rm -f "$$task_set"' EXIT; \
 	uv run python scripts/generate-task-set.py \
 		--task-set-id slopbench-swe-v1-dev \
-		--version 0.1.1 \
+		--version 0.2.0 \
 		--visibility public \
 		"$$task_set" $(SWE_V1_TASKS); \
 	diff -u datasets/slopbench-swe-v1-dev.json "$$task_set"; \
@@ -63,7 +63,7 @@ verify:
 task-set:
 	uv run python scripts/generate-task-set.py \
 		--task-set-id slopbench-swe-v1-dev \
-		--version 0.1.1 \
+		--version 0.2.0 \
 		--visibility public \
 		datasets/slopbench-swe-v1-dev.json $(SWE_V1_TASKS)
 	uv run slopbench task-set datasets/slopbench-swe-v1-dev.json --root .

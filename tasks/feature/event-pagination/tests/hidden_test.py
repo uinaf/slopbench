@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from pathlib import Path
 
 from src.events import Event, paginate_events
 
@@ -50,11 +51,27 @@ class ReviewContract(ImplementContract):
             paginate_events(events, limit=1, after=page.next_cursor)
 
 
+class IntegrateContract(ReviewContract):
+    def test_verification_is_owned_by_the_typed_task_graph(self) -> None:
+        from src.task_graph import TASK_GRAPH, resolve_tasks
+
+        nodes = resolve_tasks("verify")
+        self.assertEqual([node.name for node in nodes], ["tests", "types", "verify"])
+        self.assertEqual(nodes[-1].command, ())
+        self.assertEqual(nodes[-1].needs, ("tests", "types"))
+        self.assertEqual([node.name for node in TASK_GRAPH], ["tests", "types", "verify"])
+
+    def test_parallel_shell_owner_is_removed(self) -> None:
+        self.assertEqual(list(Path("scripts").glob("*.sh")), [])
+
+
 def main() -> int:
     try:
-        case = {"implement": ImplementContract, "review": ReviewContract}[
-            os.environ.get("SLOPBENCH_PHASE")
-        ]
+        case = {
+            "implement": ImplementContract,
+            "review": ReviewContract,
+            "integrate": IntegrateContract,
+        }[os.environ.get("SLOPBENCH_PHASE")]
     except KeyError as exc:
         raise SystemExit("unknown SLOPBENCH_PHASE") from exc
     result = unittest.TextTestRunner(verbosity=2).run(

@@ -9,8 +9,9 @@ verifier. Official scoring is deterministic. An LLM never judges the agent outpu
 The public development corpus contains 12 synthetic, SlopBench-authored tasks: two each for
 diagnosis and repair, feature work, restraint and scope, composition and domain evolution, state
 and effects, and code review. Review tasks use a read-only repository and structured finding
-matching. Patch tasks use a writable repository. Four of the ten patch tasks have two ordered
-phases; phase two receives the phase-one repository result through a fresh agent context.
+matching. Patch tasks use a writable repository. Four of the ten patch tasks have ordered phases:
+two have two phases and two have three. Each later phase receives the prior repository result
+through a fresh agent context.
 
 Each task contract binds its instructions, environment, verifier, capabilities, gates,
 provenance, license, valid alternatives, and adversarial fixtures. The task digest changes when

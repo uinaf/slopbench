@@ -187,7 +187,7 @@
     },
     {
       "description": "Use closed retry, cancellation, concurrency, and recovery states with bounded transient retries.",
-      "disposition": "partial",
+      "disposition": "measured",
       "evidence": [
         {
           "gates": [
@@ -200,7 +200,7 @@
           ]
         }
       ],
-      "limitation": "Cancellation, stale-event rejection, and capped delay are covered; retry exhaustion, attempt bounds, and idempotent retry eligibility are not.",
+      "limitation": null,
       "rule_id": "retry-cancellation-recovery"
     },
     {
@@ -223,9 +223,18 @@
     },
     {
       "description": "Prevent secrets and full payloads from crossing logs or structured event boundaries.",
-      "disposition": "out_of_scope",
-      "evidence": [],
-      "limitation": "Tasks use no live credentials and do not exercise secret-bearing application logs.",
+      "disposition": "partial",
+      "evidence": [
+        {
+          "gates": [
+            "requested_behavior"
+          ],
+          "task_ids": [
+            "slopbench/state/watch-subscription"
+          ]
+        }
+      ],
+      "limitation": "A synthetic failure payload must not cross the typed event boundary, but no live credential or logger transport is exercised.",
       "rule_id": "secret-redaction"
     },
     {
@@ -239,16 +248,17 @@
           "task_ids": [
             "slopbench/domain/fulfillment-plan",
             "slopbench/feature/idempotency-registry",
-            "slopbench/state/sync-command"
+            "slopbench/state/sync-command",
+            "slopbench/state/watch-subscription"
           ]
         }
       ],
-      "limitation": "The tasks distinguish validation and domain failures, but they do not require a shared error taxonomy or preserved exception cause chain.",
+      "limitation": "The watch task requires a stable taxonomy and prose-independent classification, but no task preserves a real exception cause chain.",
       "rule_id": "stable-errors-and-causes"
     },
     {
       "description": "Extend the closest structured owner instead of introducing a parallel script or command path.",
-      "disposition": "partial",
+      "disposition": "measured",
       "evidence": [
         {
           "gates": [
@@ -256,31 +266,27 @@
             "authority"
           ],
           "task_ids": [
-            "slopbench/domain/fulfillment-plan",
-            "slopbench/feature/event-pagination",
-            "slopbench/restraint/config-overrides",
-            "slopbench/restraint/header-lookup"
+            "slopbench/feature/event-pagination"
           ]
         }
       ],
-      "limitation": "File authority blocks adjacent changes, but no task requires replacing parallel shell automation with a typed manifest or task-graph owner.",
+      "limitation": null,
       "rule_id": "structured-owner-extension"
     },
     {
       "description": "Emit structured boundary events with stable fields, redaction, and one record per failure.",
-      "disposition": "partial",
+      "disposition": "measured",
       "evidence": [
         {
           "gates": [
             "requested_behavior"
           ],
           "task_ids": [
-            "slopbench/state/sync-command",
             "slopbench/state/watch-subscription"
           ]
         }
       ],
-      "limitation": "State tasks emit typed effect data, but no task covers process-boundary event fields, redaction, prose-independent classification, or exact-once failure logging.",
+      "limitation": null,
       "rule_id": "structured-redacted-events"
     },
     {
@@ -348,8 +354,8 @@
   "source_revision": "487784abdd8c88eec52ffabd59a21801b98d3345e7c9dcc60a618c50aca23c2f",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "7d03364a88556db0b137a722538e568264092ff71157eaf3325462769cc838ce",
-    "version": "0.1.1"
+    "sha256": "7f3e9e013d76da2a958748a3b7921afa30ee61a853f198304be48a256d414fe7",
+    "version": "0.2.0"
   },
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
