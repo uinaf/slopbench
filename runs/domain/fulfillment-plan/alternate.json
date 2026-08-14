@@ -1,0 +1,73 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {
+      "SLOPBENCH_VARIANT": "alternate"
+    },
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "implement",
+        "path": "tasks/domain/fulfillment-plan/steps/implement/instruction.md",
+        "sha256": "db25fc1c7ee1a02ae313a791d88ac18df9cba43b3b17d8db0735bb8716cfb48f"
+      },
+      {
+        "name": "review",
+        "path": "tasks/domain/fulfillment-plan/steps/review/instruction.md",
+        "sha256": "9cc62490d2e0db8573e2be60b3d07f947e7fd9342f37985aadf9e9f417fb7989"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": [
+      {
+        "name": "python",
+        "settings": {},
+        "version": "3.13.15"
+      }
+    ]
+  },
+  "attack_fixture_id": null,
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "domain-fulfillment-plan-alternate",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/domain/fulfillment-plan/slopbench-task.json",
+    "contract_sha256": "de65f930d1dc8e987ec6edbe1e30b5f0884b6c5ce5defa6ef8148ea650e72582",
+    "harbor_task_checksum": "f0460676834f981276d2072e4b445bbe4099be7e121f60144cdb1e896331bbc6",
+    "task_digest": "e9d66fb85e556411ff4b838f8d62748738212b61e10280ec99f72f6604c34de3",
+    "task_id": "slopbench/domain/fulfillment-plan",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "domain-fulfillment-plan-alternate",
+    "seed": 1
+  }
+}

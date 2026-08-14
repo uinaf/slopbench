@@ -31,7 +31,9 @@ def test_validate_command_reports_contextual_error(
 def test_task_seal_and_check_commands(tmp_path: Path) -> None:
     task_dir = tmp_path / "task"
     (task_dir / "tests").mkdir(parents=True)
+    (task_dir / "solution").mkdir()
     (task_dir / "instruction.md").write_text("Do the work.\n")
+    (task_dir / "solution" / "alternate.py").write_text("pass\n")
     (task_dir / "tests" / "test.sh").write_text("#!/bin/sh\n")
     write_json(task_dir / "slopbench-task.json", task_payload(sealed=False))
 

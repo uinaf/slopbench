@@ -78,6 +78,12 @@ def test_relative_path_accepts_canonical_path() -> None:
             lambda value: value["capabilities"]["tools"].append("git"),
             "capability values must be unique",
         ),
+        (
+            lambda value: value["design"]["valid_alternatives"].append(
+                value["design"]["valid_alternatives"][0].copy()
+            ),
+            "valid alternative ids must be unique",
+        ),
     ],
 )
 def test_task_contract_rejects_inconsistent_shapes(mutator: object, message: str) -> None:
@@ -157,6 +163,13 @@ def attack_task_payload() -> dict[str, object]:
         }
     ]
     payload["immutable_inputs"].append({"path": "solution/attack.py", "sha256": "f" * 64})
+    payload["design"]["traps"] = [
+        {
+            "id": "tampering",
+            "fixture_id": "tamper",
+            "description": "Attempts to bypass the verifier boundary.",
+        }
+    ]
     return payload
 
 
@@ -181,6 +194,35 @@ def test_attack_fixture_contract_rejects_ambiguous_expectations(
         fixtures[0]["expected"]["failed_gates"] = ["safety_type_escapes"]
 
     with pytest.raises(ValidationError, match=message):
+        validate(TaskContract, payload)
+
+
+def test_design_traps_must_cover_attack_fixtures() -> None:
+    payload = attack_task_payload()
+    payload["design"]["traps"] = []
+
+    with pytest.raises(ValidationError, match="cover every attack fixture"):
+        validate(TaskContract, payload)
+
+
+def test_approved_admission_requires_complete_evidence_and_attribution() -> None:
+    incomplete = task_payload()
+    incomplete["design"]["admission"]["status"] = "approved"
+    incomplete["design"]["admission"]["evidence"]["deterministic"] = False
+    unattributed = task_payload()
+    unattributed["design"]["admission"]["status"] = "approved"
+
+    with pytest.raises(ValidationError, match="complete verification evidence"):
+        validate(TaskContract, incomplete)
+    with pytest.raises(ValidationError, match="approver and approval_ref"):
+        validate(TaskContract, unattributed)
+
+
+def test_candidate_admission_cannot_claim_approval_metadata() -> None:
+    payload = task_payload()
+    payload["design"]["admission"]["approved_by"] = "reviewer"
+
+    with pytest.raises(ValidationError, match="only approved admission"):
         validate(TaskContract, payload)
 
 

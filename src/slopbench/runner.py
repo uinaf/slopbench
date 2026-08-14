@@ -10,11 +10,17 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 from harbor.models.environment_type import EnvironmentType
-from harbor.models.task.config import NetworkMode, VerifierEnvironmentMode
+from harbor.models.task.config import (
+    MultiStepRewardStrategy,
+    NetworkMode,
+    TaskOS,
+    VerifierEnvironmentMode,
+)
 from harbor.models.task.task import Task as HarborTask
 from harbor.models.task.verifier_mode import resolve_task_verifier_mode
 from harbor.models.trial.config import (
@@ -48,6 +54,7 @@ from slopbench.contracts import (
     GateOutcome,
     HarborEvidence,
     OutcomeStatus,
+    PhaseMode,
     ReceiptValidation,
     ResultBundle,
     RetryDecision,
@@ -214,10 +221,57 @@ def _validate_harbor_boundary(
         or config.environment.workdir != "/app"
     ):
         raise ContractError("Harbor environment does not match sealed resources or workdir")
+    if config.environment.os != TaskOS.LINUX:
+        raise ContractError("official v1 tasks require a Linux Harbor environment")
     if config.environment.env or config.environment.mcp_servers or config.artifacts:
         raise ContractError("Harbor task declares unapproved environment inputs or artifacts")
+    if any(
+        (
+            config.environment.docker_image,
+            config.environment.skills_dir,
+            config.environment.healthcheck,
+            config.environment.gpus,
+            config.environment.gpu_types,
+            config.environment.tpu,
+        )
+    ):
+        raise ContractError("Harbor task declares an unapproved environment override")
     if config.solution.env or config.verifier.env:
         raise ContractError("Harbor task declares unapproved solution or verifier environment")
+    if (
+        config.agent.user is not None
+        or config.verifier.user is not None
+        or config.verifier.environment is not None
+        or config.verifier.collect
+        or config.source is not None
+    ):
+        raise ContractError("Harbor task declares an unapproved execution override")
+
+    configured_steps = list(config.steps or [])
+    if task.phase_mode == PhaseMode.SINGLE:
+        if configured_steps or config.multi_step_reward_strategy is not None:
+            raise ContractError("single-phase task declares Harbor multi-step behavior")
+    else:
+        if [step.name for step in configured_steps] != [phase.name for phase in task.phases]:
+            raise ContractError("Harbor steps do not match the sealed phase order")
+        if config.multi_step_reward_strategy != MultiStepRewardStrategy.FINAL:
+            raise ContractError("sequential tasks require the final-step reward strategy")
+        for index, (step, phase) in enumerate(zip(configured_steps, task.phases, strict=True)):
+            expected_min_reward = 1.0 if index < len(configured_steps) - 1 else None
+            if step.min_reward != expected_min_reward:
+                raise ContractError("sequential task checkpoints do not match v1 policy")
+            if (
+                step.agent.timeout_sec is not None
+                or step.agent.user is not None
+                or step.verifier.user is not None
+                or step.verifier.environment is not None
+                or step.verifier.collect
+                or step.healthcheck is not None
+                or step.artifacts
+            ):
+                raise ContractError("Harbor step declares an unapproved execution override")
+            if step.verifier.env != {"SLOPBENCH_PHASE": phase.name}:
+                raise ContractError("Harbor step verifier phase binding is invalid")
 
     expected_agent_mode = (
         NetworkMode.NO_NETWORK if task.capabilities.network == "none" else NetworkMode.ALLOWLIST
@@ -759,10 +813,81 @@ def _retry_disposition(
     )
 
 
-def _harbor_evidence(trial_dir: Path, result: TrialResult | None) -> HarborEvidence:
+@dataclass(frozen=True)
+class _TrialOutputLayout:
+    output_dir: Path
+    exception_type: str | None
+    complete: bool
+    errors: tuple[str, ...]
+
+
+def _resolve_trial_output_layout(
+    trial_dir: Path,
+    result: TrialResult,
+    task: TaskContract,
+) -> _TrialOutputLayout:
+    top_exception = (
+        result.exception_info.exception_type if result.exception_info is not None else None
+    )
+    if task.phase_mode == PhaseMode.SINGLE:
+        single_errors = (
+            ("single-phase Harbor result unexpectedly contains step_results",)
+            if result.step_results is not None
+            else ()
+        )
+        return _TrialOutputLayout(trial_dir, top_exception, True, single_errors)
+
+    step_results = result.step_results
+    if not step_results:
+        no_steps_errors = (
+            () if top_exception is not None else ("sequential Harbor result has no steps",)
+        )
+        return _TrialOutputLayout(trial_dir, top_exception, False, no_steps_errors)
+
+    expected_names = [phase.name for phase in task.phases]
+    actual_names = [step.step_name for step in step_results]
+    expected_prefix = expected_names[: len(actual_names)]
+    if len(actual_names) > len(expected_names) or actual_names != expected_prefix:
+        return _TrialOutputLayout(
+            trial_dir,
+            top_exception,
+            False,
+            (
+                "Harbor step results do not match the sealed phase prefix: "
+                f"expected={expected_prefix}, actual={actual_names}",
+            ),
+        )
+
+    last_step = step_results[-1]
+    errors: list[str] = []
+    if result.agent_result is not None:
+        errors.append("sequential Harbor result unexpectedly contains a top-level agent result")
+    if result.verifier_result != last_step.verifier_result:
+        errors.append("Harbor final reward does not match the last reached step")
+    step_exception = next(
+        (
+            step.exception_info.exception_type
+            for step in step_results
+            if step.exception_info is not None
+        ),
+        None,
+    )
+    return _TrialOutputLayout(
+        trial_dir / "steps" / last_step.step_name,
+        top_exception or step_exception,
+        actual_names == expected_names,
+        tuple(errors),
+    )
+
+
+def _harbor_evidence(
+    trial_dir: Path,
+    output_dir: Path,
+    result: TrialResult | None,
+) -> HarborEvidence:
     result_path = trial_dir / "result.json"
     config_path = trial_dir / "config.json"
-    trajectory_path = trial_dir / "agent" / "trajectory.json"
+    trajectory_path = output_dir / "agent" / "trajectory.json"
     return HarborEvidence(
         version=_runtime_version(),
         task_checksum=result.task_checksum if result else None,
@@ -797,7 +922,16 @@ def _finalize(
     except ContractError as exc:
         trial_result = None
         trial_result_error = str(exc)
-    harbor = _harbor_evidence(trial_dir, trial_result)
+    layout = (
+        _resolve_trial_output_layout(trial_dir, trial_result, task)
+        if trial_result is not None
+        else None
+    )
+    harbor = _harbor_evidence(
+        trial_dir,
+        layout.output_dir if layout is not None else trial_dir,
+        trial_result,
+    )
     usage = UsageMetrics()
     timing = TimingMetrics(started_at=None, finished_at=None, duration_seconds=None)
     receipt = ReceiptValidation(
@@ -813,8 +947,10 @@ def _finalize(
         else FailureReason.HARBOR_PROCESS_FAILURE
     )
     outcomes = _not_applicable_outcomes()
+    effective_exception_type: str | None = None
 
     if trial_result is not None:
+        assert layout is not None
         input_tokens, cache_tokens, output_tokens, cost_usd = (
             trial_result.compute_token_cost_totals()
         )
@@ -831,10 +967,17 @@ def _finalize(
             ),
             duration_seconds=_duration_seconds(trial_result.started_at, trial_result.finished_at),
         )
+        effective_exception_type = layout.exception_type
         if trial_result.exception_info is not None:
             classification, failure_reason = _classify_exception(
                 trial_result.exception_info.exception_type
             )
+        elif layout.errors:
+            classification = FailureClassification.BENCHMARK_DEFECT
+            failure_reason = FailureReason.HARBOR_RESULT_INVALID
+            receipt = receipt.model_copy(update={"errors": list(layout.errors)})
+        elif effective_exception_type is not None:
+            classification, failure_reason = _classify_exception(effective_exception_type)
         else:
             if trial_result.task_checksum != manifest.task.harbor_task_checksum:
                 classification = FailureClassification.BENCHMARK_DEFECT
@@ -844,7 +987,7 @@ def _finalize(
                 )
             else:
                 verification_path = (
-                    trial_dir / "verifier" / PurePosixPath(task.verifier.evidence_path).name
+                    layout.output_dir / "verifier" / PurePosixPath(task.verifier.evidence_path).name
                 )
                 if verification_path.is_symlink():
                     classification = FailureClassification.BENCHMARK_DEFECT
@@ -871,14 +1014,16 @@ def _finalize(
                             contract_errors.append("verifier task digest mismatch")
                         if verification.base_revision != task.environment.base_revision:
                             contract_errors.append("verifier base revision mismatch")
-                        contract_errors.extend(_validate_verification_logs(trial_dir, verification))
+                        contract_errors.extend(
+                            _validate_verification_logs(layout.output_dir, verification)
+                        )
                         if contract_errors:
                             classification = FailureClassification.BENCHMARK_DEFECT
                             failure_reason = FailureReason.VERIFIER_CONTRACT_MISMATCH
                             receipt = receipt.model_copy(update={"errors": contract_errors})
                         else:
                             receipt, _, invalid_receipt = _validate_receipt(
-                                _receipt_path(trial_dir), task, verification
+                                _receipt_path(layout.output_dir), task, verification
                             )
                             trusted_outcomes, benchmark_errors = _check_outcomes(
                                 task, verification, True
@@ -894,7 +1039,7 @@ def _finalize(
                             )
                             reward_errors = _validate_rewards(trusted_outcomes, rewards)
                             reward_errors.extend(
-                                _validate_reward_artifact(trial_dir, task, rewards)
+                                _validate_reward_artifact(layout.output_dir, task, rewards)
                             )
                             if benchmark_errors or reward_errors:
                                 classification = FailureClassification.BENCHMARK_DEFECT
@@ -920,8 +1065,21 @@ def _finalize(
                                 in {OutcomeStatus.PASSED, OutcomeStatus.NOT_APPLICABLE}
                                 for outcome in outcomes
                             ):
-                                classification = FailureClassification.VALID_PASS
-                                failure_reason = FailureReason.NONE
+                                if layout.complete:
+                                    classification = FailureClassification.VALID_PASS
+                                    failure_reason = FailureReason.NONE
+                                else:
+                                    classification = FailureClassification.BENCHMARK_DEFECT
+                                    failure_reason = FailureReason.HARBOR_RESULT_INVALID
+                                    receipt = receipt.model_copy(
+                                        update={
+                                            "errors": [
+                                                *receipt.errors,
+                                                "Harbor stopped after a passing phase before "
+                                                "the sealed sequence completed",
+                                            ]
+                                        }
+                                    )
                             else:
                                 classification = FailureClassification.VALID_AGENT_FAILURE
                                 failure_reason = (
@@ -930,7 +1088,7 @@ def _finalize(
                                     else FailureReason.GATE_FAILURE
                                 )
 
-        if process_exit_code != 0 and trial_result.exception_info is None:
+        if process_exit_code != 0 and effective_exception_type is None:
             classification = FailureClassification.INFRASTRUCTURE_FAILURE
             failure_reason = FailureReason.HARBOR_PROCESS_FAILURE
             receipt = receipt.model_copy(

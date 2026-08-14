@@ -135,6 +135,16 @@ class TaskKind(StrEnum):
     REVIEW = "review"
 
 
+class CapabilityCategory(StrEnum):
+    TRACER = "tracer"
+    DIAGNOSIS_REPAIR = "diagnosis_repair"
+    FEATURE = "feature"
+    RESTRAINT = "restraint"
+    COMPOSITION_DOMAIN_EVOLUTION = "composition_domain_evolution"
+    STATE_EFFECTS = "state_effects"
+    CODE_REVIEW = "code_review"
+
+
 class PhaseMode(StrEnum):
     SINGLE = "single"
     SEQUENTIAL = "sequential"
@@ -282,6 +292,88 @@ class AttackFixture(ContractModel):
     _entrypoint = field_validator("entrypoint")(validate_relative_path)
 
 
+class TrapRecord(ContractModel):
+    id: Identifier
+    fixture_id: Identifier
+    description: str = Field(min_length=1)
+
+
+class ValidAlternativeRecord(ContractModel):
+    id: Identifier
+    solution_paths: list[str] = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+    @field_validator("solution_paths")
+    @classmethod
+    def valid_solution_paths(cls, value: list[str]) -> list[str]:
+        paths = [validate_relative_path(path) for path in value]
+        if len(paths) != len(set(paths)):
+            raise ValueError("valid alternative solution_paths must be unique")
+        return paths
+
+
+class AdmissionEvidence(ContractModel):
+    oracle_repeated: bool
+    no_op_rejected: bool
+    valid_alternative_passed: bool
+    traps_rejected: bool
+    prompt_checks_aligned: bool
+    deterministic: bool
+    verification_note: str = Field(min_length=1)
+
+    @property
+    def complete(self) -> bool:
+        return all(
+            (
+                self.oracle_repeated,
+                self.no_op_rejected,
+                self.valid_alternative_passed,
+                self.traps_rejected,
+                self.prompt_checks_aligned,
+                self.deterministic,
+            )
+        )
+
+
+class AdmissionRecord(ContractModel):
+    status: Literal["candidate", "approved", "retired"]
+    evidence: AdmissionEvidence
+    approved_by: str | None = None
+    approval_ref: str | None = None
+
+    @model_validator(mode="after")
+    def validate_approval(self) -> Self:
+        if self.status == "approved":
+            if not self.evidence.complete:
+                raise ValueError("approved admission requires complete verification evidence")
+            if not self.approved_by or not self.approval_ref:
+                raise ValueError("approved admission requires approver and approval_ref")
+        elif self.approved_by is not None or self.approval_ref is not None:
+            raise ValueError("only approved admission may carry approval metadata")
+        return self
+
+
+class TaskDesignRecord(ContractModel):
+    category: CapabilityCategory
+    owner: Identifier
+    traps: list[TrapRecord]
+    valid_alternatives: list[ValidAlternativeRecord] = Field(min_length=1)
+    admission: AdmissionRecord
+
+    @model_validator(mode="after")
+    def unique_records(self) -> Self:
+        trap_ids = [trap.id for trap in self.traps]
+        fixture_ids = [trap.fixture_id for trap in self.traps]
+        alternative_ids = [alternative.id for alternative in self.valid_alternatives]
+        if len(trap_ids) != len(set(trap_ids)):
+            raise ValueError("trap ids must be unique")
+        if len(fixture_ids) != len(set(fixture_ids)):
+            raise ValueError("trap fixture_ids must be unique")
+        if len(alternative_ids) != len(set(alternative_ids)):
+            raise ValueError("valid alternative ids must be unique")
+        return self
+
+
 class TaskContract(ContractModel):
     schema_version: Literal["slopbench.task.v1"]
     task_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._/-]*$")]
@@ -295,6 +387,7 @@ class TaskContract(ContractModel):
     applicable_gates: list[GateName] = Field(min_length=1)
     provenance: Provenance
     license: LicenseContract
+    design: TaskDesignRecord
     attack_fixtures: list[AttackFixture] = Field(default_factory=list)
     immutable_inputs: list[FileDigest] = Field(default_factory=list)
 
@@ -318,6 +411,11 @@ class TaskContract(ContractModel):
             self.verifier.entrypoint,
             *(phase.instruction_path for phase in self.phases),
             *(fixture.entrypoint for fixture in self.attack_fixtures),
+            *(
+                path
+                for alternative in self.design.valid_alternatives
+                for path in alternative.solution_paths
+            ),
         }
         missing = required_paths - declared_paths
         if self.immutable_inputs and missing:
@@ -325,6 +423,8 @@ class TaskContract(ContractModel):
         fixture_ids = [fixture.id for fixture in self.attack_fixtures]
         if len(fixture_ids) != len(set(fixture_ids)):
             raise ValueError("attack fixture ids must be unique")
+        if {trap.fixture_id for trap in self.design.traps} != set(fixture_ids):
+            raise ValueError("design traps must cover every attack fixture exactly once")
         for fixture in self.attack_fixtures:
             unexpected = set(fixture.expected.failed_gates) - set(self.applicable_gates)
             if unexpected:

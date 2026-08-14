@@ -43,9 +43,9 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/tracer/slopbench-task.json",
-    "contract_sha256": "141f9160f2b496244d1cca2a168c4e65252567d2106dd2b5b49b12cac56f0f42",
-    "harbor_task_checksum": "bf0ebc6d3b056d2d4b937c1c495cc79a2532ec66cecc5a461ad1ed4bca7b38d2",
-    "task_digest": "75b847df57fabfd539bfac2695e9c1f5ad5d7d2d3966ef6e829d486fa72a84d1",
+    "contract_sha256": "6b6f9a6c6ff1603366f3676a1e1cb4405068afdf74a309e790e236537aa5cc29",
+    "harbor_task_checksum": "68f65b23dae5b88bd7203a6e986415da8c9bb8df022bf1402acf8b0eb9e190dd",
+    "task_digest": "c541ffbf7f4397b17e14473c961bdae2a85fc1648f1a62ab33a00fe4926ebb94",
     "task_id": "slopbench/tracer/event-summary",
     "task_version": "1.0.0"
   },

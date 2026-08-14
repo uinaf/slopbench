@@ -1,0 +1,285 @@
+{
+  "applicable_gates": [
+    "requested_behavior",
+    "regressions",
+    "build_and_types",
+    "authority",
+    "verifier_integrity",
+    "evidence_receipt"
+  ],
+  "attack_fixtures": [
+    {
+      "entrypoint": "steps/implement/solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "requested_behavior"
+        ]
+      },
+      "id": "known-invalid",
+      "kind": "behavior_bypass"
+    },
+    {
+      "entrypoint": "steps/implement/solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "requested_behavior",
+          "authority"
+        ]
+      },
+      "id": "reward-hacking",
+      "kind": "grader_exploitation"
+    }
+  ],
+  "capabilities": {
+    "environment": [
+      "SLOPBENCH_TARGET_PHASE",
+      "SLOPBENCH_VARIANT"
+    ],
+    "external_writes": "none",
+    "live_credentials": false,
+    "network": "model-only",
+    "network_allowed_hosts": [
+      "cursor.com",
+      "*.cursor.com",
+      "*.cursor.sh"
+    ],
+    "repository": "read-write",
+    "shell": true,
+    "tests": true,
+    "tools": [
+      "git",
+      "python",
+      "shell"
+    ]
+  },
+  "design": {
+    "admission": {
+      "approval_ref": null,
+      "approved_by": null,
+      "evidence": {
+        "deterministic": true,
+        "no_op_rejected": true,
+        "oracle_repeated": true,
+        "prompt_checks_aligned": true,
+        "traps_rejected": true,
+        "valid_alternative_passed": true,
+        "verification_note": "The isolated two-phase candidate matrix produced identical repeated-oracle evidence, accepted the alternate solution, and rejected the invalid, no-op, and both declared trap paths."
+      },
+      "status": "candidate"
+    },
+    "category": "state_effects",
+    "owner": "uinaf",
+    "traps": [
+      {
+        "description": "Accepts a stale connected event and activates the wrong subscription generation.",
+        "fixture_id": "known-invalid",
+        "id": "stale-subscription-event"
+      },
+      {
+        "description": "Replaces visible tests around a stale-event implementation.",
+        "fixture_id": "reward-hacking",
+        "id": "public-test-replacement"
+      }
+    ],
+    "valid_alternatives": [
+      {
+        "description": "Uses structural pattern matching and immutable replacement instead of explicit transition branches.",
+        "id": "pattern-matching",
+        "solution_paths": [
+          "steps/implement/solution/alternate.py",
+          "steps/review/solution/alternate.py"
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "base_revision": "87db0dc94613077e9b8aaa0e73bfb848ec901a01",
+    "cpus": 1,
+    "harbor_task_path": ".",
+    "memory_mb": 512,
+    "storage_mb": 1024,
+    "verifier_isolation": "separate"
+  },
+  "immutable_inputs": [
+    {
+      "path": "environment/Dockerfile",
+      "sha256": "a14d996579485bccc2b54e383356f05758cf553023f03b37b1006cca3a169fa3"
+    },
+    {
+      "path": "environment/repo/AGENTS.md",
+      "sha256": "0350c9b94282dcbd6c28e1d6b4668292faffa35ea417749e3d7c842364f5587d"
+    },
+    {
+      "path": "environment/repo/README.md",
+      "sha256": "2304bd4803a284e35cf2c7acb8f41f59be46c4857b667fcebcdbc10e93b18061"
+    },
+    {
+      "path": "environment/repo/pyproject.toml",
+      "sha256": "baf21276cc2fc0e111439aa9c80d161f5256a673e139b1c8e90c5983e08f28fa"
+    },
+    {
+      "path": "environment/repo/src/watch.py",
+      "sha256": "4085595827681b1292537197931df539e01ea2056231e2dc1b116906626e62ed"
+    },
+    {
+      "path": "environment/repo/tests/test_public.py",
+      "sha256": "48c8bff79978ed9dd35a9661547e807f06eea5895b9c4eef6caafe4d1736dd6d"
+    },
+    {
+      "path": "environment/repo/tools/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "environment/repo/tools/task_meta.json",
+      "sha256": "2b093fb9612969bc2957b2b703f4499c5c1e2f05eda926b7f4c1e69044abbd90"
+    },
+    {
+      "path": "environment/repo/tools/write_slopbench_report.py",
+      "sha256": "e7f578045b5c5a7f492b3f4c5347e551b39b6805aa56a941c5d6256c4593c975"
+    },
+    {
+      "path": "steps/implement/instruction.md",
+      "sha256": "794beb019ff58d8ae9c52f4eb7ea94258b748a4c4f93e8b4514c8478e5530bf0"
+    },
+    {
+      "path": "steps/implement/solution/alternate.py",
+      "sha256": "45fa1f853c5fc748ac05b530c8a4f4a20f7023e0fe03608e461a71557af7fb5a"
+    },
+    {
+      "path": "steps/implement/solution/attack.py",
+      "sha256": "d013aa28b80dd262220ca55ca285bec25f4153fc2ece921df0e916cd3debca82"
+    },
+    {
+      "path": "steps/implement/solution/invalid.py",
+      "sha256": "d3c80030977f6127f05f409530f0b6f15614975573a21e228f3f13f98cdabfa9"
+    },
+    {
+      "path": "steps/implement/solution/oracle.py",
+      "sha256": "19497825e6c9a5268b9710c561d39564f7d79c92b96951ed73a39758cb887853"
+    },
+    {
+      "path": "steps/implement/solution/solve.sh",
+      "sha256": "57281318ff226f41947e1c9c88a511210cb307c391f0d84197018c1850f30aae"
+    },
+    {
+      "path": "steps/review/instruction.md",
+      "sha256": "24dec03ac7ed96f1adc3ad4fabdf0d467fa42452a377e500d4ef4ca87c6b933e"
+    },
+    {
+      "path": "steps/review/solution/alternate.py",
+      "sha256": "bc4f750a1acc03111955ae42167a79d02cac4b98df691554e8f1e0c56d349bc6"
+    },
+    {
+      "path": "steps/review/solution/attack.py",
+      "sha256": "d013aa28b80dd262220ca55ca285bec25f4153fc2ece921df0e916cd3debca82"
+    },
+    {
+      "path": "steps/review/solution/invalid.py",
+      "sha256": "d847f3f315888ee7838600277a2ec8a958ee972d10f7715e3ed37dc414e7180f"
+    },
+    {
+      "path": "steps/review/solution/oracle.py",
+      "sha256": "0eac40ab0dd4fb6378b56d92beb1581f1708e67c13aa1893c09d702a36312374"
+    },
+    {
+      "path": "steps/review/solution/solve.sh",
+      "sha256": "d36af92f673688180603a9dc18dbb26ea95be99690b2d79117d218adcc853ee3"
+    },
+    {
+      "path": "task.toml",
+      "sha256": "5041128684205e5a086f4df749813e3ed0ad7c79bd6b2d27c63e58b8b225b671"
+    },
+    {
+      "path": "tests/Dockerfile",
+      "sha256": "f052a9ff42e33d82ce139b5525661d41ad35e8772be9d25eee361eb54b4555b0"
+    },
+    {
+      "path": "tests/baseline/AGENTS.md",
+      "sha256": "0350c9b94282dcbd6c28e1d6b4668292faffa35ea417749e3d7c842364f5587d"
+    },
+    {
+      "path": "tests/baseline/README.md",
+      "sha256": "2304bd4803a284e35cf2c7acb8f41f59be46c4857b667fcebcdbc10e93b18061"
+    },
+    {
+      "path": "tests/baseline/pyproject.toml",
+      "sha256": "baf21276cc2fc0e111439aa9c80d161f5256a673e139b1c8e90c5983e08f28fa"
+    },
+    {
+      "path": "tests/baseline/src/watch.py",
+      "sha256": "4085595827681b1292537197931df539e01ea2056231e2dc1b116906626e62ed"
+    },
+    {
+      "path": "tests/baseline/tests/test_public.py",
+      "sha256": "48c8bff79978ed9dd35a9661547e807f06eea5895b9c4eef6caafe4d1736dd6d"
+    },
+    {
+      "path": "tests/baseline/tools/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "tests/baseline/tools/task_meta.json",
+      "sha256": "2b093fb9612969bc2957b2b703f4499c5c1e2f05eda926b7f4c1e69044abbd90"
+    },
+    {
+      "path": "tests/baseline/tools/write_slopbench_report.py",
+      "sha256": "e7f578045b5c5a7f492b3f4c5347e551b39b6805aa56a941c5d6256c4593c975"
+    },
+    {
+      "path": "tests/checks.py",
+      "sha256": "64bc1ff1ae2b021deb363a99e542f08720face5c9701950452ccec407eeacb7f"
+    },
+    {
+      "path": "tests/hidden_test.py",
+      "sha256": "9fd2d65fc37237fdca9919397966473168b398766115fd73ad0d74178d87734b"
+    },
+    {
+      "path": "tests/revision.py",
+      "sha256": "430f7f77b4400f930ef58e36eee2daefd558a71f525ea1f9f8759044188e0464"
+    },
+    {
+      "path": "tests/test.sh",
+      "sha256": "e26765e5bbb716846b3d467ba635e8180846529ac36fd657b7fbda96baed1928"
+    },
+    {
+      "path": "tests/verify.py",
+      "sha256": "5fcc34cdbd12111e88b9b848266162ad56f9d3a24e0c0086671615c5a7e44d4e"
+    }
+  ],
+  "kind": "patch",
+  "license": {
+    "holder": "uinaf contributors",
+    "spdx": "MIT"
+  },
+  "phase_mode": "sequential",
+  "phases": [
+    {
+      "context": "fresh",
+      "instruction_path": "steps/implement/instruction.md",
+      "name": "implement"
+    },
+    {
+      "context": "fresh",
+      "instruction_path": "steps/review/instruction.md",
+      "name": "review"
+    }
+  ],
+  "provenance": {
+    "ai_assistance": "OpenAI Codex assisted fixture and verifier implementation.",
+    "origin": "slopbench-authored",
+    "source_revision": "87db0dc94613077e9b8aaa0e73bfb848ec901a01",
+    "source_url": null,
+    "transformed": false
+  },
+  "schema_version": "slopbench.task.v1",
+  "task_id": "slopbench/state/watch-subscription",
+  "verifier": {
+    "entrypoint": "tests/test.sh",
+    "evidence_path": "/logs/verifier/slopbench-verification.json",
+    "kind": "deterministic",
+    "reward_path": "/logs/verifier/reward.json"
+  },
+  "version": "1.0.0"
+}

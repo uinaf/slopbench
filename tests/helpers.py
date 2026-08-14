@@ -43,6 +43,7 @@ def task_payload(*, sealed: bool = True, sequential: bool = False) -> dict[str, 
     if sealed:
         inputs = [
             {"path": "instruction.md", "sha256": SHA_A},
+            {"path": "solution/alternate.py", "sha256": "f" * 64},
             {"path": "tests/test.sh", "sha256": SHA_B},
         ]
         if sequential:
@@ -95,6 +96,32 @@ def task_payload(*, sealed: bool = True, sequential: bool = False) -> dict[str, 
             "ai_assistance": None,
         },
         "license": {"spdx": "MIT", "holder": "uinaf contributors"},
+        "design": {
+            "category": "tracer",
+            "owner": "uinaf",
+            "traps": [],
+            "valid_alternatives": [
+                {
+                    "id": "alternate",
+                    "solution_paths": ["solution/alternate.py"],
+                    "description": "A materially different valid implementation.",
+                }
+            ],
+            "admission": {
+                "status": "candidate",
+                "evidence": {
+                    "oracle_repeated": True,
+                    "no_op_rejected": True,
+                    "valid_alternative_passed": True,
+                    "traps_rejected": True,
+                    "prompt_checks_aligned": True,
+                    "deterministic": True,
+                    "verification_note": "Unit fixture for contract validation.",
+                },
+                "approved_by": None,
+                "approval_ref": None,
+            },
+        },
         "immutable_inputs": inputs,
     }
 
