@@ -1,4 +1,4 @@
-# SlopBench agent guide
+# uinaf/slopbench agent guide
 
 ## Start and verify
 
