@@ -1,0 +1,66 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {},
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "implement",
+        "path": "tasks/diagnosis/query-cache-key/instruction.md",
+        "sha256": "2651c1f35ddb05f48779e6b2fafd6ee02db1692cadeb07e49202f3c4b206a763"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": [
+      {
+        "name": "python",
+        "settings": {},
+        "version": "3.13.15"
+      }
+    ]
+  },
+  "attack_fixture_id": "known-invalid",
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "diagnosis-query-cache-key-attack-known-invalid",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/diagnosis/query-cache-key/slopbench-task.json",
+    "contract_sha256": "6a2ce6ff5b569964644b147d4b50819ba3d60d174c16f4acf93ba508819516e3",
+    "harbor_task_checksum": "4c3652eb3bc170976a9a0c1e53ad2fd3dba801cd3b5d471d714784d32354188b",
+    "task_digest": "afb44ffaa82a7b443b723fdd45e38a240fb50c5305a0b18654e4906ebd6f5f72",
+    "task_id": "slopbench/diagnosis/query-cache-key",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "diagnosis-query-cache-key-attack-known-invalid",
+    "seed": 1
+  }
+}

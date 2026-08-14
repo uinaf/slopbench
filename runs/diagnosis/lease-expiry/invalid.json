@@ -1,0 +1,74 @@
+{
+  "agent": {
+    "credential_env": [],
+    "effort_tier": "not-applicable",
+    "environment": {
+      "SLOPBENCH_TARGET_PHASE": "review",
+      "SLOPBENCH_VARIANT": "invalid"
+    },
+    "harness": "oracle",
+    "harness_version": "1.0.0",
+    "instruction_layers": [
+      {
+        "name": "implement",
+        "path": "tasks/diagnosis/lease-expiry/steps/implement/instruction.md",
+        "sha256": "7f7319a984a65aa3a763c0a7fb7c3ecebf7a96aacafd5e912233c91cdacaa8cc"
+      },
+      {
+        "name": "review",
+        "path": "tasks/diagnosis/lease-expiry/steps/review/instruction.md",
+        "sha256": "63e7a3d389ef826dd5e88ce97ca82115c38aad46083be0a79dd5052f76249dff"
+      }
+    ],
+    "model": null,
+    "settings": {},
+    "tools": [
+      {
+        "name": "python",
+        "settings": {},
+        "version": "3.13.15"
+      }
+    ]
+  },
+  "attack_fixture_id": null,
+  "limits": {
+    "agent_setup_timeout_sec": 120,
+    "agent_timeout_sec": 300,
+    "max_cost_usd": 0.0,
+    "max_tokens": null,
+    "verifier_timeout_sec": 120
+  },
+  "retry_policy": {
+    "max_attempts": 1,
+    "retryable_reasons": []
+  },
+  "run_id": "diagnosis-lease-expiry-invalid",
+  "runtime": {
+    "cpus": 1,
+    "environment_provider": "docker",
+    "environment_provider_version": "29.5.2",
+    "harbor_version": "0.16.1",
+    "images": [
+      {
+        "reference": "python:3.13.15-bookworm@sha256:62eafe52c91cad83c2c74e630bfde917da8c253673e695665d454def84fc9a13",
+        "role": "fixture-base"
+      }
+    ],
+    "memory_mb": 512,
+    "storage_mb": 1024
+  },
+  "schema_version": "slopbench.run.v1",
+  "task": {
+    "contract_path": "tasks/diagnosis/lease-expiry/slopbench-task.json",
+    "contract_sha256": "5e80c8eb8f57705e44960cc875201476148cc3b23ff5cffa409e7fe019271869",
+    "harbor_task_checksum": "1132556ed5a625edc6beb30f77401d452d296a82a7b6f044f51302888ee92cfb",
+    "task_digest": "fb80170d16e755159d3cdd54af02369ddbe455e15188bf23bb07255577cde1a4",
+    "task_id": "slopbench/diagnosis/lease-expiry",
+    "task_version": "1.0.0"
+  },
+  "trial": {
+    "attempt": 1,
+    "id": "diagnosis-lease-expiry-invalid",
+    "seed": 1
+  }
+}
