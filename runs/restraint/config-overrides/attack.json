@@ -55,11 +55,11 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/restraint/config-overrides/slopbench-task.json",
-    "contract_sha256": "f775e3e0f2d5fec0939b061a35b7994bded47333c32e0d7eb9c402883a709455",
-    "harbor_task_checksum": "87cd6d03c6421d4c1a9a40b86d5d68b85f0cd15ee540e014c44bc3c1ae6e7d29",
-    "task_digest": "75b1b8626c023e53a61efafc53a535be4ac4ea42ac16e17ea2ed4ce5f35433f6",
+    "contract_sha256": "a6af813a2d57792f1d5fa5eb9ca132b869baf89876f443b761157f952b8f6b2d",
+    "harbor_task_checksum": "3c4a84959510d1e987119bd20bd499541a52bc8ccb11baf3aae7a680459020ef",
+    "task_digest": "a188e5cace9a496532b394d2916dc444afb9c36cabbfb79a5d157115ff83b53a",
     "task_id": "slopbench/restraint/config-overrides",
-    "task_version": "1.0.0"
+    "task_version": "1.0.1"
   },
   "trial": {
     "attempt": 1,

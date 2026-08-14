@@ -9,7 +9,7 @@ name = "uinaf"
 
 [metadata]
 slopbench_task_id = "slopbench/restraint/config-overrides"
-slopbench_task_version = "1.0.0"
+slopbench_task_version = "1.0.1"
 
 [agent]
 timeout_sec = 300.0

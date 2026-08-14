@@ -14,4 +14,4 @@ RUN git init \
        git commit -m "fixture: header lookup"
 
 WORKDIR /app
-COPY test.sh verify.py checks.py hidden_test.py revision.py /tests/
+COPY test.sh verify.py checks.py hidden_test.py revision.py type_escapes.py /tests/

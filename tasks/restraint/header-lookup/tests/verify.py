@@ -27,7 +27,7 @@ CHECKS = [
     ("authority-scope", "authority", "python /tests/checks.py authority", False),
     ("evidence-receipt", "evidence_receipt", "python /tests/checks.py receipt", False),
 ]
-if META.get("prohibited_patterns"):
+if META.get("forbid_type_escapes"):
     CHECKS.insert(
         -1,
         (

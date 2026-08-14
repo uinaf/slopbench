@@ -1,6 +1,6 @@
 # Limitations
 
-The checked-in `0.1.0` evidence is provisional. Machine admission and adversarial fixture coverage
+The checked-in `0.1.1` evidence is provisional. Machine admission and adversarial fixture coverage
 are complete, but owner approval, independent human review, expert calibration, private held-out
 execution, signed five-trial references, release audits, and clean-room reproduction are not.
 The generated readiness report is the authoritative blocker list.

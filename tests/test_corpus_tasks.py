@@ -97,7 +97,7 @@ def test_corpus_shape_and_design_records() -> None:
         assert task.license.spdx == "MIT"
         assert task.provenance.origin == "slopbench-authored"
         assert task.provenance.source_revision == task.environment.base_revision
-        assert len(task.design.traps) == 2
+        assert len(task.design.traps) >= 2
         assert len(task.design.valid_alternatives) == 1
         prompt = "\n".join(
             (task_dir / phase.instruction_path).read_text().lower() for phase in task.phases

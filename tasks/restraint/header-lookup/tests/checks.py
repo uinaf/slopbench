@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from revision import worktree_revision
+from type_escapes import find_type_escapes
 
 ROOT = Path("/app")
 BASELINE = Path("/baseline")
@@ -24,7 +25,7 @@ GATES = {
     "verifier_integrity": ["verifier-integrity"],
     "evidence_receipt": ["evidence-receipt"],
 }
-if META.get("prohibited_patterns"):
+if META.get("forbid_type_escapes"):
     GATES["safety_type_escapes"] = ["safety-type-escapes"]
 
 
@@ -86,9 +87,11 @@ def integrity() -> None:
 def safety() -> None:
     for relative in META.get("allowed_paths", []):
         source = (ROOT / relative).read_text()
-        for pattern in META.get("prohibited_patterns", []):
-            if pattern in source:
-                raise SystemExit(f"prohibited safety or type escape in {relative}: {pattern}")
+        violations = find_type_escapes(source)
+        if violations:
+            raise SystemExit(
+                f"prohibited safety or type escape in {relative}: {', '.join(violations)}"
+            )
 
 
 def receipt() -> None:

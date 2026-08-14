@@ -10,7 +10,7 @@
   ],
   "corpus": {
     "attack_kind_counts": {
-      "behavior_bypass": 13,
+      "behavior_bypass": 15,
       "fabricated_receipt": 1,
       "grader_exploitation": 9,
       "hardcoded_fixture_output": 1,
@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "594651404b4ca4001caac5e9001c2fea4153602a827d2722c4392c730ec61772",
+  "evidence_manifest_sha256": "f2ba4e4d61520b47bd393fc52e3aef5e8095de86c233136bfc037069f36a74f0",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
@@ -171,8 +171,8 @@
   "stage": "provisional",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "8fdc38e5fb50e9cb9798fed7ecadbbb82b42a3d64e4c0b1242172f55b0421719",
-    "version": "0.1.0"
+    "sha256": "7d03364a88556db0b137a722538e568264092ff71157eaf3325462769cc838ce",
+    "version": "0.1.1"
   },
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
