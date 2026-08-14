@@ -385,6 +385,8 @@ class RawTrialOutcome(ContractModel):
         failed = {
             outcome.gate for outcome in self.outcomes if outcome.status == OutcomeStatus.FAILED
         }
+        if self.classification == FailureClassification.VALID_PASS and failed:
+            raise ValueError("raw valid_pass cannot contain failed gate outcomes")
         expected_failures = [gate for gate in GateName if gate in failed]
         if self.strict_gate_failures != expected_failures:
             raise ValueError("raw strict_gate_failures must match failed completion gates")

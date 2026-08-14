@@ -1625,6 +1625,11 @@ def test_raw_and_evaluation_result_models_reject_internal_drift() -> None:
     raw_payload["receipt"]["sha256"] = digest("wrong-receipt")
     with pytest.raises(ValidationError, match="receipt and report digest"):
         RawTrialOutcome.model_validate_json(json.dumps(raw_payload))
+    raw_payload = result.trials[0].model_dump(mode="json")
+    raw_payload["outcomes"][0]["status"] = OutcomeStatus.FAILED.value
+    raw_payload["strict_gate_failures"] = [GateName.REQUESTED_BEHAVIOR.value]
+    with pytest.raises(ValidationError, match="raw valid_pass cannot contain failed gate"):
+        RawTrialOutcome.model_validate_json(json.dumps(raw_payload))
 
     mutations: list[tuple[str, dict[str, Any], str]] = []
     payload = result.model_dump(mode="json")

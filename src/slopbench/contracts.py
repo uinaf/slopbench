@@ -867,6 +867,10 @@ class ResultBundle(ContractModel):
             raise ValueError("outcomes must contain exactly one entry per gate")
         if self.completed != (self.classification == FailureClassification.VALID_PASS):
             raise ValueError("completed must be true exactly for valid_pass")
+        if self.classification == FailureClassification.VALID_PASS and any(
+            outcome.status == OutcomeStatus.FAILED for outcome in self.outcomes
+        ):
+            raise ValueError("valid_pass cannot contain failed gate outcomes")
         if (self.failure_reason == FailureReason.NONE) != (
             self.classification == FailureClassification.VALID_PASS
         ):

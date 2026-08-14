@@ -52,6 +52,8 @@ Reliability uses only agent-attributable evidence: valid passes, valid agent fai
 agent runs. Infrastructure failures and benchmark defects remain explicit in failure counts and in
 the raw trials, but are reported as excluded reliability trials instead of being scored as agent
 failures. A comparison containing either class is not publishable until replacement trials exist.
+The result and evaluation contracts reject `valid_pass` whenever any applicable gate failed, so
+reliability cannot contradict the retained deterministic gate vector.
 
 Compute a result from an immutable bundle:
 

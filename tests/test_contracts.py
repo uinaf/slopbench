@@ -542,6 +542,14 @@ def test_result_completion_must_match_classification() -> None:
         validate(ResultBundle, payload)
 
 
+def test_result_valid_pass_cannot_contain_a_failed_gate() -> None:
+    payload = result_payload()
+    payload["outcomes"][0]["status"] = "failed"
+
+    with pytest.raises(ValidationError, match="valid_pass cannot contain failed gate"):
+        validate(ResultBundle, payload)
+
+
 def test_result_rejects_inconsistent_failure_and_retry_state() -> None:
     reason = result_payload()
     reason["failure_reason"] = "gate_failure"
