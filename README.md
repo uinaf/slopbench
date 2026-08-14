@@ -1,34 +1,51 @@
-![slopbench — deterministic evaluation of coding-agent software judgment.](https://uinaf.dev/og/banner/slopbench.png)
+![uinaf/slopbench — deterministic evaluation of coding-agent software judgment.](https://uinaf.dev/og/banner/slopbench.png)
 
-# SlopBench
+# uinaf/slopbench
 
-SlopBench evaluates coding-agent software judgment through versioned tasks, deterministic
-verification, and evidence-bound result bundles. It keeps Harbor behind a thin runner boundary
-and preserves the full gate outcome vector instead of reducing a run to one score.
+`uinaf/slopbench` evaluates coding-agent software judgment with versioned tasks,
+deterministic verification, and evidence-bound result bundles. It keeps Harbor behind a thin
+runner boundary and preserves the complete gate outcome vector instead of reducing a run to one
+score.
 
-## Install
+## Status
 
-Install [uv](https://docs.astral.sh/uv/) and provide a Docker engine, then sync the locked
-environment:
+The checked-in `slopbench-swe-v1-dev` task set is a provisional `0.x` development corpus. Its 12
+public synthetic tasks have deterministic machine-admission and adversarial evidence. The
+[readiness report](release/slopbench-swe-v1-dev-readiness.json) records the human calibration,
+signed reference, held-out, audit, and clean-reproduction evidence required before a stable v1
+release.
+
+## Install and verify
+
+Install [uv](https://docs.astral.sh/uv/) and provide a Docker engine. Python and uv versions are
+pinned in `.python-version` and the verification workflow.
 
 ```sh
 uv sync --locked --all-groups
+make verify
 ```
 
-Python and uv versions are pinned in `.python-version` and the CI workflow.
+`make verify` checks formatting, lint, strict types, branch-aware coverage, task seals, run
+manifests, profiles, reference configurations, generated task-set and release evidence, the
+readiness report, and schema drift. It does not require Docker.
 
-## Run the tracer
-
-The tracer matrix runs a repeated oracle, a distinct valid implementation, a known-invalid
-implementation, and a no-op through Harbor:
+## Run the deterministic proofs
 
 ```sh
 make tracer
+make hardening
+make corpus
 ```
 
-The command prints the artifact root. Every trial contains its pinned run manifest, generated
-Harbor config, read-only task snapshot, Harbor evidence, agent receipt when present, verifier
-evidence, and `slopbench.result.v1` bundle.
+- `make tracer` runs repeated oracle, distinct-valid, known-invalid, and no-op trials through
+  Harbor.
+- `make hardening` exercises every sealed attack fixture, including verifier tampering, hidden
+  material, unauthorized network use, fabricated receipts, and grader exploitation.
+- `make corpus` applies the deterministic admission matrix to the public development corpus.
+
+These commands use the zero-cost Oracle harness and print or create their artifact roots. A trial
+bundle contains the pinned run manifest, generated Harbor configuration, read-only task snapshot,
+Harbor and verifier evidence, optional agent receipt, and `slopbench.result.v1` result.
 
 Run one manifest directly when debugging:
 
@@ -42,68 +59,34 @@ uv run slopbench run \
 Exit `0` is a valid pass, `1` is a valid agent failure, and `2` is an invalid run, benchmark
 defect, infrastructure failure, or rejected boundary input.
 
-Run the sealed clean-room attacks separately from the baseline tracer matrix:
-
-```sh
-make hardening
-```
-
-The matrix exercises verifier and test tampering, hidden-material access, protected dependency
-changes, hardcoded output, behavior bypass, fabricated receipts, unauthorized network use, and
-grader exploitation. It uses the zero-cost Oracle harness.
-
-## Verify
-
-```sh
-make verify
-```
-
-This checks formatting, lint, strict types, branch-aware coverage, the immutable task seal, every
-run manifest, all five profiles, all pinned reference configurations, deterministic task-set and
-release-evidence regeneration, the readiness report, and generated-schema drift. Docker is only
-required for the end-to-end tracer, hardening, and corpus matrices.
-
-Regenerate and validate the provisional 12-task public development set independently:
+Regenerate the provisional public task set, profiles, reference configurations, and release
+readiness evidence with:
 
 ```sh
 make task-set profiles reference-configurations release-candidate
 ```
 
-The development set is versioned `0.x`. Its machine admission and adversarial evidence are
-complete. The checked-in [readiness report](release/slopbench-swe-v1-dev-readiness.json) keeps
-owner approval, independent human and expert calibration, signed five-trial references, release
-audits, and held-out execution explicit as blockers; it is not a stable benchmark release.
+## Documentation
 
-## Contracts
-
-- [Architecture](docs/ARCHITECTURE.md) explains trust boundaries, evidence flow, and failure
+- [Architecture](docs/ARCHITECTURE.md) — trust boundaries, evidence flow, and failure
   classification.
-- [Methodology](docs/METHODOLOGY.md), [limitations](docs/LIMITATIONS.md), and
-  [reproduction](docs/REPRODUCING.md) define the provisional release boundary and the evidence
-  still required for v1.
-- [Results and lifecycle](docs/RESULTS.md) defines task-set versions, profiles, trial policy,
-  held-out disclosure, retirement bridges, and maintainer attestations.
-- [Review tasks](docs/REVIEW_TASKS.md) defines the finding taxonomy and deterministic matching
-  rules.
-- [Task schema](schemas/slopbench-task.schema.json) declares phases, capabilities, provenance,
-  licensing, and immutable inputs.
-- [Run schema](schemas/slopbench-run.schema.json) pins the agent and runtime configuration.
-- [Receipt schema](schemas/slopbench-report.schema.json) carries claims, commands, uncertainty,
-  and the final revision.
-- [Review schema](schemas/slopbench-review.schema.json) defines structured review-only findings.
-- [Result schema](schemas/slopbench-result.schema.json) records evidence and the gate vector.
-- [Task-set schema](schemas/slopbench-task-set.schema.json),
-  [profile schema](schemas/slopbench-profile.schema.json), and
-  [evaluation schemas](schemas/slopbench-evaluation.schema.json) define reproducible suite
-  computation without tying dataset versions to runner releases.
-- [Reference configuration](schemas/slopbench-reference-configuration.schema.json),
-  [release evidence](schemas/slopbench-release-evidence.schema.json),
-  [release readiness](schemas/slopbench-release-readiness.schema.json), and
-  [regression](schemas/slopbench-regression.schema.json) schemas define pinned harnesses and the
-  provisional-to-stable gate.
-- [Roadmap issue #1](https://github.com/uinaf/slopbench/issues/1) tracks the path from this tracer
-  to the release corpus.
+- [Methodology](docs/METHODOLOGY.md) — admission, execution, scoring, and release policy.
+- [Reproduction guide](docs/REPRODUCING.md) — local proofs, reference trials, and release audits.
+- [Results and lifecycle](docs/RESULTS.md) — task-set versions, profiles, held-out disclosure,
+  retirement bridges, and attestations.
+- [Review-task contract](docs/REVIEW_TASKS.md) — finding taxonomy and deterministic matching.
+- [Limitations](docs/LIMITATIONS.md) — current evidence and interpretation boundaries.
+- [Schemas](schemas/) — versioned task, run, receipt, review, result, evaluation, and release
+  contracts.
+
+## Contributing and security
+
+Run `make verify` before opening a pull request and follow the uinaf organization
+[contribution guidance](https://github.com/uinaf/.github/blob/main/CONTRIBUTING.md). Report
+suspected vulnerabilities privately according to the uinaf
+[security policy](https://github.com/uinaf/.github/blob/main/SECURITY.md).
 
 ## License
 
-SlopBench-authored code and task artifacts are available under the [MIT License](LICENSE).
+Code and task artifacts authored by `uinaf/slopbench` are available under the
+[MIT License](LICENSE).
