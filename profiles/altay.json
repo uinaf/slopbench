@@ -14,6 +14,11 @@
   "profile_id": "altay",
   "quality_weight": 35,
   "reliability_weight": 65,
+  "review_quality_weights": {
+    "category": 25,
+    "detection": 50,
+    "severity": 25
+  },
   "schema_version": "slopbench.profile.v1",
   "source_note": "Derived from non-sensitive AGENTS.md priorities: correctness, scope discipline, evidence, and reproducibility.",
   "strict_gates": [
@@ -23,5 +28,5 @@
     "evidence_receipt"
   ],
   "subjective": true,
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

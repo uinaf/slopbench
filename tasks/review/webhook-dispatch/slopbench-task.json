@@ -14,6 +14,17 @@
           "requested_behavior"
         ]
       },
+      "id": "duplicate-finding",
+      "kind": "behavior_bypass"
+    },
+    {
+      "entrypoint": "solution/attack.py",
+      "expected": {
+        "classification": "valid_agent_failure",
+        "failed_gates": [
+          "requested_behavior"
+        ]
+      },
       "id": "known-false-positive",
       "kind": "behavior_bypass"
     },
@@ -62,13 +73,18 @@
         "prompt_checks_aligned": true,
         "traps_rejected": true,
         "valid_alternative_passed": true,
-        "verification_note": "The isolated candidate matrix produced identical review, score, and novel-queue artifacts, accepted the equivalent review, and rejected empty, no-op, known-false-positive, and source-mutation paths."
+        "verification_note": "The isolated candidate matrix produced identical review, score, and novel-queue artifacts, accepted canonical and adjudicated equivalent classifications and locations, and rejected empty, no-op, known-false-positive, duplicate, and source-mutation paths."
       },
       "status": "candidate"
     },
     "category": "code_review",
     "owner": "uinaf",
     "traps": [
+      {
+        "description": "Reports the same defect twice to inflate the apparent finding count.",
+        "fixture_id": "duplicate-finding",
+        "id": "duplicate-review-finding"
+      },
       {
         "description": "Reports a cross-process deduplication race despite the declared serialized-delivery boundary.",
         "fixture_id": "known-false-positive",
@@ -82,7 +98,7 @@
     ],
     "valid_alternatives": [
       {
-        "description": "The same defect set in a different order with tolerated locations and independent explanations.",
+        "description": "The same defect set with adjudicated classification alternatives, tolerated locations, a different order, and independent explanations.",
         "id": "equivalent-review",
         "solution_paths": [
           "solution/alternate.json"
@@ -145,11 +161,15 @@
     },
     {
       "path": "solution/alternate.json",
-      "sha256": "d9110415290da5f39450f92aed7f3a00e73728cd2249bb48ed0306cb9998e33c"
+      "sha256": "ac365c2c1d9fc1200772c1ed43b4e1f6e7600718168daf5c9262c457e5ea1e4d"
     },
     {
       "path": "solution/attack.py",
-      "sha256": "61e92c3bcb8e62d66b6073a422c5cb811e2ef4451ef3ec0666f1836ba986cbb1"
+      "sha256": "2ece536f2aa5787fd56a983ebd86b1c3fa63b2ba185e892ac4b5f8fbd806f4be"
+    },
+    {
+      "path": "solution/duplicate.json",
+      "sha256": "6b4630b2a9d8addba081d4d7ce157a4191417844cda2f292408b1ae9f8e83105"
     },
     {
       "path": "solution/invalid.json",
@@ -173,7 +193,7 @@
     },
     {
       "path": "task.toml",
-      "sha256": "4bc6eb6a64245cdd1c480e87105955cde516e75ea4b5862aa25d70a6134cf874"
+      "sha256": "f6ce6dc7a09537eca74c1f7ed48f252e958ab38dba01c3f636eb60ec211e94b3"
     },
     {
       "path": "tests/Dockerfile",
@@ -181,7 +201,7 @@
     },
     {
       "path": "tests/adjudication.json",
-      "sha256": "929d3ccfb63ca390f5d74c6d35d176932e72d438313f8d98f1edc3c7b8cac442"
+      "sha256": "f4f37319a0d6dbbc57735a598a1c6e6ee8a8c55738289a6542f84e976e82cc89"
     },
     {
       "path": "tests/baseline/AGENTS.md",
@@ -229,7 +249,7 @@
     },
     {
       "path": "tests/score_review.py",
-      "sha256": "b19f47bfb95f23ee0f68d1b43794133e28f4de8720be8d79a7b84e1a1bfb9f57"
+      "sha256": "cbb47a163d078895907de3f1b15d9c4188c1b7c43d6b45aeaa1734f970a00cfa"
     },
     {
       "path": "tests/test.sh",
@@ -281,5 +301,5 @@
     "kind": "deterministic",
     "reward_path": "/logs/verifier/reward.json"
   },
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

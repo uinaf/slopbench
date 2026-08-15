@@ -19,6 +19,7 @@ from slopbench.contracts import (
     ResultBundle,
     RunManifest,
     TaskBinding,
+    TaskKind,
     ToolPin,
 )
 from slopbench.hashing import (
@@ -53,6 +54,7 @@ from slopbench.release import (
     RetirementManifest,
     RetirementReason,
     RetirementRecord,
+    ReviewQualityWeights,
     SshSignature,
     TaskSetEntry,
     TaskSetManifest,
@@ -241,7 +243,7 @@ def raw_trial(
     ]
     for outcome in result_data["outcomes"]:
         outcome["status"] = (
-            "not_applicable" if outcome["gate"] == GateName.SAFETY_TYPE_ESCAPES.value else "passed"
+            "passed" if outcome["gate"] in entry.applicable_gates else "not_applicable"
         )
         if fail_requested and outcome["gate"] == GateName.REQUESTED_BEHAVIOR.value:
             outcome["status"] = "failed"
@@ -320,8 +322,9 @@ def materialize_evaluation(
     purpose: EvaluationPurpose = EvaluationPurpose.SMOKE,
     origin: ResultOrigin = ResultOrigin.EXTERNAL,
     fail_requested: bool = False,
+    entry_index: int = 0,
 ) -> dict[str, Any]:
-    task_set = one_task_set()
+    task_set = one_task_set(entry_index=entry_index)
     scoring_profile = scoring_profile or profile()
     task_set_path = tmp_path / "task-set.json"
     profile_path = tmp_path / "profile.json"
@@ -439,11 +442,52 @@ def materialize_evaluation(
         result_data["artifacts"] = [
             {"path": "harbor/trajectory.json", "sha256": digest(f"trace-{pair_index}")}
         ]
+        if task.kind == TaskKind.REVIEW:
+            assert task.review is not None
+            adjudication = json.loads(
+                (contract_path.parent / task.review.adjudication_path).read_text()
+            )
+            defect_ids = [defect["id"] for defect in adjudication["defects"]]
+            matched_ids = defect_ids[:2] if fail_requested else defect_ids
+            category_mismatches = matched_ids[1:] if fail_requested else defect_ids[1:]
+            severity_mismatches = matched_ids[:1]
+            true_positives = len(matched_ids)
+            score_data = {
+                "schema_version": "slopbench.review-score.v2",
+                "task_digest": entry.task_digest,
+                "submission_sha256": digest(f"submission-{run_id}"),
+                "true_positives": true_positives,
+                "false_positives": 0,
+                "duplicates": 0,
+                "known_false_positives": 0,
+                "novel_findings": 0,
+                "recall": true_positives / len(defect_ids),
+                "precision": 1.0,
+                "category_calibration": (
+                    (true_positives - len(category_mismatches)) / true_positives
+                ),
+                "severity_calibration": (
+                    (true_positives - len(severity_mismatches)) / true_positives
+                ),
+                "exact_classification_calibration": 0.0,
+                "passed": not fail_requested,
+                "matched_defect_ids": sorted(matched_ids),
+                "category_mismatch_defect_ids": sorted(category_mismatches),
+                "severity_mismatch_defect_ids": sorted(severity_mismatches),
+                "known_false_positive_ids": [],
+                "duplicate_submission_indices": [],
+            }
+            score_relative = (
+                Path("harbor") / run_id / "verifier" / Path(task.review.score_path).name
+            )
+            score_path = trial_dir / score_relative
+            write_json(score_path, score_data)
+            result_data["artifacts"].append(
+                {"path": score_relative.as_posix(), "sha256": sha256_file(score_path)}
+            )
         for outcome in result_data["outcomes"]:
             outcome["status"] = (
-                "not_applicable"
-                if outcome["gate"] == GateName.SAFETY_TYPE_ESCAPES.value
-                else "passed"
+                "passed" if outcome["gate"] in entry.applicable_gates else "not_applicable"
             )
             if fail_requested and outcome["gate"] == GateName.REQUESTED_BEHAVIOR.value:
                 outcome["status"] = "failed"
@@ -658,6 +702,79 @@ def test_compute_evaluation_is_deterministic_and_retains_full_raw_evidence(
     assert first.result_vector_sha256 == contract_digest(
         "slopbench.result-vector.v1", RawResultVector(trials=first.trials)
     )
+
+
+def test_review_calibration_scales_quality_without_changing_reliability(
+    tmp_path: Path,
+) -> None:
+    fixture = materialize_evaluation(tmp_path, entry_index=8)
+    result = fixture["result"]
+    trial = result.trials[0]
+
+    assert trial.review_calibration is not None
+    assert trial.review_calibration.true_positives == 3
+    assert trial.review_calibration.category_matches == 1
+    assert trial.review_calibration.severity_matches == 2
+    assert trial.review_calibration.exact_classification_matches == 0
+    assert trial.review_calibration.score_artifact in trial.artifacts
+    assert result.metrics.quality_bps == 8_958
+    assert result.metrics.reliability_bps == 10_000
+    assert result.metrics.selection_bps == 9_479
+
+    binary_profile = fixture["profile"].model_copy(update={"review_quality_weights": None})
+    assert _aggregate(result.trials, binary_profile).quality_bps == 10_000
+
+
+def test_review_calibration_requires_bound_source_and_passed_trial_evidence(
+    tmp_path: Path,
+) -> None:
+    fixture = materialize_evaluation(tmp_path, entry_index=8)
+    result = fixture["result"]
+    trial = result.trials[0]
+    assert trial.review_calibration is not None
+
+    calibration = trial.review_calibration.model_copy(
+        update={
+            "score_artifact": trial.review_calibration.score_artifact.model_copy(
+                update={"sha256": digest("unbound-review-score")}
+            )
+        }
+    )
+    with pytest.raises(ValidationError, match="source must be retained"):
+        RawTrialOutcome.model_validate_json(
+            json.dumps(
+                trial.model_copy(update={"review_calibration": calibration}).model_dump(mode="json")
+            )
+        )
+
+    without_calibration = trial.model_copy(update={"review_calibration": None})
+    trials = [without_calibration]
+    payload = result.model_dump(mode="json")
+    payload["trials"] = [without_calibration.model_dump(mode="json")]
+    payload["result_vector_sha256"] = contract_digest(
+        "slopbench.result-vector.v1", RawResultVector(trials=trials)
+    )
+    payload["metrics"] = _aggregate(trials, result.profile_definition).model_dump(mode="json")
+    with pytest.raises(ValidationError, match="passed review trials require calibration"):
+        EvaluationResult.model_validate_json(json.dumps(payload))
+
+
+def test_compute_evaluation_rejects_changed_review_score_artifact(tmp_path: Path) -> None:
+    fixture = materialize_evaluation(tmp_path, entry_index=8)
+    calibration = fixture["result"].trials[0].review_calibration
+    assert calibration is not None
+    binding = fixture["bindings"][0]
+    score_path = (tmp_path / binding.result_path).parent / calibration.score_artifact.path
+    score_path.write_text(score_path.read_text() + " ")
+
+    with pytest.raises(ContractError, match="review score artifact digest mismatch"):
+        compute_evaluation(
+            fixture["evaluation_path"],
+            fixture["task_set_path"],
+            fixture["profile_path"],
+            ROOT,
+            tmp_path,
+        )
 
 
 def test_evaluate_cli_recomputes_an_immutable_bundle(tmp_path: Path) -> None:
@@ -1532,6 +1649,8 @@ def test_release_models_reject_secret_configuration_and_invalid_profile() -> Non
         ProfileDefinition.model_validate_json(json.dumps(scoring_profile))
     with pytest.raises(ValidationError, match="declare a cost or duration"):
         ProfileBudget(max_mean_cost_usd=None, max_mean_duration_seconds=None)
+    with pytest.raises(ValidationError, match="review quality weights must sum to 100"):
+        ReviewQualityWeights(detection=50, category=25, severity=20)
 
 
 def test_aggregate_contract_requires_complete_failure_counters() -> None:

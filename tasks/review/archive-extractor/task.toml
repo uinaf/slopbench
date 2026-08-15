@@ -9,7 +9,7 @@ name = "uinaf"
 
 [metadata]
 slopbench_task_id = "slopbench/review/archive-extractor"
-slopbench_task_version = "1.0.0"
+slopbench_task_version = "1.1.0"
 
 [agent]
 timeout_sec = 300.0

@@ -57,11 +57,11 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/review/archive-extractor/slopbench-task.json",
-    "contract_sha256": "64a9f0433b752bdfac44d47c697726ea69b8f41d914b704205436ae0db03aaf5",
-    "harbor_task_checksum": "f5cd7d4128a0c81069ce5243f51818b6f77f2dc5ad81781e13f1d51c77053492",
-    "task_digest": "ce70ce9acf4c7dfda158a7e918d7e076d037f67b39ab33678ce7858a4e2f9e5f",
+    "contract_sha256": "1fdf185f496d5f6ee740f4de0cbe580b9fba63d89793b4b198d886f23321ba96",
+    "harbor_task_checksum": "45babf020bb886cd183d53e93d3885a22a3ec42385fd43a00021172afb301dc0",
+    "task_digest": "d5784186f84088a12647d2714cd70d9627c5f55e582e484eff8a092c6f9932ab",
     "task_id": "slopbench/review/archive-extractor",
-    "task_version": "1.0.0"
+    "task_version": "1.1.0"
   },
   "trial": {
     "attempt": 1,

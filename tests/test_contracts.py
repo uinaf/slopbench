@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from slopbench.contracts import (
     AgentReport,
     ResultBundle,
+    ReviewScore,
     ReviewSubmission,
     RunManifest,
     TaskContract,
@@ -595,3 +596,71 @@ def test_result_rejects_inconsistent_failure_and_retry_state() -> None:
         validate(ResultBundle, reason)
     with pytest.raises(ValidationError, match="retry eligibility is inconsistent"):
         validate(ResultBundle, retry)
+
+
+def review_score_payload() -> dict[str, object]:
+    return {
+        "schema_version": "slopbench.review-score.v2",
+        "task_digest": "a" * 64,
+        "submission_sha256": "b" * 64,
+        "true_positives": 2,
+        "false_positives": 2,
+        "duplicates": 1,
+        "known_false_positives": 1,
+        "novel_findings": 0,
+        "recall": 1.0,
+        "precision": 0.5,
+        "category_calibration": 0.5,
+        "severity_calibration": 0.5,
+        "exact_classification_calibration": 0.0,
+        "passed": False,
+        "matched_defect_ids": ["defect-a", "defect-b"],
+        "category_mismatch_defect_ids": ["defect-b"],
+        "severity_mismatch_defect_ids": ["defect-a"],
+        "known_false_positive_ids": ["false-positive-a"],
+        "duplicate_submission_indices": [2],
+    }
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("unsorted-defects", "matched_defect_ids must be sorted and unique"),
+        ("duplicate-indices", "duplicate_submission_indices must be sorted and unique"),
+        ("unsorted-false-positives", "known_false_positive_ids must be sorted"),
+        ("unknown-mismatch", "mismatches must identify matched defects"),
+        ("true-positive-count", "true_positives must match"),
+        ("duplicate-count", "duplicates must match"),
+        ("known-false-positive-count", "known_false_positives must match"),
+        ("false-positive-total", "false_positives must equal"),
+        ("precision", "precision does not match"),
+        ("calibration", "calibration does not match"),
+    ],
+)
+def test_review_score_rejects_inconsistent_evidence(mutation: str, message: str) -> None:
+    payload = review_score_payload()
+    if mutation == "unsorted-defects":
+        payload["matched_defect_ids"] = ["defect-b", "defect-a"]
+    elif mutation == "duplicate-indices":
+        payload["duplicate_submission_indices"] = [2, 2]
+    elif mutation == "unsorted-false-positives":
+        payload["known_false_positive_ids"] = ["false-positive-b", "false-positive-a"]
+        payload["known_false_positives"] = 2
+        payload["false_positives"] = 3
+    elif mutation == "unknown-mismatch":
+        payload["category_mismatch_defect_ids"] = ["defect-c"]
+    elif mutation == "true-positive-count":
+        payload["true_positives"] = 3
+    elif mutation == "duplicate-count":
+        payload["duplicates"] = 2
+    elif mutation == "known-false-positive-count":
+        payload["known_false_positives"] = 2
+    elif mutation == "false-positive-total":
+        payload["false_positives"] = 3
+    elif mutation == "precision":
+        payload["precision"] = 1.0
+    else:
+        payload["category_calibration"] = 1.0
+
+    with pytest.raises(ValidationError, match=message):
+        validate(ReviewScore, payload)

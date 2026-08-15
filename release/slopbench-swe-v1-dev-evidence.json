@@ -18,23 +18,23 @@
   "profiles": [
     {
       "path": "profiles/altay.json",
-      "sha256": "8e8e097bac3b87850306146bbc91bf60f94cd919447bd14fe86d9b73277b6b1c"
+      "sha256": "09f4bc4a5a0798950d2f5045ffc9a23318832f27eef7545cb6c358f05c213e08"
     },
     {
       "path": "profiles/balanced.json",
-      "sha256": "69eb228788504690acadd463542233d4bbbfd9f505706064ae0e78c05a133730"
+      "sha256": "bc241e6468aa9e9df330e85290acb9fe04b9e4d92f80406968be1524a5b66b50"
     },
     {
       "path": "profiles/cost-aware.json",
-      "sha256": "693caa879da10a6e63b2b714ad1dfcc239c3f863e4c7635230852f58786d462c"
+      "sha256": "49230d742da20bcdbcd307e7ab02fbb9356314a6a0698eb2bb545fd81f6b3b92"
     },
     {
       "path": "profiles/fast-feedback.json",
-      "sha256": "d99da5f2a99f7de1635b0da7e201936b132986304720f3ef45acdc828532ec30"
+      "sha256": "f0aaf20275282b127312c7c42f03920b18e852f613c197ed1942f94230fe9abb"
     },
     {
       "path": "profiles/reliability-first.json",
-      "sha256": "652ff6c10ca8e2472359b9f116f7fe30b977a5216c7cf5d4660dd1581634925d"
+      "sha256": "df8191f2eea85e7b511e1f88858c61527ef7134e4a89b6b289e88ab541f77009"
     }
   ],
   "public_materials": [
@@ -48,7 +48,7 @@
     },
     {
       "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
-      "sha256": "ab1d1f4c654e795b67b81663d310c103bd7d268ba8305b4bf61fc30ad946e238"
+      "sha256": "f249cccd1008df4be98d43615057c4cc2f4db1a005e7b74ed93d8dca32468715"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -56,11 +56,11 @@
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "d98063768e5f8c2ea10a838017525d79d9ff41ec5df1f05433e5683c4ae67f8f"
+      "sha256": "a8ef96e3bf3a09b6c94c6ca413fb126f0159cb536f21a40c0f25135db1d63b88"
     },
     {
       "path": "docs/METHODOLOGY.md",
-      "sha256": "f8bcd6ad8e90c0062624034834e39082e1c7cf09ae700310f33debeaa4eb1d7f"
+      "sha256": "9dda1ce1a4e117c375806c4acfed1719f814631861380500610456cf03c0014b"
     },
     {
       "path": "docs/REPRODUCING.md",
@@ -68,11 +68,11 @@
     },
     {
       "path": "docs/RESULTS.md",
-      "sha256": "66a92ca72bb52a01e43350e2dc59e1094883c896c534e24e75a7bde9ce3b5be1"
+      "sha256": "2cf9d590ebe5b8d48686124ddee844affff9b744512b8d3fd0ef8b34581172e4"
     },
     {
       "path": "docs/REVIEW_TASKS.md",
-      "sha256": "1e94caa00d02fa8d653eb6a16de2b9ee5e01c8f2af099912cbd9a6dcaa729473"
+      "sha256": "2376b091df40785a9b088e85810b744014c02d751ee913019144147cb7be87a4"
     },
     {
       "path": "schemas/slopbench-attestation-statement.schema.json",
@@ -92,11 +92,11 @@
     },
     {
       "path": "schemas/slopbench-disclosure.schema.json",
-      "sha256": "861a7634dcffb0190540b82b1c0e286be1ffbb416af3c522490f1ea14624c4d2"
+      "sha256": "93baf796afce60175684899841040b005116a0697fc246b19095099f475be4e7"
     },
     {
       "path": "schemas/slopbench-evaluation-result.schema.json",
-      "sha256": "6835ddd2af71c85cfe5a734cdb84a91302ce86d2947c0bef7e4e52a54801f0db"
+      "sha256": "cbcbcd958cf89bcfbd17954c10feda29e6d78c6b43b97259342e594e1fd82bcc"
     },
     {
       "path": "schemas/slopbench-evaluation.schema.json",
@@ -104,7 +104,7 @@
     },
     {
       "path": "schemas/slopbench-profile.schema.json",
-      "sha256": "711fc948b6ae918074efc8d37dece68d1df5ce4574b45a0f578d82348fbbbb7b"
+      "sha256": "b7d035cf448177da253a1bcf7d9e77b0bab4648034a27d74a8f32f055ca7ea38"
     },
     {
       "path": "schemas/slopbench-reference-configuration.schema.json",
@@ -137,6 +137,10 @@
     {
       "path": "schemas/slopbench-retirement.schema.json",
       "sha256": "4f920cdf7f86a99c0d11e0c92b67745360a7aea32e23e846308efcc1588bf3c3"
+    },
+    {
+      "path": "schemas/slopbench-review-score.schema.json",
+      "sha256": "bf6aac5906262f79fe8ba04ceab852ee8d1548cb2214578750da7d7fa6bf7c93"
     },
     {
       "path": "schemas/slopbench-review.schema.json",
@@ -191,11 +195,11 @@
   "stage": "provisional",
   "task_set": {
     "path": "datasets/slopbench-swe-v1-dev.json",
-    "sha256": "561168ebbc0ef944e60777199ba3708ed8589b444b5d16528ac397b31ee32f0a"
+    "sha256": "1a9f025d31be5682eae72606ba8cd60376762f7750045c5602920bebd152f79b"
   },
   "tracer_task": {
     "path": "tasks/tracer/slopbench-task.json",
     "sha256": "ddb808249205741365980be40967e0d7f3ee1e7ec773399f94f83d7d5a567825"
   },
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

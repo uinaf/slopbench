@@ -45,10 +45,12 @@ Raw trials retain the complete deterministic gate vector, failed completion gate
 and reason, uncertainty, evidence receipt, usage and cost, timing and latency, Harbor trajectory
 hash, artifact hashes, complete agent configuration, runtime image pins, limits, and trial identity.
 They also retain the complete task binding, adapter evidence, hashed instruction layers, and only
-the names of credential variables, never their values. Repeated trials for one task must use the
-same task binding, instructions, runtime, and limits. The evaluator orders trials by task and pair
-index and hashes the complete raw vector. Changing a profile never changes that vector; it creates
-a new profile binding and aggregate.
+the names of credential variables, never their values. Review trials additionally retain canonical
+category, severity, and exact-classification match counts together with the bound score artifact
+that produced them. Repeated trials for one task must use the same task binding, instructions,
+runtime, and limits. The evaluator orders trials by task and pair index and hashes the complete raw
+vector. Changing a profile never changes that vector; it creates a new profile binding and
+aggregate.
 
 Reliability uses only agent-attributable evidence: valid passes, valid agent failures, and invalid
 agent runs. Infrastructure failures and benchmark defects remain explicit in failure counts and in
@@ -86,6 +88,9 @@ separate trust decision produced only by successful attestation verification.
 Cost and latency remain separate reported dimensions. A declared budget changes only eligibility;
 it is not folded into quality or reliability. Missing required usage produces `incomplete`, not a
 free pass. The Altay profile records its non-sensitive source priorities and is labeled subjective.
+All checked-in `0.2.0` profiles refine a passed review task's `requested_behavior` quality with
+50% semantic detection, 25% category calibration, and 25% severity calibration. Review pass/fail
+and repeat-trial reliability remain binary.
 
 ## Release readiness and regression
 

@@ -788,6 +788,17 @@
           "title": "Reliability Weight",
           "type": "integer"
         },
+        "review_quality_weights": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewQualityWeights"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "schema_version": {
           "const": "slopbench.profile.v1",
           "title": "Schema Version",
@@ -954,6 +965,17 @@
           "pattern": "^[0-9a-f]{64}$",
           "title": "Result Sha256",
           "type": "string"
+        },
+        "review_calibration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewCalibration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "run_id": {
           "pattern": "^[a-z0-9][a-z0-9._:-]*$",
@@ -1176,6 +1198,79 @@
       ],
       "title": "ResultOrigin",
       "type": "string"
+    },
+    "ReviewCalibration": {
+      "additionalProperties": false,
+      "properties": {
+        "category_matches": {
+          "minimum": 0,
+          "title": "Category Matches",
+          "type": "integer"
+        },
+        "exact_classification_matches": {
+          "minimum": 0,
+          "title": "Exact Classification Matches",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "slopbench.review-calibration.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "score_artifact": {
+          "$ref": "#/$defs/ArtifactDigest"
+        },
+        "severity_matches": {
+          "minimum": 0,
+          "title": "Severity Matches",
+          "type": "integer"
+        },
+        "true_positives": {
+          "minimum": 0,
+          "title": "True Positives",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "score_artifact",
+        "true_positives",
+        "category_matches",
+        "severity_matches",
+        "exact_classification_matches"
+      ],
+      "title": "ReviewCalibration",
+      "type": "object"
+    },
+    "ReviewQualityWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Category",
+          "type": "integer"
+        },
+        "detection": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Detection",
+          "type": "integer"
+        },
+        "severity": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "detection",
+        "category",
+        "severity"
+      ],
+      "title": "ReviewQualityWeights",
+      "type": "object"
     },
     "RunLimits": {
       "additionalProperties": false,

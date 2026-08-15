@@ -93,12 +93,46 @@ def range_distance(finding: dict[str, object], target: dict[str, object]) -> int
     return 0
 
 
-def matches(finding: dict[str, object], target: dict[str, object], tolerance: int) -> bool:
-    return (
-        finding["path"] == target["path"]
-        and finding["category"] == target["category"]
-        and finding["severity"] == target["severity"]
-        and range_distance(finding, target) <= tolerance
+def range_shape_distance(finding: dict[str, object], target: dict[str, object]) -> int:
+    start = int(finding["start_line"])
+    end = start + int(finding["line_count"]) - 1
+    return abs(start - int(target["start_line"])) + abs(end - int(target["end_line"]))
+
+
+def match_rank(
+    finding: dict[str, object], target: dict[str, object], tolerance: int
+) -> tuple[int, int, int, int] | None:
+    if finding["path"] != target["path"]:
+        return None
+    locations = [
+        {"start_line": target["start_line"], "end_line": target["end_line"]},
+        *target.get("accepted_locations", []),
+    ]
+    location_ranks = [
+        (range_distance(finding, location), range_shape_distance(finding, location), index)
+        for index, location in enumerate(locations)
+        if range_distance(finding, location) <= tolerance
+    ]
+    if not location_ranks:
+        return None
+    classification = (finding["category"], finding["severity"])
+    canonical = (target["category"], target["severity"])
+    alternatives = {
+        (item["category"], item["severity"]) for item in target.get("accepted_classifications", [])
+    }
+    if classification == canonical:
+        classification_rank = 0
+    elif classification in alternatives:
+        classification_rank = 1
+    else:
+        return None
+    distance, shape_distance, location_rank = min(location_ranks)
+    return distance, shape_distance, classification_rank, location_rank
+
+
+def finding_identity(finding: dict[str, object]) -> tuple[object, ...]:
+    return tuple(
+        finding[key] for key in ("path", "start_line", "line_count", "category", "severity")
     )
 
 
@@ -152,41 +186,58 @@ def main() -> int:
     defects = adjudication["defects"]
     false_positives = adjudication["false_positives"]
     tolerance = rules["location_tolerance_lines"]
-    matched: set[str] = set()
+    matched: dict[str, int] = {}
+    category_mismatches: list[str] = []
+    severity_mismatches: list[str] = []
     known_false_positives: list[str] = []
     duplicates: list[int] = []
     novel: list[dict[str, object]] = []
     for index, finding in indexed:
-        eligible = [
-            defect
-            for defect in defects
-            if defect["id"] not in matched and matches(finding, defect, tolerance)
-        ]
-        if eligible:
-            selected = min(
-                eligible, key=lambda defect: (range_distance(finding, defect), defect["id"])
-            )
-            matched.add(selected["id"])
-        elif any(matches(finding, defect, tolerance) for defect in defects):
-            duplicates.append(index)
-        else:
-            false_positive = next(
-                (item for item in false_positives if matches(finding, item, tolerance)),
-                None,
-            )
-            if false_positive is not None:
-                known_false_positives.append(false_positive["id"])
+        candidates: list[tuple[tuple[int, int, int, int], str, str, dict[str, object]]] = []
+        for kind, targets in (("defect", defects), ("false_positive", false_positives)):
+            for target in targets:
+                rank = match_rank(finding, target, tolerance)
+                if rank is not None:
+                    candidates.append((rank, kind, str(target["id"]), target))
+        if not candidates:
+            novel.append({"submission_index": index, "finding": finding})
+            continue
+        _, kind, target_id, target = min(
+            candidates, key=lambda candidate: (candidate[0], candidate[1], candidate[2])
+        )
+        if kind == "false_positive":
+            known_false_positives.append(target_id)
+            continue
+        if target_id in matched:
+            if finding_identity(finding) == finding_identity(findings[matched[target_id]]):
+                duplicates.append(index)
             else:
                 novel.append({"submission_index": index, "finding": finding})
+            continue
+        matched[target_id] = index
+        if finding["category"] != target["category"]:
+            category_mismatches.append(target_id)
+        if finding["severity"] != target["severity"]:
+            severity_mismatches.append(target_id)
     true_positives = len(matched)
     false_positive_count = len(known_false_positives) + len(duplicates)
     recall = true_positives / len(defects) if defects else 1.0
     denominator = true_positives + false_positive_count
     precision = true_positives / denominator if denominator else 1.0
+    category_matches = true_positives - len(category_mismatches)
+    severity_matches = true_positives - len(severity_mismatches)
+    exact_classification_matches = true_positives - len(
+        set(category_mismatches) | set(severity_mismatches)
+    )
+    category_calibration = category_matches / true_positives if true_positives else 0.0
+    severity_calibration = severity_matches / true_positives if true_positives else 0.0
+    exact_classification_calibration = (
+        exact_classification_matches / true_positives if true_positives else 0.0
+    )
     passed = recall >= rules["recall_threshold"] and precision >= rules["precision_threshold"]
     submission_sha256 = hashlib.sha256(raw).hexdigest()
     score = {
-        "schema_version": "slopbench.review-score.v1",
+        "schema_version": "slopbench.review-score.v2",
         "task_digest": task_digest,
         "submission_sha256": submission_sha256,
         "true_positives": true_positives,
@@ -196,8 +247,13 @@ def main() -> int:
         "novel_findings": len(novel),
         "recall": recall,
         "precision": precision,
+        "category_calibration": category_calibration,
+        "severity_calibration": severity_calibration,
+        "exact_classification_calibration": exact_classification_calibration,
         "passed": passed,
         "matched_defect_ids": sorted(matched),
+        "category_mismatch_defect_ids": sorted(category_mismatches),
+        "severity_mismatch_defect_ids": sorted(severity_mismatches),
         "known_false_positive_ids": sorted(known_false_positives),
         "duplicate_submission_indices": sorted(duplicates),
     }

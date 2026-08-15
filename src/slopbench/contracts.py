@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from enum import StrEnum
 from pathlib import PurePosixPath
@@ -21,6 +22,7 @@ TASK_SCHEMA_VERSION: Literal["slopbench.task.v1"] = "slopbench.task.v1"
 RUN_SCHEMA_VERSION: Literal["slopbench.run.v1"] = "slopbench.run.v1"
 REPORT_SCHEMA_VERSION: Literal["slopbench.report.v1"] = "slopbench.report.v1"
 REVIEW_SCHEMA_VERSION: Literal["slopbench.review.v1"] = "slopbench.review.v1"
+REVIEW_SCORE_SCHEMA_VERSION: Literal["slopbench.review-score.v2"] = "slopbench.review-score.v2"
 VERIFICATION_SCHEMA_VERSION: Literal["slopbench.verification.v1"] = "slopbench.verification.v1"
 RESULT_SCHEMA_VERSION: Literal["slopbench.result.v1"] = "slopbench.result.v1"
 
@@ -773,6 +775,83 @@ class ReviewSubmission(ContractModel):
     task_digest: Sha256Hex
     base_revision: GitRevision
     findings: list[ReviewFinding] = Field(max_length=100)
+
+
+class ReviewScore(ContractModel):
+    schema_version: Literal["slopbench.review-score.v2"]
+    task_digest: Sha256Hex
+    submission_sha256: Sha256Hex
+    true_positives: int = Field(ge=0)
+    false_positives: int = Field(ge=0)
+    duplicates: int = Field(ge=0)
+    known_false_positives: int = Field(ge=0)
+    novel_findings: int = Field(ge=0)
+    recall: float = Field(ge=0, le=1, allow_inf_nan=False)
+    precision: float = Field(ge=0, le=1, allow_inf_nan=False)
+    category_calibration: float = Field(ge=0, le=1, allow_inf_nan=False)
+    severity_calibration: float = Field(ge=0, le=1, allow_inf_nan=False)
+    exact_classification_calibration: float = Field(ge=0, le=1, allow_inf_nan=False)
+    passed: bool
+    matched_defect_ids: list[Identifier]
+    category_mismatch_defect_ids: list[Identifier]
+    severity_mismatch_defect_ids: list[Identifier]
+    known_false_positive_ids: list[Identifier]
+    duplicate_submission_indices: list[Annotated[int, Field(ge=0)]]
+
+    @model_validator(mode="after")
+    def internally_consistent(self) -> Self:
+        ordered_unique = {
+            "matched_defect_ids": self.matched_defect_ids,
+            "category_mismatch_defect_ids": self.category_mismatch_defect_ids,
+            "severity_mismatch_defect_ids": self.severity_mismatch_defect_ids,
+        }
+        for name, values in ordered_unique.items():
+            if values != sorted(set(values)):
+                raise ValueError(f"{name} must be sorted and unique")
+        if self.duplicate_submission_indices != sorted(set(self.duplicate_submission_indices)):
+            raise ValueError("duplicate_submission_indices must be sorted and unique")
+        if self.known_false_positive_ids != sorted(self.known_false_positive_ids):
+            raise ValueError("known_false_positive_ids must be sorted")
+        matched = set(self.matched_defect_ids)
+        category_mismatches = set(self.category_mismatch_defect_ids)
+        severity_mismatches = set(self.severity_mismatch_defect_ids)
+        if not category_mismatches <= matched or not severity_mismatches <= matched:
+            raise ValueError("classification mismatches must identify matched defects")
+        if self.true_positives != len(self.matched_defect_ids):
+            raise ValueError("true_positives must match matched_defect_ids")
+        if self.duplicates != len(self.duplicate_submission_indices):
+            raise ValueError("duplicates must match duplicate_submission_indices")
+        if self.known_false_positives != len(self.known_false_positive_ids):
+            raise ValueError("known_false_positives must match known_false_positive_ids")
+        if self.false_positives != self.duplicates + self.known_false_positives:
+            raise ValueError("false_positives must equal duplicates plus known false positives")
+        precision_denominator = self.true_positives + self.false_positives
+        expected_precision = (
+            self.true_positives / precision_denominator if precision_denominator else 1.0
+        )
+        if not math.isclose(self.precision, expected_precision, rel_tol=0.0, abs_tol=1e-12):
+            raise ValueError("precision does not match scored finding counts")
+
+        category_matches = self.true_positives - len(category_mismatches)
+        severity_matches = self.true_positives - len(severity_mismatches)
+        exact_matches = self.true_positives - len(category_mismatches | severity_mismatches)
+        denominator = self.true_positives
+        expected = (
+            category_matches / denominator if denominator else 0.0,
+            severity_matches / denominator if denominator else 0.0,
+            exact_matches / denominator if denominator else 0.0,
+        )
+        actual = (
+            self.category_calibration,
+            self.severity_calibration,
+            self.exact_classification_calibration,
+        )
+        if any(
+            not math.isclose(observed, wanted, rel_tol=0.0, abs_tol=1e-12)
+            for observed, wanted in zip(actual, expected, strict=True)
+        ):
+            raise ValueError("classification calibration does not match mismatch evidence")
+        return self
 
 
 class CheckEvidence(ContractModel):

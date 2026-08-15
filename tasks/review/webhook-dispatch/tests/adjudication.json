@@ -1,5 +1,5 @@
 {
-  "schema_version": "slopbench.review-adjudication.v1",
+  "schema_version": "slopbench.review-adjudication.v2",
   "task_id": "slopbench/review/webhook-dispatch",
   "rules": {
     "submission_path": "slopbench-review.json",
@@ -16,6 +16,12 @@
       "end_line": 21,
       "category": "security",
       "severity": "medium",
+      "accepted_classifications": [
+        {
+          "category": "security",
+          "severity": "high"
+        }
+      ],
       "rationale": "Ordinary string equality exposes data-dependent comparison timing for an attacker-controlled signature."
     },
     {
@@ -25,6 +31,16 @@
       "end_line": 45,
       "category": "api_contract",
       "severity": "high",
+      "accepted_classifications": [
+        {
+          "category": "api_contract",
+          "severity": "medium"
+        },
+        {
+          "category": "correctness",
+          "severity": "high"
+        }
+      ],
       "rationale": "An unknown type is sent to the invoice handler instead of being rejected without side effects."
     },
     {
@@ -34,6 +50,16 @@
       "end_line": 47,
       "category": "data_integrity",
       "severity": "high",
+      "accepted_classifications": [
+        {
+          "category": "data_integrity",
+          "severity": "medium"
+        },
+        {
+          "category": "error_handling",
+          "severity": "high"
+        }
+      ],
       "rationale": "The event is marked before the handler succeeds, so a retry after handler failure is discarded."
     }
   ],
@@ -45,6 +71,7 @@
       "end_line": 20,
       "category": "security",
       "severity": "low",
+      "accepted_classifications": [],
       "rationale": "HMAC-SHA256 is the required and appropriate primitive; the comparison operation is the defect."
     },
     {
@@ -54,6 +81,7 @@
       "end_line": 44,
       "category": "concurrency",
       "severity": "high",
+      "accepted_classifications": [],
       "rationale": "The fixture contract serializes delivery per event ID."
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "schema_version": "slopbench.review-adjudication.v1",
+  "schema_version": "slopbench.review-adjudication.v2",
   "task_id": "slopbench/review/archive-extractor",
   "rules": {
     "submission_path": "slopbench-review.json",
@@ -16,6 +16,20 @@
       "end_line": 25,
       "category": "resource_lifecycle",
       "severity": "high",
+      "accepted_classifications": [
+        {
+          "category": "api_contract",
+          "severity": "high"
+        },
+        {
+          "category": "correctness",
+          "severity": "high"
+        },
+        {
+          "category": "security",
+          "severity": "high"
+        }
+      ],
       "rationale": "The total limit is compared with each member independently, so many allowed members can exceed the archive budget."
     },
     {
@@ -25,6 +39,12 @@
       "end_line": 27,
       "category": "security",
       "severity": "high",
+      "accepted_classifications": [
+        {
+          "category": "security",
+          "severity": "critical"
+        }
+      ],
       "rationale": "An absolute or parent-relative member name can write outside the owned destination."
     },
     {
@@ -32,8 +52,24 @@
       "path": "src/archive.py",
       "start_line": 28,
       "end_line": 30,
+      "accepted_locations": [
+        {
+          "start_line": 18,
+          "end_line": 25
+        }
+      ],
       "category": "data_integrity",
       "severity": "medium",
+      "accepted_classifications": [
+        {
+          "category": "error_handling",
+          "severity": "medium"
+        },
+        {
+          "category": "resource_lifecycle",
+          "severity": "medium"
+        }
+      ],
       "rationale": "Files are published directly, so a later validation or extraction failure leaves a partial result."
     }
   ],
@@ -45,6 +81,7 @@
       "end_line": 18,
       "category": "resource_lifecycle",
       "severity": "medium",
+      "accepted_classifications": [],
       "rationale": "The context manager closes the archive on success and failure."
     },
     {
@@ -54,6 +91,7 @@
       "end_line": 29,
       "category": "resource_lifecycle",
       "severity": "medium",
+      "accepted_classifications": [],
       "rationale": "copyfileobj streams bounded chunks and does not load the entire member."
     }
   ]

@@ -1,0 +1,36 @@
+{
+  "findings": [
+    {
+      "path": "src/archive.py",
+      "start_line": 24,
+      "line_count": 2,
+      "category": "resource_lifecycle",
+      "severity": "high",
+      "explanation": "The archive-wide limit is checked against one member instead of a cumulative total."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 24,
+      "line_count": 2,
+      "category": "resource_lifecycle",
+      "severity": "high",
+      "explanation": "The same cumulative-size defect is reported twice."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 26,
+      "line_count": 2,
+      "category": "security",
+      "severity": "high",
+      "explanation": "An untrusted member name can escape the destination."
+    },
+    {
+      "path": "src/archive.py",
+      "start_line": 28,
+      "line_count": 3,
+      "category": "data_integrity",
+      "severity": "medium",
+      "explanation": "Direct writes leave partial output after a later failure."
+    }
+  ]
+}

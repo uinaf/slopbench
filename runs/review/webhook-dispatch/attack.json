@@ -25,7 +25,7 @@
       }
     ]
   },
-  "attack_fixture_id": "known-false-positive",
+  "attack_fixture_id": "duplicate-finding",
   "limits": {
     "agent_setup_timeout_sec": 120,
     "agent_timeout_sec": 300,
@@ -37,7 +37,7 @@
     "max_attempts": 1,
     "retryable_reasons": []
   },
-  "run_id": "review-webhook-dispatch-attack-known-false-positive",
+  "run_id": "review-webhook-dispatch-attack-duplicate-finding",
   "runtime": {
     "cpus": 1,
     "environment_provider": "docker",
@@ -55,15 +55,15 @@
   "schema_version": "slopbench.run.v1",
   "task": {
     "contract_path": "tasks/review/webhook-dispatch/slopbench-task.json",
-    "contract_sha256": "5469b9a7c90f0d7ca65a51ba5e17f74f70eb19f327799fb5c3dde87bdff5e136",
-    "harbor_task_checksum": "8fb2f1057b99454d878d7647e1d38495252dde955d14183321560e2dba122f4b",
-    "task_digest": "1e8242da261841a8ad424d7c119420ea9b02989b1515b8ee4aaa72641099d5b3",
+    "contract_sha256": "eb3b5e3cda1222095420fd5b273a32c9ed54d5ea728e1bbf4ffcaacc3e2881a0",
+    "harbor_task_checksum": "b31609b33a2e92d5e9f77702eba1ec5adf746841ff117db6bfb716c75ed70689",
+    "task_digest": "752c4122abec917e7438581d5ee304e52c290ef2f22e8e97d7f26a024baf4ce9",
     "task_id": "slopbench/review/webhook-dispatch",
-    "task_version": "1.0.0"
+    "task_version": "1.1.0"
   },
   "trial": {
     "attempt": 1,
-    "id": "review-webhook-dispatch-attack-known-false-positive",
+    "id": "review-webhook-dispatch-attack-duplicate-finding",
     "seed": 1
   }
 }

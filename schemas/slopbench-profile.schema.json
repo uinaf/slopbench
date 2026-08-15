@@ -50,6 +50,36 @@
       },
       "title": "ProfileBudget",
       "type": "object"
+    },
+    "ReviewQualityWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Category",
+          "type": "integer"
+        },
+        "detection": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Detection",
+          "type": "integer"
+        },
+        "severity": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "detection",
+        "category",
+        "severity"
+      ],
+      "title": "ReviewQualityWeights",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -101,6 +131,17 @@
       "minimum": 0,
       "title": "Reliability Weight",
       "type": "integer"
+    },
+    "review_quality_weights": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReviewQualityWeights"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "schema_version": {
       "const": "slopbench.profile.v1",

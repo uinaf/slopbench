@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import subprocess
 import tempfile
 from collections import Counter, defaultdict
@@ -16,6 +17,7 @@ from pydantic import Field, JsonValue, field_validator, model_validator
 
 from slopbench.contracts import (
     _SENSITIVE_KEY,
+    REVIEW_SCORE_SCHEMA_VERSION,
     AgentConfiguration,
     AgentReport,
     ArtifactDigest,
@@ -34,11 +36,13 @@ from slopbench.contracts import (
     Provenance,
     ReceiptValidation,
     ResultBundle,
+    ReviewScore,
     RunLimits,
     RunManifest,
     RuntimeConfiguration,
     Sha256Hex,
     TaskBinding,
+    TaskContract,
     TaskKind,
     TimingMetrics,
     ToolPin,
@@ -196,6 +200,18 @@ class ProfileBudget(ContractModel):
         return self
 
 
+class ReviewQualityWeights(ContractModel):
+    detection: int = Field(ge=0, le=100)
+    category: int = Field(ge=0, le=100)
+    severity: int = Field(ge=0, le=100)
+
+    @model_validator(mode="after")
+    def sum_to_one_hundred(self) -> Self:
+        if self.detection + self.category + self.severity != 100:
+            raise ValueError("review quality weights must sum to 100")
+        return self
+
+
 class ProfileDefinition(ContractModel):
     schema_version: Literal["slopbench.profile.v1"]
     profile_id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9._:-]*$")]
@@ -208,6 +224,9 @@ class ProfileDefinition(ContractModel):
     strict_gates: list[GateName]
     quality_weight: int = Field(ge=0, le=100)
     reliability_weight: int = Field(ge=0, le=100)
+    review_quality_weights: ReviewQualityWeights | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     budget: ProfileBudget | None = None
 
     @model_validator(mode="after")
@@ -356,6 +375,35 @@ class EvaluationManifest(ContractModel):
         return self
 
 
+class ReviewCalibration(ContractModel):
+    schema_version: Literal["slopbench.review-calibration.v1"]
+    score_artifact: ArtifactDigest
+    true_positives: int = Field(ge=0)
+    category_matches: int = Field(ge=0)
+    severity_matches: int = Field(ge=0)
+    exact_classification_matches: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def valid_match_counts(self) -> Self:
+        if (
+            max(
+                self.category_matches,
+                self.severity_matches,
+                self.exact_classification_matches,
+            )
+            > self.true_positives
+        ):
+            raise ValueError("review calibration matches cannot exceed true positives")
+        minimum_exact = max(0, self.category_matches + self.severity_matches - self.true_positives)
+        if (
+            not minimum_exact
+            <= self.exact_classification_matches
+            <= min(self.category_matches, self.severity_matches)
+        ):
+            raise ValueError("exact classification matches are inconsistent")
+        return self
+
+
 class RawTrialOutcome(ContractModel):
     task_id: TaskId
     task_digest: Sha256Hex
@@ -379,6 +427,9 @@ class RawTrialOutcome(ContractModel):
     timing: TimingMetrics
     harbor: HarborEvidence
     artifacts: list[ArtifactDigest]
+    review_calibration: ReviewCalibration | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
     @model_validator(mode="after")
     def validate_raw_outcome(self) -> Self:
@@ -416,6 +467,11 @@ class RawTrialOutcome(ContractModel):
             raise ValueError("raw valid receipt presence requires a report digest")
         if not self.receipt.present and self.receipt.sha256 is not None:
             raise ValueError("raw absent receipt cannot retain a digest")
+        if (
+            self.review_calibration is not None
+            and self.review_calibration.score_artifact not in self.artifacts
+        ):
+            raise ValueError("review calibration source must be retained in raw artifacts")
         return self
 
 
@@ -499,6 +555,19 @@ class EvaluationResult(ContractModel):
                 }
                 if actual_gates != set(entry.applicable_gates):
                     raise ValueError(f"raw gate applicability mismatch for {trial.task_id}")
+            if entry.kind != TaskKind.REVIEW and trial.review_calibration is not None:
+                raise ValueError("patch trials cannot retain review calibration")
+            requested_behavior = next(
+                outcome for outcome in trial.outcomes if outcome.gate == GateName.REQUESTED_BEHAVIOR
+            )
+            if (
+                entry.kind == TaskKind.REVIEW
+                and self.profile_definition.review_quality_weights is not None
+                and trial.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+                and requested_behavior.status == OutcomeStatus.PASSED
+                and trial.review_calibration is None
+            ):
+                raise ValueError("passed review trials require calibration evidence")
             comparisons = {
                 "harness": (self.configuration.harness.name, trial.agent.harness),
                 "harness_version": (
@@ -589,6 +658,9 @@ class PublicScoringContract(ContractModel):
     strict_gates: list[GateName]
     quality_weight: int
     reliability_weight: int
+    review_quality_weights: ReviewQualityWeights | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     budget: ProfileBudget | None
 
 
@@ -822,8 +894,28 @@ def _configuration_mismatches(configuration: ReferenceConfiguration, run: RunMan
     return mismatches
 
 
+def _passed_gate_quality_bps(
+    trial: RawTrialOutcome, outcome: GateOutcome, profile: ProfileDefinition
+) -> int:
+    weights = profile.review_quality_weights
+    calibration = trial.review_calibration
+    if (
+        outcome.gate != GateName.REQUESTED_BEHAVIOR
+        or weights is None
+        or calibration is None
+        or calibration.true_positives == 0
+    ):
+        return 10_000
+    weighted_matches = (
+        weights.detection * calibration.true_positives
+        + weights.category * calibration.category_matches
+        + weights.severity * calibration.severity_matches
+    )
+    return weighted_matches * 100 // calibration.true_positives
+
+
 def _aggregate(trials: list[RawTrialOutcome], profile: ProfileDefinition) -> AggregateMetrics:
-    quality_numerator = 0
+    quality_numerator_bps = 0
     quality_denominator = 0
     failure_counts = Counter(trial.classification for trial in trials)
     strict_counts = Counter(gate for trial in trials for gate in trial.strict_gate_failures)
@@ -837,10 +929,8 @@ def _aggregate(trials: list[RawTrialOutcome], profile: ProfileDefinition) -> Agg
             weight = profile.gate_weights[outcome.gate]
             quality_denominator += weight
             if outcome.status == OutcomeStatus.PASSED:
-                quality_numerator += weight
-    quality_bps = (
-        0 if quality_denominator == 0 else quality_numerator * 10_000 // quality_denominator
-    )
+                quality_numerator_bps += weight * _passed_gate_quality_bps(trial, outcome, profile)
+    quality_bps = 0 if quality_denominator == 0 else quality_numerator_bps // quality_denominator
     reliability_bps = (
         0
         if not reliable_trials
@@ -900,6 +990,58 @@ def _aggregate(trials: list[RawTrialOutcome], profile: ProfileDefinition) -> Agg
         missing_duration_trials=len(trials) - len(durations),
         budget_status=budget_status,
         budget_failures=budget_failures,
+    )
+
+
+def _extract_review_calibration(
+    task: TaskContract,
+    result: ResultBundle,
+    result_path: Path,
+) -> ReviewCalibration | None:
+    if task.kind != TaskKind.REVIEW:
+        return None
+    if task.review is None:
+        raise ContractError("review task is missing its scoring contract")
+    score_name = PurePosixPath(task.review.score_path).name
+    score_artifacts = [
+        artifact
+        for artifact in result.artifacts
+        if PurePosixPath(artifact.path).parts[-2:] == ("verifier", score_name)
+    ]
+    if not score_artifacts:
+        return None
+    if len(score_artifacts) != 1:
+        raise ContractError(f"multiple review score artifacts for {task.task_id}")
+    artifact = score_artifacts[0]
+    score_path = _resolved_file(result_path.parent, artifact.path)
+    if sha256_file(score_path) != artifact.sha256:
+        raise ContractError(f"review score artifact digest mismatch for {task.task_id}")
+    try:
+        raw_score = json.loads(score_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ContractError(f"review score artifact is invalid for {task.task_id}: {exc}") from exc
+    if not isinstance(raw_score, dict):
+        raise ContractError(f"review score artifact is invalid for {task.task_id}")
+    if raw_score.get("schema_version") != REVIEW_SCORE_SCHEMA_VERSION:
+        return None
+    score = load_model(score_path, ReviewScore)
+    if score.task_digest != result.task_digest:
+        raise ContractError(f"review score task digest mismatch for {task.task_id}")
+    requested_behavior = next(
+        outcome for outcome in result.outcomes if outcome.gate == GateName.REQUESTED_BEHAVIOR
+    )
+    if score.passed != (requested_behavior.status == OutcomeStatus.PASSED):
+        raise ContractError(f"review score gate mismatch for {task.task_id}")
+    category_mismatches = set(score.category_mismatch_defect_ids)
+    severity_mismatches = set(score.severity_mismatch_defect_ids)
+    return ReviewCalibration(
+        schema_version="slopbench.review-calibration.v1",
+        score_artifact=artifact,
+        true_positives=score.true_positives,
+        category_matches=score.true_positives - len(category_mismatches),
+        severity_matches=score.true_positives - len(severity_mismatches),
+        exact_classification_matches=score.true_positives
+        - len(category_mismatches | severity_mismatches),
     )
 
 
@@ -977,6 +1119,18 @@ def compute_evaluation(
             raise ContractError(
                 f"reference configuration mismatch for {binding.task_id}: {mismatches}"
             )
+        review_calibration = _extract_review_calibration(task, result, result_path)
+        requested_behavior = next(
+            outcome for outcome in result.outcomes if outcome.gate == GateName.REQUESTED_BEHAVIOR
+        )
+        if (
+            task.kind == TaskKind.REVIEW
+            and profile.review_quality_weights is not None
+            and result.classification in _AGENT_ATTRIBUTABLE_CLASSIFICATIONS
+            and requested_behavior.status == OutcomeStatus.PASSED
+            and review_calibration is None
+        ):
+            raise ContractError(f"review calibration evidence is missing for {binding.task_id}")
 
         uncertainty: list[Uncertainty] = []
         if binding.report_path is not None and binding.report_sha256 is not None:
@@ -1029,6 +1183,7 @@ def compute_evaluation(
                 timing=result.timing,
                 harbor=result.harbor,
                 artifacts=result.artifacts,
+                review_calibration=review_calibration,
             )
         )
 
@@ -1091,6 +1246,7 @@ def build_held_out_disclosure(
             strict_gates=profile.strict_gates,
             quality_weight=profile.quality_weight,
             reliability_weight=profile.reliability_weight,
+            review_quality_weights=profile.review_quality_weights,
             budget=profile.budget,
         ),
         aggregate=PublicAggregate(

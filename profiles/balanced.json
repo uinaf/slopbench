@@ -14,6 +14,11 @@
   "profile_id": "balanced",
   "quality_weight": 50,
   "reliability_weight": 50,
+  "review_quality_weights": {
+    "category": 25,
+    "detection": 50,
+    "severity": 25
+  },
   "schema_version": "slopbench.profile.v1",
   "source_note": null,
   "strict_gates": [
@@ -22,5 +27,5 @@
     "verifier_integrity"
   ],
   "subjective": false,
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

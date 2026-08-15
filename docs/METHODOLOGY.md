@@ -75,6 +75,12 @@ Profiles derive aggregates from the same immutable raw vector. Quality, reliabil
 latency remain separate dimensions. A profile budget changes eligibility and never silently
 changes quality or reliability.
 
+For review tasks, the raw vector also retains category, severity, and exact-classification match
+counts from the bound deterministic score artifact. The checked-in profiles give a passed review
+gate 50% weight for semantic detection and 25% each for canonical category and severity
+calibration. This refines quality without changing pass/fail or reliability. Exact classification
+is reported but not weighted because it is the intersection of the other two calibration signals.
+
 ## Regression policy
 
 A regression report flags a task that previously passed five of five trials when the new result

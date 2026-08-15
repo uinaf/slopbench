@@ -13,6 +13,7 @@ from harbor.models.task.task import Task as HarborTask
 from slopbench import runner
 from slopbench.contracts import (
     CapabilityCategory,
+    ReviewScore,
     ReviewSubmission,
     RunManifest,
     TaskKind,
@@ -144,10 +145,11 @@ def test_review_task_shape_and_adjudication_contracts() -> None:
         assert task.provenance.origin == "slopbench-authored"
         assert task.design.admission.status == "candidate"
         assert task.design.admission.evidence.complete
-        assert len(task.design.traps) == 2
+        assert len(task.design.traps) == 3
         assert len(task.design.valid_alternatives) == 1
         assert task.review is not None
         adjudication = json.loads((task_dir / task.review.adjudication_path).read_text())
+        assert adjudication["schema_version"] == "slopbench.review-adjudication.v2"
         assert adjudication["task_id"] == task.task_id
         assert adjudication["rules"] == {
             "submission_path": task.review.submission_path,
@@ -158,6 +160,15 @@ def test_review_task_shape_and_adjudication_contracts() -> None:
         }
         assert len(adjudication["defects"]) == 3
         assert len(adjudication["false_positives"]) == 2
+        for target in [*adjudication["defects"], *adjudication["false_positives"]]:
+            classifications = [
+                (target["category"], target["severity"]),
+                *[
+                    (item["category"], item["severity"])
+                    for item in target["accepted_classifications"]
+                ],
+            ]
+            assert len(classifications) == len(set(classifications))
         assert "without modifying tracked files" in (task_dir / "instruction.md").read_text()
 
 
@@ -227,9 +238,152 @@ def test_review_scorer_has_stable_recall_and_precision(
     assert first_exit == second_exit == expected_exit
     assert first == second
     assert first is not None
+    ReviewScore.model_validate(first["score"])
+    assert first["score"]["schema_version"] == "slopbench.review-score.v2"
     assert first["score"]["recall"] == recall
     assert first["score"]["precision"] == precision
+    expected_calibration = {
+        "alternate": (1 / 3, 2 / 3, 0.0),
+        "invalid": (0.0, 0.0, 0.0),
+        "known_false_positive": (1.0, 1.0, 1.0),
+        "oracle": (1.0, 1.0, 1.0),
+    }[variant]
+    assert first["score"]["category_calibration"] == expected_calibration[0]
+    assert first["score"]["severity_calibration"] == expected_calibration[1]
+    assert first["score"]["exact_classification_calibration"] == expected_calibration[2]
     assert first["score"]["passed"] == (expected_exit == 0)
+
+
+@pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)
+def test_adjudicated_classification_alternatives_pass_and_report_calibration(
+    task_dir: Path, tmp_path: Path
+) -> None:
+    task, _, task_digest = validate_task(task_dir)
+    assert task.review is not None
+    adjudication = json.loads((task_dir / task.review.adjudication_path).read_text())
+    findings = []
+    expected_category_matches = 0
+    expected_severity_matches = 0
+    for defect in adjudication["defects"]:
+        alternative = defect["accepted_classifications"][0]
+        expected_category_matches += alternative["category"] == defect["category"]
+        expected_severity_matches += alternative["severity"] == defect["severity"]
+        findings.append(
+            {
+                "path": defect["path"],
+                "start_line": defect["start_line"],
+                "line_count": defect["end_line"] - defect["start_line"] + 1,
+                "category": alternative["category"],
+                "severity": alternative["severity"],
+                "explanation": defect["rationale"],
+            }
+        )
+    repo = initialize_repo(task_dir, tmp_path)
+    write_submission(task_dir, repo, task_digest, findings)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 0
+    assert envelope is not None
+    result = envelope["score"]
+    assert result["recall"] == 1.0
+    assert result["precision"] == 1.0
+    assert result["category_calibration"] == expected_category_matches / 3
+    assert result["severity_calibration"] == expected_severity_matches / 3
+    assert result["exact_classification_calibration"] == 0.0
+
+
+@pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)
+def test_unadjudicated_classification_pair_does_not_match(task_dir: Path, tmp_path: Path) -> None:
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+    findings = variant_findings(task_dir, "oracle")
+    findings[0] = {**findings[0], "category": "concurrency", "severity": "low"}
+    write_submission(task_dir, repo, task_digest, findings)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 1
+    assert envelope is not None
+    assert envelope["score"]["recall"] == 2 / 3
+    assert envelope["score"]["novel_findings"] == 1
+
+
+def test_overlapping_archive_targets_choose_the_closest_range_shape(tmp_path: Path) -> None:
+    task_dir = REVIEW_TASKS[0]
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+    findings = variant_findings(task_dir, "oracle")
+    findings[2] = {
+        **findings[2],
+        "category": "resource_lifecycle",
+        "severity": "medium",
+    }
+    write_submission(task_dir, repo, task_digest, findings)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 0
+    assert envelope is not None
+    assert envelope["score"]["matched_defect_ids"] == [
+        "cumulative-limit-not-enforced",
+        "destination-path-escape",
+        "partial-output-retained",
+    ]
+    assert envelope["score"]["known_false_positive_ids"] == []
+
+
+def test_exact_archive_false_positive_beats_overlapping_defect_range(tmp_path: Path) -> None:
+    task_dir = REVIEW_TASKS[0]
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+    findings = variant_findings(task_dir, "oracle")
+    findings.append(
+        {
+            "path": "src/archive.py",
+            "start_line": 29,
+            "line_count": 1,
+            "category": "resource_lifecycle",
+            "severity": "medium",
+            "explanation": "The streaming copy buffers the whole member in memory.",
+        }
+    )
+    write_submission(task_dir, repo, task_digest, findings)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 1
+    assert envelope is not None
+    assert envelope["score"]["recall"] == 1.0
+    assert envelope["score"]["precision"] == 0.75
+    assert envelope["score"]["known_false_positive_ids"] == ["whole-member-buffered"]
+
+
+def test_nonidentical_overlapping_finding_is_queued_instead_of_duplicated(
+    tmp_path: Path,
+) -> None:
+    task_dir = REVIEW_TASKS[1]
+    _, _, task_digest = validate_task(task_dir)
+    repo = initialize_repo(task_dir, tmp_path)
+    findings = variant_findings(task_dir, "oracle")
+    findings.append(
+        {
+            "path": "src/webhooks.py",
+            "start_line": 45,
+            "line_count": 1,
+            "category": "correctness",
+            "severity": "high",
+            "explanation": "The eager fallback raises even when the exact handler exists.",
+        }
+    )
+    write_submission(task_dir, repo, task_digest, findings)
+
+    exit_code, envelope = score(task_dir, repo, task_digest)
+
+    assert exit_code == 0
+    assert envelope is not None
+    assert envelope["score"]["duplicates"] == 0
+    assert envelope["score"]["novel_findings"] == 1
 
 
 @pytest.mark.parametrize("task_dir", REVIEW_TASKS, ids=lambda path: path.name)

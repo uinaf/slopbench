@@ -1,0 +1,36 @@
+{
+  "findings": [
+    {
+      "path": "src/webhooks.py",
+      "start_line": 20,
+      "line_count": 2,
+      "category": "security",
+      "severity": "medium",
+      "explanation": "The signature comparison is not constant-time."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 20,
+      "line_count": 2,
+      "category": "security",
+      "severity": "medium",
+      "explanation": "The same signature-comparison defect is reported twice."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 45,
+      "line_count": 1,
+      "category": "api_contract",
+      "severity": "high",
+      "explanation": "Unsupported event types are misrouted to invoice processing."
+    },
+    {
+      "path": "src/webhooks.py",
+      "start_line": 46,
+      "line_count": 2,
+      "category": "data_integrity",
+      "severity": "high",
+      "explanation": "Failed handlers leave the event marked as processed."
+    }
+  ]
+}

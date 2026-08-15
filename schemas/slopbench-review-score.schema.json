@@ -1,0 +1,142 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "category_calibration": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Category Calibration",
+      "type": "number"
+    },
+    "category_mismatch_defect_ids": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+        "type": "string"
+      },
+      "title": "Category Mismatch Defect Ids",
+      "type": "array"
+    },
+    "duplicate_submission_indices": {
+      "items": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "title": "Duplicate Submission Indices",
+      "type": "array"
+    },
+    "duplicates": {
+      "minimum": 0,
+      "title": "Duplicates",
+      "type": "integer"
+    },
+    "exact_classification_calibration": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Exact Classification Calibration",
+      "type": "number"
+    },
+    "false_positives": {
+      "minimum": 0,
+      "title": "False Positives",
+      "type": "integer"
+    },
+    "known_false_positive_ids": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+        "type": "string"
+      },
+      "title": "Known False Positive Ids",
+      "type": "array"
+    },
+    "known_false_positives": {
+      "minimum": 0,
+      "title": "Known False Positives",
+      "type": "integer"
+    },
+    "matched_defect_ids": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+        "type": "string"
+      },
+      "title": "Matched Defect Ids",
+      "type": "array"
+    },
+    "novel_findings": {
+      "minimum": 0,
+      "title": "Novel Findings",
+      "type": "integer"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "precision": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Precision",
+      "type": "number"
+    },
+    "recall": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Recall",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": "slopbench.review-score.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "severity_calibration": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Severity Calibration",
+      "type": "number"
+    },
+    "severity_mismatch_defect_ids": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9._:-]*$",
+        "type": "string"
+      },
+      "title": "Severity Mismatch Defect Ids",
+      "type": "array"
+    },
+    "submission_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Submission Sha256",
+      "type": "string"
+    },
+    "task_digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Task Digest",
+      "type": "string"
+    },
+    "true_positives": {
+      "minimum": 0,
+      "title": "True Positives",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_digest",
+    "submission_sha256",
+    "true_positives",
+    "false_positives",
+    "duplicates",
+    "known_false_positives",
+    "novel_findings",
+    "recall",
+    "precision",
+    "category_calibration",
+    "severity_calibration",
+    "exact_classification_calibration",
+    "passed",
+    "matched_defect_ids",
+    "category_mismatch_defect_ids",
+    "severity_mismatch_defect_ids",
+    "known_false_positive_ids",
+    "duplicate_submission_indices"
+  ],
+  "title": "ReviewScore",
+  "type": "object"
+}

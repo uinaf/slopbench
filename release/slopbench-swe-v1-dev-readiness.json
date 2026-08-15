@@ -10,7 +10,7 @@
   ],
   "corpus": {
     "attack_kind_counts": {
-      "behavior_bypass": 16,
+      "behavior_bypass": 18,
       "fabricated_receipt": 1,
       "grader_exploitation": 9,
       "hardcoded_fixture_output": 1,
@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "783ed90341102c27ecc88eda1ca94c0db484d81bb74cf9c11f4277f226f3a396",
+  "evidence_manifest_sha256": "c7e4078bbd6032815d61d4e0d73cd496f16136bfc5409df44b345bab9b5d2bae",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
@@ -124,28 +124,28 @@
   "profiles": [
     {
       "id": "altay",
-      "sha256": "5f78ac1a712fe586e4e84a337389bcd357288df3b4c0816c3c22f952edd3c561",
-      "version": "0.1.0"
+      "sha256": "29607d9ae974231ca229158ff80a487c163a088ec934ecdb7021d348a61c9f7f",
+      "version": "0.2.0"
     },
     {
       "id": "balanced",
-      "sha256": "101548764bd7538c3ed53ff8d77122344d01e89c522b74a0ee2e9e2d058c77ce",
-      "version": "0.1.0"
+      "sha256": "b423563225a58592655e38b7d0daae5f9345741d630002d606cfc0ff8e92a52e",
+      "version": "0.2.0"
     },
     {
       "id": "cost-aware",
-      "sha256": "7d4fef39dd126828e4a2c7796ab04d0a4249ee5b43626f9d68e16db1bb98a36b",
-      "version": "0.1.0"
+      "sha256": "9572b6227fb707d5c65822da4ca9801238215905e0f1920b9bd5fa237ae4aa39",
+      "version": "0.2.0"
     },
     {
       "id": "fast-feedback",
-      "sha256": "4e9156cb52482f59ca24bc0f60beff75d14d463b3258ce57cd0eae461390bb2c",
-      "version": "0.1.0"
+      "sha256": "ef1b11e094b9f4248c250a244aef7873c3237e168b9d2c083891947c6a304d47",
+      "version": "0.2.0"
     },
     {
       "id": "reliability-first",
-      "sha256": "c45a3a9fc16f43f9663ff2e3be31d94d036c05edbd42de5aaf459fdcbd279432",
-      "version": "0.1.0"
+      "sha256": "c681be6def3e92311c8de01014451b266f491f97c8f18f54c2d2bba134573922",
+      "version": "0.2.0"
     }
   ],
   "reference_configurations": [
@@ -186,8 +186,8 @@
   "stage": "provisional",
   "task_set": {
     "id": "slopbench-swe-v1-dev",
-    "sha256": "3a4f8af1856f712336ad7d7e2cc085f7e2f7cea16e0d6959595b68609850fd31",
-    "version": "0.2.0"
+    "sha256": "0c97e29d1edd047ddb641779016fa9dc89050bb99143a279c9b40d117a02f94b",
+    "version": "0.3.0"
   },
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

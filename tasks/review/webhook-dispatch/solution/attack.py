@@ -13,6 +13,10 @@ def known_false_positive() -> None:
     write_review(Path("/solution/known_false_positive.json"))
 
 
+def duplicate_finding() -> None:
+    write_review(Path("/solution/duplicate.json"))
+
+
 def source_mutation() -> None:
     write_review(Path("/solution/oracle.json"))
     source = ROOT / "src" / "webhooks.py"
@@ -20,6 +24,7 @@ def source_mutation() -> None:
 
 
 ATTACKS = {
+    "duplicate-finding": duplicate_finding,
     "known-false-positive": known_false_positive,
     "source-mutation": source_mutation,
 }

@@ -2,9 +2,9 @@
   "findings": [
     {
       "path": "src/archive.py",
-      "start_line": 29,
-      "line_count": 2,
-      "category": "data_integrity",
+      "start_line": 22,
+      "line_count": 4,
+      "category": "error_handling",
       "severity": "medium",
       "explanation": "Publishing each output as it is copied means an exception does not roll back files already created."
     },
@@ -12,7 +12,7 @@
       "path": "src/archive.py",
       "start_line": 25,
       "line_count": 1,
-      "category": "resource_lifecycle",
+      "category": "correctness",
       "severity": "high",
       "explanation": "This condition never accumulates member sizes and therefore cannot enforce the documented total extraction ceiling."
     },
@@ -21,7 +21,7 @@
       "start_line": 27,
       "line_count": 1,
       "category": "security",
-      "severity": "high",
+      "severity": "critical",
       "explanation": "Parent creation follows a target derived directly from the ZIP name, including paths outside the extraction root."
     }
   ]
