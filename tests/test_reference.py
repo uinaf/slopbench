@@ -69,7 +69,7 @@ def evaluation_fixture(
         report_data = report_payload()
         report_data["task_digest"] = run.task.task_digest
         report = parse_json(AgentReport, report_data)
-        report_relative = f"harbor/{run.run_id}/steps/implement/artifacts/app/slopbench-report.json"
+        report_relative = f"harbor/{run.run_id}/artifacts/app/slopbench-report.json"
         report_path = result_bundle / report_relative
         write_model(report_path, report)
         report_sha256 = sha256_file(report_path)
@@ -280,7 +280,9 @@ def test_reference_evaluation_binds_and_computes_five_trial_result(tmp_path: Pat
     assert all(run.report_path is not None for run in evaluation.runs)
     assert all(run.run_manifest_path.startswith("manifests/") for run in evaluation.runs)
     assert evaluation.runs[0].report_path is not None
-    assert "/steps/implement/" in evaluation.runs[0].report_path
+    assert evaluation.runs[0].report_path.endswith(
+        f"harbor/{first_run.run_id}/artifacts/app/slopbench-report.json"
+    )
     evaluation_path = tmp_path / "evaluation.json"
     task_set_path = tmp_path / "task-set.json"
     write_model(evaluation_path, evaluation)
@@ -319,9 +321,7 @@ def test_reference_evaluation_rejects_receipt_artifact_drift(tmp_path: Path) -> 
     )
     run = load_model(manifests[0], RunManifest)
     report_path = (
-        result_dir
-        / run.run_id
-        / f"harbor/{run.run_id}/steps/implement/artifacts/app/slopbench-report.json"
+        result_dir / run.run_id / f"harbor/{run.run_id}/artifacts/app/slopbench-report.json"
     )
     report_path.write_text("{}\n")
 
@@ -383,20 +383,23 @@ def test_reference_evaluation_rejects_ambiguous_reports_without_phases(
     final_artifact = next(
         artifact for artifact in result.artifacts if artifact.sha256 == result.receipt.sha256
     )
+    final_report = load_model(result_path.parent / final_artifact.path, AgentReport)
+    phase_relative = f"harbor/{run.run_id}/steps/implement/artifacts/app/slopbench-report.json"
+    phase_path = result_path.parent / phase_relative
+    write_model(phase_path, final_report)
     duplicate_relative = f"harbor/{run.run_id}/steps/prepare/artifacts/app/slopbench-report.json"
     duplicate_path = result_path.parent / duplicate_relative
-    write_model(
-        duplicate_path,
-        load_model(result_path.parent / final_artifact.path, AgentReport),
-    )
+    write_model(duplicate_path, final_report)
+    (result_path.parent / final_artifact.path).unlink()
     run_data = run.model_dump(mode="json")
     run_data["agent"]["instruction_layers"] = []
     write_model(run_path, parse_json(RunManifest, run_data))
     result_data = result.model_dump(mode="json")
     result_data["run_manifest_sha256"] = sha256_file(run_path)
-    result_data["artifacts"].append(
-        {"path": duplicate_relative, "sha256": sha256_file(duplicate_path)}
-    )
+    result_data["artifacts"] = [
+        {"path": phase_relative, "sha256": sha256_file(phase_path)},
+        {"path": duplicate_relative, "sha256": sha256_file(duplicate_path)},
+    ]
     write_model(result_path, parse_json(ResultBundle, result_data))
 
     with pytest.raises(ContractError, match="without instruction layers"):
@@ -410,6 +413,56 @@ def test_reference_evaluation_rejects_ambiguous_reports_without_phases(
             EvaluationPurpose.COMPARISON,
             "ambiguous-report-without-phases",
         )
+
+
+def test_reference_evaluation_uses_last_reached_sequential_report(
+    tmp_path: Path,
+) -> None:
+    bundle_root, result_dir, configuration, task_set, profile, manifests = evaluation_fixture(
+        tmp_path
+    )
+    run_path = manifests[0]
+    run = load_model(run_path, RunManifest)
+    result_path = result_dir / run.run_id / "result.json"
+    result = load_model(result_path, ResultBundle)
+    root_artifact = next(
+        artifact for artifact in result.artifacts if artifact.sha256 == result.receipt.sha256
+    )
+    report = load_model(result_path.parent / root_artifact.path, AgentReport)
+    phase_paths = [
+        f"harbor/{run.run_id}/steps/{phase}/artifacts/app/slopbench-report.json"
+        for phase in ("prepare", "implement")
+    ]
+    for relative in phase_paths:
+        write_model(result_path.parent / relative, report)
+    (result_path.parent / root_artifact.path).unlink()
+    run_data = run.model_dump(mode="json")
+    layer = run_data["agent"]["instruction_layers"][0]
+    run_data["agent"]["instruction_layers"] = [
+        {**layer, "name": phase} for phase in ("prepare", "implement", "review")
+    ]
+    write_model(run_path, parse_json(RunManifest, run_data))
+    result_data = result.model_dump(mode="json")
+    result_data["run_manifest_sha256"] = sha256_file(run_path)
+    result_data["artifacts"] = [
+        {"path": relative, "sha256": sha256_file(result_path.parent / relative)}
+        for relative in phase_paths
+    ]
+    write_model(result_path, parse_json(ResultBundle, result_data))
+
+    evaluation = build_reference_evaluation(
+        bundle_root / "manifests",
+        result_dir,
+        bundle_root,
+        configuration,
+        task_set,
+        profile,
+        EvaluationPurpose.COMPARISON,
+        "last-reached-sequential-report",
+    )
+
+    assert evaluation.runs[0].report_path is not None
+    assert evaluation.runs[0].report_path.endswith(phase_paths[-1])
 
 
 def test_reference_evaluation_preserves_invalid_receipt_without_trusting_it(

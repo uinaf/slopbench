@@ -202,13 +202,32 @@ def _report_binding(
         and Path(artifact.path).name == "slopbench-report.json"
     ]
     if len(matches) > 1:
-        if not run.agent.instruction_layers:
-            raise ContractError(
-                f"cannot identify the final report without instruction layers for {result.run_id}"
-            )
-        final_phase = run.agent.instruction_layers[-1].name
-        final_suffix = f"/steps/{final_phase}/artifacts/app/slopbench-report.json"
-        matches = [artifact for artifact in matches if artifact.path.endswith(final_suffix)]
+        root_path = f"harbor/{run.run_id}/artifacts/app/slopbench-report.json"
+        root_matches = [artifact for artifact in matches if artifact.path == root_path]
+        if root_matches:
+            matches = root_matches
+        else:
+            if not run.agent.instruction_layers:
+                raise ContractError(
+                    "cannot identify the final report without instruction layers "
+                    f"for {result.run_id}"
+                )
+            step_indexes = {
+                (
+                    f"harbor/{run.run_id}/steps/{layer.name}/artifacts/app/slopbench-report.json"
+                ): index
+                for index, layer in enumerate(run.agent.instruction_layers)
+            }
+            reached = [
+                (step_indexes[artifact.path], artifact)
+                for artifact in matches
+                if artifact.path in step_indexes
+            ]
+            if reached:
+                final_index = max(index for index, _ in reached)
+                matches = [artifact for index, artifact in reached if index == final_index]
+            else:
+                matches = []
     if len(matches) != 1:
         raise ContractError(f"expected one final report artifact for {result.run_id}")
     report_path = result_bundle / matches[0].path
