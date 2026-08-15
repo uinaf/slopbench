@@ -192,7 +192,9 @@ def _report_binding(
     if not result.receipt.present:
         return None, None
     if result.receipt.sha256 is None:
-        raise ContractError(f"present receipt has no digest for {result.run_id}")
+        if result.receipt.valid:
+            raise ContractError(f"valid receipt has no digest for {result.run_id}")
+        return None, None
     matches = [
         artifact
         for artifact in result.artifacts
@@ -200,6 +202,10 @@ def _report_binding(
         and Path(artifact.path).name == "slopbench-report.json"
     ]
     if len(matches) > 1:
+        if not run.agent.instruction_layers:
+            raise ContractError(
+                f"cannot identify the final report without instruction layers for {result.run_id}"
+            )
         final_phase = run.agent.instruction_layers[-1].name
         final_suffix = f"/steps/{final_phase}/artifacts/app/slopbench-report.json"
         matches = [artifact for artifact in matches if artifact.path.endswith(final_suffix)]
@@ -232,6 +238,7 @@ def build_reference_evaluation(
     bindings: list[EvaluationRunBinding] = []
     covered_tasks: set[str] = set()
     for manifest_path in manifest_paths:
+        manifest_relative = _relative_regular_file(manifest_path, bundle_root, "run manifest")
         run = load_model(manifest_path, RunManifest)
         entry = expected_tasks.get(run.task.task_id)
         if entry is None:
@@ -242,6 +249,7 @@ def build_reference_evaluation(
             raise ContractError(f"reference run has no pair seed: {run.run_id}")
         result_bundle = result_dir / run.run_id
         result_path = result_bundle / "result.json"
+        result_relative = _relative_regular_file(result_path, bundle_root, "raw result")
         result = load_model(result_path, ResultBundle)
         manifest_sha256 = sha256_file(manifest_path)
         if (
@@ -257,11 +265,9 @@ def build_reference_evaluation(
                 task_id=run.task.task_id,
                 task_digest=run.task.task_digest,
                 pair_index=run.trial.seed,
-                run_manifest_path=_relative_regular_file(
-                    manifest_path, bundle_root, "run manifest"
-                ),
+                run_manifest_path=manifest_relative,
                 run_manifest_sha256=manifest_sha256,
-                result_path=_relative_regular_file(result_path, bundle_root, "raw result"),
+                result_path=result_relative,
                 result_sha256=sha256_file(result_path),
                 report_path=report_path,
                 report_sha256=report_sha256,

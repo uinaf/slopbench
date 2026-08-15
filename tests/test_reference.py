@@ -336,3 +336,197 @@ def test_reference_evaluation_rejects_receipt_artifact_drift(tmp_path: Path) -> 
             EvaluationPurpose.COMPARISON,
             "receipt-artifact-drift",
         )
+
+
+@pytest.mark.parametrize(
+    ("target", "message"),
+    [
+        ("manifest", "run manifest escapes the bundle root"),
+        ("result", "raw result escapes the bundle root"),
+    ],
+)
+def test_reference_evaluation_rejects_external_files_before_loading(
+    tmp_path: Path, target: str, message: str
+) -> None:
+    bundle_root, result_dir, configuration, task_set, profile, manifests = evaluation_fixture(
+        tmp_path
+    )
+    run = load_model(manifests[0], RunManifest)
+    path = manifests[0] if target == "manifest" else result_dir / run.run_id / "result.json"
+    outside = tmp_path / f"outside-{target}.json"
+    path.replace(outside)
+    path.symlink_to(outside)
+
+    with pytest.raises(ContractError, match=message):
+        build_reference_evaluation(
+            bundle_root / "manifests",
+            result_dir,
+            bundle_root,
+            configuration,
+            task_set,
+            profile,
+            EvaluationPurpose.COMPARISON,
+            f"external-{target}",
+        )
+
+
+def test_reference_evaluation_rejects_ambiguous_reports_without_phases(
+    tmp_path: Path,
+) -> None:
+    bundle_root, result_dir, configuration, task_set, profile, manifests = evaluation_fixture(
+        tmp_path
+    )
+    run_path = manifests[0]
+    run = load_model(run_path, RunManifest)
+    result_path = result_dir / run.run_id / "result.json"
+    result = load_model(result_path, ResultBundle)
+    final_artifact = next(
+        artifact for artifact in result.artifacts if artifact.sha256 == result.receipt.sha256
+    )
+    duplicate_relative = f"harbor/{run.run_id}/steps/prepare/artifacts/app/slopbench-report.json"
+    duplicate_path = result_path.parent / duplicate_relative
+    write_model(
+        duplicate_path,
+        load_model(result_path.parent / final_artifact.path, AgentReport),
+    )
+    run_data = run.model_dump(mode="json")
+    run_data["agent"]["instruction_layers"] = []
+    write_model(run_path, parse_json(RunManifest, run_data))
+    result_data = result.model_dump(mode="json")
+    result_data["run_manifest_sha256"] = sha256_file(run_path)
+    result_data["artifacts"].append(
+        {"path": duplicate_relative, "sha256": sha256_file(duplicate_path)}
+    )
+    write_model(result_path, parse_json(ResultBundle, result_data))
+
+    with pytest.raises(ContractError, match="without instruction layers"):
+        build_reference_evaluation(
+            bundle_root / "manifests",
+            result_dir,
+            bundle_root,
+            configuration,
+            task_set,
+            profile,
+            EvaluationPurpose.COMPARISON,
+            "ambiguous-report-without-phases",
+        )
+
+
+def test_reference_evaluation_preserves_invalid_receipt_without_trusting_it(
+    tmp_path: Path,
+) -> None:
+    bundle_root, result_dir, configuration, task_set, profile, manifests = evaluation_fixture(
+        tmp_path
+    )
+    run = load_model(manifests[0], RunManifest)
+    result_path = result_dir / run.run_id / "result.json"
+    result = load_model(result_path, ResultBundle)
+    report_artifact = next(
+        artifact for artifact in result.artifacts if artifact.sha256 == result.receipt.sha256
+    )
+    report_path = result_path.parent / report_artifact.path
+    report_data = load_model(report_path, AgentReport).model_dump(mode="json")
+    report_data["task_digest"] = "0" * 64
+    write_model(report_path, parse_json(AgentReport, report_data))
+    report_sha256 = sha256_file(report_path)
+    result_data = result.model_dump(mode="json")
+    result_data.update(
+        {
+            "classification": "invalid_run",
+            "failure_reason": "receipt_invalid",
+            "completed": False,
+            "receipt": {
+                "present": True,
+                "valid": False,
+                "sha256": report_sha256,
+                "errors": ["task_digest does not match verifier evidence"],
+            },
+        }
+    )
+    for outcome in result_data["outcomes"]:
+        if outcome["gate"] == "evidence_receipt":
+            outcome["status"] = "failed"
+    result_data["artifacts"] = [{"path": report_artifact.path, "sha256": report_sha256}]
+    write_model(result_path, parse_json(ResultBundle, result_data))
+
+    evaluation = build_reference_evaluation(
+        bundle_root / "manifests",
+        result_dir,
+        bundle_root,
+        configuration,
+        task_set,
+        profile,
+        EvaluationPurpose.COMPARISON,
+        "invalid-receipt-evaluation",
+    )
+    evaluation_path = tmp_path / "invalid-receipt-evaluation.json"
+    task_set_path = tmp_path / "invalid-receipt-task-set.json"
+    write_model(evaluation_path, evaluation)
+    write_model(task_set_path, task_set)
+
+    computed = compute_evaluation(
+        evaluation_path,
+        task_set_path,
+        ROOT / "profiles" / "balanced.json",
+        ROOT,
+        bundle_root,
+    )
+    invalid = next(trial for trial in computed.trials if trial.pair_index == 1)
+    assert invalid.classification.value == "invalid_run"
+    assert invalid.report_sha256 == report_sha256
+    assert invalid.uncertainty == []
+    assert computed.metrics.reliability_bps == 8_000
+
+
+def test_reference_evaluation_accepts_unbindable_invalid_receipt(tmp_path: Path) -> None:
+    bundle_root, result_dir, configuration, task_set, profile, manifests = evaluation_fixture(
+        tmp_path
+    )
+    run = load_model(manifests[0], RunManifest)
+    result_path = result_dir / run.run_id / "result.json"
+    result_data = load_model(result_path, ResultBundle).model_dump(mode="json")
+    result_data.update(
+        {
+            "classification": "invalid_run",
+            "failure_reason": "receipt_invalid",
+            "completed": False,
+            "receipt": {
+                "present": True,
+                "valid": False,
+                "sha256": None,
+                "errors": ["slopbench-report.json must be a regular file, not a symlink"],
+            },
+            "artifacts": [],
+        }
+    )
+    for outcome in result_data["outcomes"]:
+        if outcome["gate"] == "evidence_receipt":
+            outcome["status"] = "failed"
+    write_model(result_path, parse_json(ResultBundle, result_data))
+
+    evaluation = build_reference_evaluation(
+        bundle_root / "manifests",
+        result_dir,
+        bundle_root,
+        configuration,
+        task_set,
+        profile,
+        EvaluationPurpose.COMPARISON,
+        "unbindable-invalid-receipt",
+    )
+    evaluation_path = tmp_path / "unbindable-invalid-receipt.json"
+    task_set_path = tmp_path / "unbindable-invalid-task-set.json"
+    write_model(evaluation_path, evaluation)
+    write_model(task_set_path, task_set)
+
+    computed = compute_evaluation(
+        evaluation_path,
+        task_set_path,
+        ROOT / "profiles" / "balanced.json",
+        ROOT,
+        bundle_root,
+    )
+    invalid = next(trial for trial in computed.trials if trial.pair_index == 1)
+    assert invalid.classification.value == "invalid_run"
+    assert invalid.report_sha256 is None
+    assert invalid.receipt.present and not invalid.receipt.valid
