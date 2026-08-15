@@ -37,7 +37,7 @@
     "sequential_patch_task_count": 4,
     "task_count": 12
   },
-  "evidence_manifest_sha256": "ce7ada19d9c4db9e338addecc474dade922e1bf1889ab8f3017565b0c4bda295",
+  "evidence_manifest_sha256": "783ed90341102c27ecc88eda1ca94c0db484d81bb74cf9c11f4277f226f3a396",
   "gates": [
     {
       "detail": "12 tasks; category counts are {'code_review': 2, 'composition_domain_evolution': 2, 'diagnosis_repair': 2, 'feature': 2, 'restraint': 2, 'state_effects': 2}",
@@ -85,12 +85,12 @@
       "status": "passed"
     },
     {
-      "detail": "0/3 configurations have five-trial comparisons",
+      "detail": "0/6 configurations have five-trial comparisons",
       "gate": "reference_comparisons",
       "status": "pending"
     },
     {
-      "detail": "0/3 comparison results have verified maintainer signatures",
+      "detail": "0/6 comparison results have verified maintainer signatures",
       "gate": "signed_references",
       "status": "pending"
     },
@@ -150,13 +150,28 @@
   ],
   "reference_configurations": [
     {
+      "id": "claude-code-opus-high",
+      "sha256": "2619a38091ebe01974bfffbfe866ae5ca5a06f2b2788309ed65c97d8bccc7384",
+      "version": "0.1.0"
+    },
+    {
       "id": "claude-code-sonnet-medium",
       "sha256": "62525e692db1ecb48754af086e6af770f6090dd87cf6af520da222879359e4ab",
       "version": "0.1.0"
     },
     {
+      "id": "codex-sol-high",
+      "sha256": "53f7c886153a3721f1e5e1e6abd3e461347e91b31fe88682bf743d52382f9786",
+      "version": "0.1.0"
+    },
+    {
       "id": "codex-terra-medium",
       "sha256": "c7fdeedc138b6d3ddd4f968c8293f7906e1d899b2334c7cd535c7cbd59c781b9",
+      "version": "0.1.0"
+    },
+    {
+      "id": "cursor-grok-4.6-high",
+      "sha256": "f1c5efd5056e474aff2e4f5d9d1901455e5a027db5cb2f69bf6bea7f5ac22df7",
       "version": "0.1.0"
     },
     {

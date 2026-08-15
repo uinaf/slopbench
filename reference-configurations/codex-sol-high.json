@@ -1,0 +1,42 @@
+{
+  "adapter": {
+    "name": "harbor-codex",
+    "settings": {},
+    "version": "0.16.1"
+  },
+  "configuration_id": "codex-sol-high",
+  "credential_env": [
+    "CODEX_AUTH_JSON_PATH"
+  ],
+  "effort_tier": "high",
+  "environment": {},
+  "harness": {
+    "name": "codex",
+    "version": "0.147.0"
+  },
+  "model": {
+    "name": "gpt-5.6-sol",
+    "provider": "openai"
+  },
+  "network_allowed_hosts": [
+    "chatgpt.com",
+    "api.openai.com"
+  ],
+  "schema_version": "slopbench.reference-configuration.v1",
+  "settings": {
+    "reasoning_effort": "high",
+    "reasoning_summary": "concise",
+    "version": "0.147.0",
+    "web_search": "disabled"
+  },
+  "setup_network_allowed_hosts": [
+    "deb.debian.org",
+    "security.debian.org",
+    "raw.githubusercontent.com",
+    "github.com",
+    "nodejs.org",
+    "registry.npmjs.org"
+  ],
+  "tools": [],
+  "version": "0.1.0"
+}
