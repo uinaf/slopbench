@@ -162,12 +162,24 @@
   "reference_comparisons": [],
   "reference_configurations": [
     {
+      "path": "reference-configurations/claude-code-opus-high.json",
+      "sha256": "254e6ee2b0c89bc3833bb561206e306acf5e44497e3f90448b46dbd99e757c8d"
+    },
+    {
       "path": "reference-configurations/claude-code-sonnet-medium.json",
       "sha256": "4ec231332140c67f6962c0e3cb01d50094cc894afec7f1b942ca8cb3e30c8c24"
     },
     {
+      "path": "reference-configurations/codex-sol-high.json",
+      "sha256": "52afbac1509087ace263114a16cf810be2d7c4262c641581eca78689f364f59f"
+    },
+    {
       "path": "reference-configurations/codex-terra-medium.json",
       "sha256": "eec14e031308e6490c7e00451d9a30fcb723514e79d6cb585ff2e9b6acdc1240"
+    },
+    {
+      "path": "reference-configurations/cursor-grok-4.6-high.json",
+      "sha256": "52743cc66ce3a39c4ec4f3531b3a772df9aecf1924b827ec67d60284ba3b1a22"
     },
     {
       "path": "reference-configurations/cursor-grok-4.6-medium.json",
