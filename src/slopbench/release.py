@@ -408,10 +408,14 @@ class RawTrialOutcome(ContractModel):
         expected_failures = [gate for gate in GateName if gate in failed]
         if self.strict_gate_failures != expected_failures:
             raise ValueError("raw strict_gate_failures must match failed completion gates")
-        if self.receipt.present != (self.report_sha256 is not None):
-            raise ValueError("raw receipt presence and report digest must match")
-        if self.receipt.present and self.receipt.sha256 != self.report_sha256:
+        if self.report_sha256 is not None and (
+            not self.receipt.present or self.receipt.sha256 != self.report_sha256
+        ):
             raise ValueError("raw receipt and report digest must match")
+        if self.receipt.valid and self.report_sha256 is None:
+            raise ValueError("raw valid receipt presence requires a report digest")
+        if not self.receipt.present and self.receipt.sha256 is not None:
+            raise ValueError("raw absent receipt cannot retain a digest")
         return self
 
 
@@ -979,14 +983,15 @@ def compute_evaluation(
             report_path = _resolved_file(bundle_root, binding.report_path)
             if sha256_file(report_path) != binding.report_sha256:
                 raise ContractError(f"agent report digest mismatch: {binding.report_path}")
-            report = load_model(report_path, AgentReport)
-            if report.task_digest != binding.task_digest:
-                raise ContractError(f"agent report task mismatch for {binding.task_id}")
             if result.receipt.sha256 != binding.report_sha256:
                 raise ContractError(f"result receipt mismatch for {binding.task_id}")
-            uncertainty = report.uncertainty
-        elif result.receipt.present:
-            raise ContractError(f"present receipt lacks report binding for {binding.task_id}")
+            if result.receipt.valid:
+                report = load_model(report_path, AgentReport)
+                if report.task_digest != binding.task_digest:
+                    raise ContractError(f"agent report task mismatch for {binding.task_id}")
+                uncertainty = report.uncertainty
+        elif result.receipt.valid or result.receipt.sha256 is not None:
+            raise ContractError(f"receipt digest lacks report binding for {binding.task_id}")
 
         outcomes_by_gate = {outcome.gate: outcome for outcome in result.outcomes}
         outcomes = [outcomes_by_gate[gate] for gate in GateName]

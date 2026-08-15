@@ -59,10 +59,24 @@ variables:
 - Codex subscription auth: `CODEX_AUTH_JSON_PATH`; and
 - Claude subscription auth: `CLAUDE_CODE_OAUTH_TOKEN` plus `CLAUDE_FORCE_OAUTH=1`.
 
-Generate `comparison` manifests for five matched trials. After all raw bundles exist, create an
-evaluation manifest that binds every run, result, optional receipt, and digest. Recompute the
-result with `slopbench evaluate`, then sign and verify a maintainer reference as described in
-[Results and lifecycle](RESULTS.md).
+Generate `comparison` manifests for five matched trials. Keep the manifests and result bundles
+below one artifact root, then bind every run, result, optional receipt, and digest:
+
+```sh
+uv run python scripts/generate-reference-evaluation.py \
+  --configuration reference-configurations/cursor-grok-4.6-medium.json \
+  --task-set datasets/slopbench-swe-v1-dev.json \
+  --profile profiles/balanced.json \
+  --purpose comparison \
+  --bundle-root artifacts/reference \
+  --manifest-dir artifacts/reference/manifests \
+  --result-dir artifacts/reference/bundles \
+  --evaluation-id cursor-grok-4.6-medium-balanced-comparison \
+  artifacts/reference/evaluation.json
+```
+
+Recompute the result with `slopbench evaluate`, then sign and verify a maintainer reference as
+described in [Results and lifecycle](RESULTS.md).
 
 ## Audit the release candidate
 
