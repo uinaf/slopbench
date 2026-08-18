@@ -41,16 +41,20 @@ applicability drift without trusting the original evaluator process.
 | `calibration` | 3 | Task and verifier calibration |
 | `comparison` | 5 | Published comparisons, bridge runs, and regression decisions |
 
-Raw trials retain the complete deterministic gate vector, failed completion gates, failure class
-and reason, uncertainty, evidence receipt, usage and cost, timing and latency, Harbor trajectory
-hash, artifact hashes, complete agent configuration, runtime image pins, limits, and trial identity.
-They also retain the complete task binding, adapter evidence, hashed instruction layers, and only
-the names of credential variables, never their values. Review trials additionally retain canonical
-category, severity, and exact-classification match counts together with the bound score artifact
-that produced them. Repeated trials for one task must use the same task binding, instructions,
-runtime, and limits. The evaluator orders trials by task and pair index and hashes the complete raw
-vector. Changing a profile never changes that vector; it creates a new profile binding and
-aggregate.
+Raw trials retain:
+
+- the complete deterministic gate vector, failed completion gates, failure class and reason, and
+  uncertainty;
+- the evidence receipt, usage and cost, timing and latency, and Harbor trajectory hash;
+- artifact hashes, complete agent configuration, runtime image pins, limits, and trial identity;
+- the complete task binding, adapter evidence, and hashed instruction layers;
+- only the names of credential variables, never their values; and
+- for review trials, canonical category, severity, and exact-classification match counts together
+  with the bound score artifact that produced them.
+
+Repeated trials for one task must use the same task binding, instructions, runtime, and limits.
+The evaluator orders trials by task and pair index and hashes the complete raw vector. Changing a
+profile never changes that vector; it creates a new profile binding and aggregate.
 
 Reliability uses only agent-attributable evidence: valid passes, valid agent failures, and invalid
 agent runs. Infrastructure failures and benchmark defects remain explicit in failure counts and in

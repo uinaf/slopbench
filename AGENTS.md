@@ -20,15 +20,19 @@
 
 ## Task changes
 
-After changing any file below `tasks/<name>/`, format first, then run
-`uv run slopbench task seal tasks/<name>`. Update every bound run manifest with the new contract
-hash and task digest, then run `make verify` and the relevant Harbor proof.
+After changing any file below `tasks/<name>/`:
+
+1. Format the changed files.
+2. Run `uv run slopbench task seal tasks/<name>`.
+3. Update every bound run manifest with the new contract hash and task digest.
+4. Run `make verify` and the relevant Harbor proof.
 
 Update the agent-rule coverage manifest whenever a task, gate, or sanitized source rule changes.
 Increment its version and source revision when the source guidance changes.
 
-Keep credentials out of tasks, manifests, logs, fixtures, and committed results. Add agent or
-environment behavior through Harbor configuration unless a repeated, documented blocker proves
-the thin boundary insufficient. Every official task must keep its Harbor environment and verifier
-offline, use a separate verifier, declare the exact agent allowlist, and carry deterministic
-known-invalid fixtures for its task format.
+- Keep credentials out of tasks, manifests, logs, fixtures, and committed results.
+- Add agent or environment behavior through Harbor configuration unless a repeated, documented
+  blocker proves the thin boundary insufficient.
+- Every official task keeps its Harbor environment and verifier offline, uses a separate
+  verifier, declares the exact agent allowlist, and carries deterministic known-invalid fixtures
+  for its task format.
