@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "a99f75a40fb12445d6e285e59737cdf562a6abc79c722da081f1e09ab7c8fc52"
+      "sha256": "2f812e8b3b98584c6af2715ec9dffccb0efd9198aa9bff0241c42abee18abdf4"
     },
     {
       "path": "coverage/slopbench-swe-v1-dev-agent-rules.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "docs/LIMITATIONS.md",
-      "sha256": "a8ef96e3bf3a09b6c94c6ca413fb126f0159cb536f21a40c0f25135db1d63b88"
+      "sha256": "f7c0ae3fe03944d068b78b320e4385ca4cf2254d3797bf79d2cc7fc096416cd0"
     },
     {
       "path": "docs/METHODOLOGY.md",
@@ -68,7 +68,7 @@
     },
     {
       "path": "docs/RESULTS.md",
-      "sha256": "2cf9d590ebe5b8d48686124ddee844affff9b744512b8d3fd0ef8b34581172e4"
+      "sha256": "17d9a47c60a86ad20525ed37147df4f0419af1118376c49f6606e26f6ed696df"
     },
     {
       "path": "docs/REVIEW_TASKS.md",
