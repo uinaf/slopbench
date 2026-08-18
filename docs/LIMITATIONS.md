@@ -15,8 +15,8 @@ authoritative scope map.
 
 - **Measured:** structured-owner integration, bounded retry and recovery, and structured failure
   events.
-- **Partial:** mixed-success batches, exception cause chains, and secret handling at the typed
-  event-record boundary; credentials, loggers, and transports remain out of scope.
+- **Partial:** mixed-success batches, exception cause chains, and secret handling only at the
+  typed event-record boundary; credentials, loggers, and transports remain out of scope.
 - **Outside the score:** communication, delegation, external approvals, interface quality,
   performance evidence, documentation style, technology choice, and delivery workflow.
 

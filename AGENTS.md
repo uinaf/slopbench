@@ -33,6 +33,6 @@ Increment its version and source revision when the source guidance changes.
 - Keep credentials out of tasks, manifests, logs, fixtures, and committed results.
 - Add agent or environment behavior through Harbor configuration unless a repeated, documented
   blocker proves the thin boundary insufficient.
-- Every official task keeps its Harbor environment and verifier offline, uses a separate
-  verifier, declares the exact agent allowlist, and carries deterministic known-invalid fixtures
+- Every official task must keep its Harbor environment and verifier offline, use a separate
+  verifier, declare the exact agent allowlist, and carry deterministic known-invalid fixtures
   for its task format.
