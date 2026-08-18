@@ -68,17 +68,17 @@ make task-set profiles reference-configurations release-candidate
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — trust boundaries, evidence flow, and failure
+- [Architecture](docs/ARCHITECTURE.md): trust boundaries, evidence flow, and failure
   classification.
-- [Methodology](docs/METHODOLOGY.md) — admission, execution, scoring, and release policy.
-- [Agent-rule coverage](coverage/slopbench-swe-v1-dev-agent-rules.json) — measured, partial, and
+- [Methodology](docs/METHODOLOGY.md): admission, execution, scoring, and release policy.
+- [Agent-rule coverage](coverage/slopbench-swe-v1-dev-agent-rules.json): measured, partial, and
   out-of-scope behavior families for the current task set.
-- [Reproduction guide](docs/REPRODUCING.md) — local proofs, reference trials, and release audits.
-- [Results and lifecycle](docs/RESULTS.md) — task-set versions, profiles, held-out disclosure,
+- [Reproduction guide](docs/REPRODUCING.md): local proofs, reference trials, and release audits.
+- [Results and lifecycle](docs/RESULTS.md): task-set versions, profiles, held-out disclosure,
   retirement bridges, and attestations.
-- [Review-task contract](docs/REVIEW_TASKS.md) — finding taxonomy and deterministic matching.
-- [Limitations](docs/LIMITATIONS.md) — current evidence and interpretation boundaries.
-- [Schemas](schemas/) — versioned coverage, task, run, receipt, review, result, evaluation, and
+- [Review-task contract](docs/REVIEW_TASKS.md): finding taxonomy and deterministic matching.
+- [Limitations](docs/LIMITATIONS.md): current evidence and interpretation boundaries.
+- [Schemas](schemas/): versioned coverage, task, run, receipt, review, result, evaluation, and
   release contracts.
 
 ## Contributing and security

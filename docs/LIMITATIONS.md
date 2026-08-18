@@ -11,12 +11,14 @@ design quality, or operational competence. Deterministic verifiers can still enc
 or incorrect task specification, which is why human admission remains mandatory.
 
 The [agent-rule coverage manifest](../coverage/slopbench-swe-v1-dev-agent-rules.json) is the
-authoritative scope map. Structured-owner integration, bounded retry and recovery, and structured
-failure events are measured. Mixed-success batches and exception cause chains are only partially
-covered. Secret handling is partial only at the typed event-record boundary; credentials, loggers,
-and transports remain out of scope. Communication, delegation, external approvals, interface
-quality, performance evidence, documentation style, technology choice, and delivery workflow are
-outside the current score.
+authoritative scope map.
+
+- **Measured:** structured-owner integration, bounded retry and recovery, and structured failure
+  events.
+- **Partial:** mixed-success batches, exception cause chains, and secret handling only at the
+  typed event-record boundary; credentials, loggers, and transports remain out of scope.
+- **Outside the score:** communication, delegation, external approvals, interface quality,
+  performance evidence, documentation style, technology choice, and delivery workflow.
 
 Model sampling and provider infrastructure can vary even with a fixed model identifier and trial
 seed. Five trials measure observed reliability; they do not make inference deterministic.
