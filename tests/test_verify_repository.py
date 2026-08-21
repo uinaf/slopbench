@@ -11,8 +11,10 @@ from slopbench.repository_verify import (
     RepositoryVerifyError,
     VerifyLane,
     lane_fingerprint,
+    lane_fingerprints,
     lane_includes,
     write_lane_fingerprint,
+    write_lane_fingerprints,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,6 +69,33 @@ def test_fingerprint_changes_only_when_a_lane_input_changes(git_repository: Path
     assert output.read_text() not in {original, changed}
 
 
+def test_bulk_fingerprints_match_single_lanes_and_preserve_unchanged_files(
+    git_repository: Path,
+) -> None:
+    source = git_repository / "source.py"
+    source.write_text("value = 1\n")
+    readme = git_repository / "README.md"
+    readme.write_text("first\n")
+    track(git_repository, "source.py", "README.md")
+
+    fingerprints = lane_fingerprints(git_repository)
+    assert fingerprints == {lane: lane_fingerprint(git_repository, lane) for lane in VerifyLane}
+
+    output_dir = git_repository / "artifacts" / "verify" / "inputs"
+    assert write_lane_fingerprints(git_repository, output_dir) == set(VerifyLane)
+    mtimes = {lane: (output_dir / f"{lane.value}.sha256").stat().st_mtime_ns for lane in VerifyLane}
+    assert write_lane_fingerprints(git_repository, output_dir) == set()
+    assert {
+        lane: (output_dir / f"{lane.value}.sha256").stat().st_mtime_ns for lane in VerifyLane
+    } == mtimes
+
+    readme.write_text("second\n")
+    assert write_lane_fingerprints(git_repository, output_dir) == {
+        VerifyLane.TESTS,
+        VerifyLane.GENERATED,
+    }
+
+
 def test_fingerprint_handles_symlinks_and_rejects_non_files(git_repository: Path) -> None:
     target = git_repository / "target.py"
     target.write_text("value = 1\n")
@@ -106,6 +135,11 @@ def test_repository_verify_cli(git_repository: Path, capsys: pytest.CaptureFixtu
         == 0
     )
     assert output.is_file()
+    assert (
+        repository_verify.main(["--root", str(git_repository), "fingerprints", str(output.parent)])
+        == 0
+    )
+    assert all((output.parent / f"{lane.value}.sha256").is_file() for lane in VerifyLane)
 
     contracts = git_repository / "contracts"
     shutil.copytree(

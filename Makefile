@@ -1,9 +1,11 @@
 .PHONY: \
 	FORCE corpus hardening issue7-corpus profiles reference-configurations \
 	release-candidate review-corpus task-set tracer verify verify-contracts \
-	verify-full verify-generated verify-lanes verify-static verify-sync verify-tests
+	verify-full verify-generated verify-lanes verify-refresh verify-stamps \
+	verify-static verify-sync verify-tests
 
 VERIFY_JOBS ?= 4
+VERIFY_TEST_JOBS ?= 4
 VERIFY_STATE_DIR := artifacts/verify
 VERIFY_INPUT_DIR := $(VERIFY_STATE_DIR)/inputs
 VERIFY_STAMP_DIR := $(VERIFY_STATE_DIR)/stamps
@@ -22,13 +24,20 @@ SWE_V1_TASKS = \
 	tasks/state/sync-command \
 	tasks/state/watch-subscription
 
-verify:
-	+@$(MAKE) --no-print-directory --jobs=$(VERIFY_JOBS) verify-lanes
+verify: verify-lanes
 
 verify-full:
-	+@$(MAKE) --no-print-directory --always-make --jobs=$(VERIFY_JOBS) verify-lanes
+	+@$(MAKE) --no-print-directory verify-refresh
+	+@$(MAKE) --no-print-directory --always-make --jobs=$(VERIFY_JOBS) verify-stamps
 
-verify-lanes: verify-static verify-tests verify-contracts verify-generated
+verify-lanes: verify-refresh
+	+@$(MAKE) --no-print-directory --jobs=$(VERIFY_JOBS) verify-stamps
+
+verify-stamps: \
+	$(VERIFY_STAMP_DIR)/static \
+	$(VERIFY_STAMP_DIR)/tests \
+	$(VERIFY_STAMP_DIR)/contracts \
+	$(VERIFY_STAMP_DIR)/generated
 
 verify-sync:
 	uv sync --locked --all-groups
@@ -36,8 +45,8 @@ verify-sync:
 $(VERIFY_INPUT_DIR) $(VERIFY_STAMP_DIR):
 	mkdir -p $@
 
-$(VERIFY_INPUT_DIR)/%.sha256: FORCE | verify-sync $(VERIFY_INPUT_DIR)
-	@uv run python -m slopbench.repository_verify fingerprint $* $@
+verify-refresh: verify-sync | $(VERIFY_INPUT_DIR)
+	@uv run python -m slopbench.repository_verify fingerprints $(VERIFY_INPUT_DIR)
 
 $(VERIFY_STAMP_DIR)/static: $(VERIFY_INPUT_DIR)/static.sha256 | $(VERIFY_STAMP_DIR)
 	uv run ruff format --check --no-cache .
@@ -46,7 +55,7 @@ $(VERIFY_STAMP_DIR)/static: $(VERIFY_INPUT_DIR)/static.sha256 | $(VERIFY_STAMP_D
 	@touch $@
 
 $(VERIFY_STAMP_DIR)/tests: $(VERIFY_INPUT_DIR)/tests.sha256 | $(VERIFY_STAMP_DIR)
-	uv run pytest --cov=slopbench --cov-report=term-missing -q
+	uv run pytest -n $(VERIFY_TEST_JOBS) --cov=slopbench --cov-report=term-missing -q
 	@touch $@
 
 $(VERIFY_STAMP_DIR)/contracts: $(VERIFY_INPUT_DIR)/contracts.sha256 | $(VERIFY_STAMP_DIR)
@@ -81,13 +90,17 @@ $(VERIFY_STAMP_DIR)/generated: $(VERIFY_INPUT_DIR)/generated.sha256 | $(VERIFY_S
 		"$$release_dir/slopbench-swe-v1-dev-readiness.json"
 	@touch $@
 
-verify-static: $(VERIFY_STAMP_DIR)/static
+verify-static: verify-refresh
+	+@$(MAKE) --no-print-directory $(VERIFY_STAMP_DIR)/static
 
-verify-tests: $(VERIFY_STAMP_DIR)/tests
+verify-tests: verify-refresh
+	+@$(MAKE) --no-print-directory $(VERIFY_STAMP_DIR)/tests
 
-verify-contracts: $(VERIFY_STAMP_DIR)/contracts
+verify-contracts: verify-refresh
+	+@$(MAKE) --no-print-directory $(VERIFY_STAMP_DIR)/contracts
 
-verify-generated: $(VERIFY_STAMP_DIR)/generated
+verify-generated: verify-refresh
+	+@$(MAKE) --no-print-directory $(VERIFY_STAMP_DIR)/generated
 
 FORCE:
 

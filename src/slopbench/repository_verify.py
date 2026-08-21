@@ -79,40 +79,66 @@ def _repository_paths(root: Path) -> list[str]:
 
 
 def lane_fingerprint(root: Path, lane: VerifyLane) -> str:
+    return lane_fingerprints(root)[lane]
+
+
+def lane_fingerprints(root: Path) -> dict[VerifyLane, str]:
     root = root.resolve()
-    digest = hashlib.sha256(_FINGERPRINT_VERSION)
-    digest.update(lane.value.encode())
-    digest.update(b"\0")
-    digest.update(sys.version.encode())
-    digest.update(b"\0")
+    digests = {
+        lane: hashlib.sha256(
+            _FINGERPRINT_VERSION + lane.value.encode() + b"\0" + sys.version.encode() + b"\0"
+        )
+        for lane in VerifyLane
+    }
     for relative in _repository_paths(root):
-        if not lane_includes(lane, relative):
+        included = [lane for lane in VerifyLane if lane_includes(lane, relative)]
+        if not included:
             continue
         relative_bytes = os.fsencode(relative)
         path = root / relative
-        digest.update(len(relative_bytes).to_bytes(8, "big"))
-        digest.update(relative_bytes)
         try:
             metadata = path.lstat()
         except FileNotFoundError:
-            digest.update(b"m")
+            for lane in included:
+                digest = digests[lane]
+                digest.update(len(relative_bytes).to_bytes(8, "big"))
+                digest.update(relative_bytes)
+                digest.update(b"m")
             continue
-        digest.update(b"x" if metadata.st_mode & stat.S_IXUSR else b"-")
+        executable = b"x" if metadata.st_mode & stat.S_IXUSR else b"-"
         if stat.S_ISLNK(metadata.st_mode):
-            digest.update(b"l")
+            file_type = b"l"
             content = os.fsencode(os.readlink(path))
         elif stat.S_ISREG(metadata.st_mode):
-            digest.update(b"f")
+            file_type = b"f"
             content = path.read_bytes()
         else:
             raise RepositoryVerifyError(f"verification input is not a file or symlink: {relative}")
-        digest.update(len(content).to_bytes(8, "big"))
-        digest.update(content)
-    return digest.hexdigest()
+        for lane in included:
+            digest = digests[lane]
+            digest.update(len(relative_bytes).to_bytes(8, "big"))
+            digest.update(relative_bytes)
+            digest.update(executable)
+            digest.update(file_type)
+            digest.update(len(content).to_bytes(8, "big"))
+            digest.update(content)
+    return {lane: digest.hexdigest() for lane, digest in digests.items()}
 
 
 def write_lane_fingerprint(root: Path, lane: VerifyLane, output: Path) -> bool:
-    rendered = lane_fingerprint(root, lane) + "\n"
+    return _write_fingerprint(output, lane_fingerprint(root, lane))
+
+
+def write_lane_fingerprints(root: Path, output_dir: Path) -> set[VerifyLane]:
+    changed: set[VerifyLane] = set()
+    for lane, fingerprint in lane_fingerprints(root).items():
+        if _write_fingerprint(output_dir / f"{lane.value}.sha256", fingerprint):
+            changed.add(lane)
+    return changed
+
+
+def _write_fingerprint(output: Path, fingerprint: str) -> bool:
+    rendered = fingerprint + "\n"
     try:
         if output.read_text() == rendered:
             return False
@@ -162,6 +188,9 @@ def _parser() -> argparse.ArgumentParser:
     fingerprint.add_argument("lane", choices=list(VerifyLane), type=VerifyLane)
     fingerprint.add_argument("output", type=Path)
 
+    fingerprints = commands.add_parser("fingerprints")
+    fingerprints.add_argument("output_dir", type=Path)
+
     commands.add_parser("contracts")
     return parser
 
@@ -171,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "fingerprint":
             write_lane_fingerprint(args.root, args.lane, args.output)
+        elif args.command == "fingerprints":
+            write_lane_fingerprints(args.root, args.output_dir)
         elif args.command == "contracts":
             counts = verify_contracts(args.root)
             print(
