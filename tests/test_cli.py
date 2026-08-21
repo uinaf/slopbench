@@ -7,8 +7,10 @@ import pytest
 
 from slopbench import cli
 from slopbench.contracts import FailureClassification
+from slopbench.release import TaskSetVisibility
 from slopbench.runner import RunError
 from tests.helpers import result_bundle, task_payload, write_json
+from tests.test_release import direct_result, one_task_set, profile
 
 
 def test_validate_command_accepts_valid_document(tmp_path: Path) -> None:
@@ -142,197 +144,226 @@ def test_run_command_reports_run_errors(
     assert "slopbench: unsafe run" in capsys.readouterr().err
 
 
-def test_release_commands_dispatch_to_contract_operations(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    calls: list[tuple[str, object]] = []
-
-    def fake_validate_task_set(path: Path, root: Path) -> tuple[object, str]:
-        calls.append(("task-set", (path, root)))
-        return f"task-set:{path}", "a" * 64
-
-    def fake_load(path: Path, model_type: type[object]) -> object:
-        return f"{model_type.__name__}:{path}"
-
-    def fake_write(path: Path, model: object) -> None:
-        calls.append(("write", (path, model)))
-
-    monkeypatch.setattr(cli, "validate_task_set", fake_validate_task_set)
-    monkeypatch.setattr(cli, "load_model", fake_load)
-    monkeypatch.setattr(cli, "write_model", fake_write)
-    monkeypatch.setattr(cli, "sha256_file", lambda path: "b" * 64)
-    monkeypatch.setattr(cli, "compute_evaluation", lambda *args, **kwargs: "evaluation")
-    monkeypatch.setattr(cli, "build_held_out_disclosure", lambda *args: "disclosure")
-    monkeypatch.setattr(cli, "build_bridge_report", lambda *args: "bridge")
-    monkeypatch.setattr(
-        cli,
-        "validate_retirement",
-        lambda *args: calls.append(("retirement", args)),
-    )
-    monkeypatch.setattr(cli, "build_attestation_statement", lambda *args: "statement")
-    monkeypatch.setattr(cli, "sign_reference_attestation", lambda *args: "attestation")
-    monkeypatch.setattr(cli, "verify_reference_attestation", lambda *args: "official")
-    monkeypatch.setattr(cli, "audit_release", lambda *args: "readiness")
-    monkeypatch.setattr(cli, "build_regression_report", lambda *args: "regression")
-
-    assert cli.main(["task-set", "suite.json", "--root", str(tmp_path)]) == 0
-    assert (
-        cli.main(
+@pytest.mark.parametrize(
+    ("argv", "first_input"),
+    [
+        (["task-set", "missing-task-set.json"], "missing-task-set.json"),
+        (
             [
                 "evaluate",
                 "--manifest",
-                "evaluation.json",
+                "missing-evaluation.json",
                 "--task-set",
-                "suite.json",
+                "task-set.json",
                 "--profile",
                 "profile.json",
-                "--project-root",
-                str(tmp_path),
-                "--bundle-root",
-                str(tmp_path),
-                "--origin",
-                "maintainer",
                 "--output",
                 "result.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-evaluation.json",
+        ),
+        (
             [
                 "disclose",
                 "--task-set",
-                "suite.json",
+                "missing-disclosure-task-set.json",
                 "--profile",
                 "profile.json",
                 "--result",
                 "result.json",
                 "--output",
-                "public.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+                "disclosure.json",
+            ],
+            "missing-disclosure-task-set.json",
+        ),
+        (
             [
                 "bridge",
                 "--before-task-set",
-                "before.json",
+                "missing-before-task-set.json",
                 "--after-task-set",
-                "after.json",
+                "after-task-set.json",
                 "--before-result",
                 "before-result.json",
                 "--after-result",
                 "after-result.json",
                 "--output",
                 "bridge.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-before-task-set.json",
+        ),
+        (
             [
                 "retirement",
                 "--manifest",
-                "retirement.json",
+                "missing-retirement.json",
                 "--bridge",
                 "bridge.json",
                 "--before-task-set",
-                "before.json",
+                "before-task-set.json",
                 "--after-task-set",
-                "after.json",
+                "after-task-set.json",
                 "--before-result",
                 "before-result.json",
                 "--after-result",
                 "after-result.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-retirement.json",
+        ),
+        (
             [
                 "attestation",
                 "statement",
                 "--evaluation",
-                "evaluation.json",
+                "missing-statement-evaluation.json",
                 "--result",
                 "result.json",
                 "--output",
                 "statement.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-statement-evaluation.json",
+        ),
+        (
             [
                 "attestation",
                 "sign",
                 "--evaluation",
-                "evaluation.json",
+                "missing-sign-evaluation.json",
                 "--result",
                 "result.json",
                 "--identity",
                 "key",
                 "--signer",
-                "maintainer@uinaf.dev",
+                "maintainer@example.test",
                 "--output",
                 "attestation.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-sign-evaluation.json",
+        ),
+        (
             [
                 "attestation",
                 "verify",
                 "--attestation",
-                "attestation.json",
+                "missing-attestation.json",
                 "--allowed-signers",
-                "allowed_signers",
+                "allowed-signers",
                 "--evaluation",
                 "evaluation.json",
                 "--result",
                 "result.json",
                 "--output",
                 "verification.json",
-            ]
-        )
-        == 0
-    )
-    assert (
-        cli.main(
+            ],
+            "missing-attestation.json",
+        ),
+        (
             [
                 "release",
                 "audit",
                 "--manifest",
-                "release-evidence.json",
-                "--project-root",
-                str(tmp_path),
+                "missing-release-evidence.json",
                 "--output",
                 "readiness.json",
-            ]
-        )
-        == 0
+            ],
+            "missing-release-evidence.json",
+        ),
+        (
+            [
+                "regression",
+                "--before",
+                "missing-before-result.json",
+                "--after",
+                "after-result.json",
+                "--output",
+                "regression.json",
+            ],
+            "missing-before-result.json",
+        ),
+    ],
+)
+def test_contract_commands_report_their_missing_first_input(
+    argv: list[str],
+    first_input: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cli.main(argv) == 2
+    assert first_input in capsys.readouterr().err
+
+
+def test_regression_command_writes_the_comparison_report(tmp_path: Path) -> None:
+    task_set = one_task_set()
+    scoring_profile = profile()
+    before_path = tmp_path / "before.json"
+    after_path = tmp_path / "after.json"
+    output_path = tmp_path / "regression.json"
+    write_json(before_path, direct_result(task_set, scoring_profile).model_dump(mode="json"))
+    write_json(
+        after_path,
+        direct_result(task_set, scoring_profile, fail_requested=True).model_dump(mode="json"),
     )
+
     assert (
         cli.main(
             [
                 "regression",
                 "--before",
-                "before-result.json",
+                str(before_path),
                 "--after",
-                "after-result.json",
+                str(after_path),
                 "--output",
-                "regression.json",
+                str(output_path),
             ]
         )
         == 0
     )
-    assert any(name == "retirement" for name, _ in calls)
-    assert [name for name, _ in calls].count("write") == 8
+    report = json.loads(output_path.read_text())
+    assert report["schema_version"] == "slopbench.regression.v1"
+    assert report["flags"] == [
+        {
+            "critical_gate": None,
+            "failed_pair_indices": [1, 2, 3, 4, 5],
+            "kind": "reliability",
+            "task_digest": task_set.tasks[0].task_digest,
+            "task_id": task_set.tasks[0].task_id,
+        }
+    ]
+
+
+def test_disclose_command_writes_the_held_out_summary(tmp_path: Path) -> None:
+    task_set = one_task_set(visibility=TaskSetVisibility.HELD_OUT_ACTIVE)
+    scoring_profile = profile()
+    task_set_path = tmp_path / "task-set.json"
+    profile_path = tmp_path / "profile.json"
+    result_path = tmp_path / "result.json"
+    output_path = tmp_path / "disclosure.json"
+    write_json(task_set_path, task_set.model_dump(mode="json"))
+    write_json(profile_path, scoring_profile.model_dump(mode="json"))
+    write_json(
+        result_path,
+        direct_result(task_set, scoring_profile).model_dump(mode="json"),
+    )
+
+    assert (
+        cli.main(
+            [
+                "disclose",
+                "--task-set",
+                str(task_set_path),
+                "--profile",
+                str(profile_path),
+                "--result",
+                str(result_path),
+                "--project-root",
+                str(Path(__file__).resolve().parents[1]),
+                "--output",
+                str(output_path),
+            ]
+        )
+        == 0
+    )
+    disclosure = json.loads(output_path.read_text())
+    assert disclosure["schema_version"] == "slopbench.disclosure.v1"
+    assert disclosure["task_set"]["id"] == task_set.task_set_id
+    assert disclosure["category_counts"] == {"diagnosis_repair": 1}
+    assert disclosure["aggregate"]["trial_count"] == 5

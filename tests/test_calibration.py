@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
-from typing import Any
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -45,18 +45,15 @@ from slopbench.hashing import (
     ContractError,
     load_model,
     sha256_file,
-    validate_task,
     write_model,
 )
 from slopbench.release import (
     EvaluationManifest,
     EvaluationPurpose,
     EvaluationResult,
-    ProfileDefinition,
     RawResultVector,
     RawTrialOutcome,
     ReferenceAttestation,
-    ReferenceConfiguration,
     ReferenceVerification,
     ResultOrigin,
     SshSignature,
@@ -103,6 +100,24 @@ def write_evidence(tmp_path: Path, evidence: ReleaseEvidenceManifest) -> Path:
     path = tmp_path / "release-evidence.json"
     write_model(path, evidence)
     return path
+
+
+def copy_release_project(tmp_path: Path) -> Path:
+    project = tmp_path / "project"
+    project.mkdir()
+    for directory in (
+        "coverage",
+        "datasets",
+        "docs",
+        "profiles",
+        "reference-configurations",
+        "schemas",
+        "tasks",
+    ):
+        shutil.copytree(ROOT / directory, project / directory)
+    for filename in ("LICENSE", "README.md"):
+        shutil.copyfile(ROOT / filename, project / filename)
+    return project
 
 
 def gate_status(report: ReleaseReadinessReport, gate: ReleaseGate) -> GateStatus:
@@ -388,55 +403,48 @@ def test_release_audit_rejects_bound_file_drift_and_wrong_tracer(tmp_path: Path)
 
 def test_release_audit_rejects_duplicate_loaded_ids(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    original = load_model
-    first_profile = original(ROOT / "profiles/altay.json", ProfileDefinition)
+    project = copy_release_project(tmp_path)
+    evidence = candidate_evidence()
+    profiles = list(evidence.profiles)
+    source = project / profiles[0].path
+    target = project / profiles[1].path
+    shutil.copyfile(source, target)
+    profiles[1] = profiles[1].model_copy(update={"sha256": sha256_file(target)})
+    evidence = evidence.model_copy(update={"profiles": profiles})
 
-    def duplicate_profiles(path: Path, model_type: type[Any]) -> Any:
-        if model_type is ProfileDefinition:
-            return first_profile
-        return original(path, model_type)
-
-    monkeypatch.setattr(calibration, "load_model", duplicate_profiles)
     with pytest.raises(ContractError, match="profile IDs must be unique"):
-        audit_release(write_evidence(tmp_path, candidate_evidence()), ROOT)
+        audit_release(write_evidence(tmp_path, evidence), project)
 
 
 def test_release_audit_rejects_duplicate_loaded_configuration_ids(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    original = load_model
-    first = original(
-        ROOT / "reference-configurations/cursor-grok-4.6-medium.json",
-        ReferenceConfiguration,
-    )
+    project = copy_release_project(tmp_path)
+    evidence = candidate_evidence()
+    configurations = list(evidence.reference_configurations)
+    source = project / configurations[0].path
+    target = project / configurations[1].path
+    shutil.copyfile(source, target)
+    configurations[1] = configurations[1].model_copy(update={"sha256": sha256_file(target)})
+    evidence = evidence.model_copy(update={"reference_configurations": configurations})
 
-    def duplicate_configurations(path: Path, model_type: type[Any]) -> Any:
-        if model_type is ReferenceConfiguration:
-            return first
-        return original(path, model_type)
-
-    monkeypatch.setattr(calibration, "load_model", duplicate_configurations)
     with pytest.raises(ContractError, match="configuration IDs must be unique"):
-        audit_release(write_evidence(tmp_path, candidate_evidence()), ROOT)
+        audit_release(write_evidence(tmp_path, evidence), project)
 
 
 def test_release_task_loader_rejects_task_set_digest_drift(
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
-    task_set = one_task_set()
-    task_path = ROOT / task_set.tasks[0].contract_path
-    task, contract_sha256, _ = validate_task(task_path.parent)
-    monkeypatch.setattr(
-        calibration,
-        "validate_task",
-        lambda path: (task, contract_sha256, "a" * 64),
-    )
+    project = copy_release_project(tmp_path)
+    task_set_path = project / candidate_evidence().task_set.path
+    task_set = load_model(task_set_path, TaskSetManifest)
+    tasks = list(task_set.tasks)
+    tasks[0] = tasks[0].model_copy(update={"task_digest": "a" * 64})
+    task_set = task_set.model_copy(update={"tasks": tasks})
 
     with pytest.raises(ContractError, match="release task digest mismatch"):
-        calibration._task_contracts(task_set, ROOT)
+        calibration._task_contracts(task_set, project)
 
 
 def test_release_audit_requires_cursor_as_primary_and_valid_common_harness(
@@ -552,14 +560,15 @@ def test_stable_release_evidence_cannot_retain_pending_gates(tmp_path: Path) -> 
 
 def test_active_held_out_evidence_requires_matching_disclosure_and_audit(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    project = copy_release_project(tmp_path)
     held_out_set = one_task_set(visibility=TaskSetVisibility.HELD_OUT_ACTIVE)
     result = direct_result(held_out_set, profile())
     disclosure = build_held_out_disclosure(held_out_set, profile(), result)
-    disclosure_path = tmp_path / "held-out-disclosure.json"
-    write_model(disclosure_path, disclosure)
     relative = "private/held-out-disclosure.json"
+    disclosure_path = project / relative
+    disclosure_path.parent.mkdir()
+    write_model(disclosure_path, disclosure)
     evidence = candidate_evidence().model_copy(
         update={
             "held_out": HeldOutEvidence(
@@ -579,24 +588,16 @@ def test_active_held_out_evidence_requires_matching_disclosure_and_audit(
             ],
         }
     )
-    original = calibration._resolve_bound
 
-    def resolve(root: Path, bound: BoundDocument) -> Path:
-        if bound.path == relative:
-            return disclosure_path
-        return original(root, bound)
-
-    monkeypatch.setattr(calibration, "_resolve_bound", resolve)
-
-    report = audit_release(write_evidence(tmp_path, evidence), ROOT)
+    report = audit_release(write_evidence(tmp_path, evidence), project)
 
     assert gate_status(report, ReleaseGate.HELD_OUT) == GateStatus.PASSED
 
 
 def test_active_held_out_evidence_rejects_disclosure_binding_drift(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    project = copy_release_project(tmp_path)
     held_out_set = one_task_set(visibility=TaskSetVisibility.HELD_OUT_ACTIVE)
     other_set = one_task_set(
         visibility=TaskSetVisibility.HELD_OUT_ACTIVE,
@@ -607,9 +608,10 @@ def test_active_held_out_evidence_rejects_disclosure_binding_drift(
         profile(),
         direct_result(held_out_set, profile()),
     )
-    disclosure_path = tmp_path / "held-out-disclosure.json"
-    write_model(disclosure_path, disclosure)
     relative = "private/held-out-disclosure.json"
+    disclosure_path = project / relative
+    disclosure_path.parent.mkdir()
+    write_model(disclosure_path, disclosure)
     evidence = candidate_evidence().model_copy(
         update={
             "held_out": HeldOutEvidence(
@@ -620,32 +622,30 @@ def test_active_held_out_evidence_rejects_disclosure_binding_drift(
             )
         }
     )
-    original = calibration._resolve_bound
-    monkeypatch.setattr(
-        calibration,
-        "_resolve_bound",
-        lambda root, bound: disclosure_path if bound.path == relative else original(root, bound),
-    )
 
     with pytest.raises(ContractError, match="held-out disclosure does not match"):
-        audit_release(write_evidence(tmp_path, evidence), ROOT)
+        audit_release(write_evidence(tmp_path, evidence), project)
 
 
 def test_cross_version_claim_requires_a_bound_bridge(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    project = copy_release_project(tmp_path)
     before_set = one_task_set(version="0.1.0")
     after_set = one_task_set(version="0.2.0")
     before = direct_result(before_set, profile())
     after = direct_result(after_set, profile())
     paths = {
-        "private/before-task-set.json": tmp_path / "before-task-set.json",
-        "private/after-task-set.json": tmp_path / "after-task-set.json",
-        "private/before-result.json": tmp_path / "before-result.json",
-        "private/after-result.json": tmp_path / "after-result.json",
-        "private/bridge.json": tmp_path / "bridge.json",
+        relative: project / relative
+        for relative in (
+            "private/before-task-set.json",
+            "private/after-task-set.json",
+            "private/before-result.json",
+            "private/after-result.json",
+            "private/bridge.json",
+        )
     }
+    (project / "private").mkdir()
     write_model(paths["private/before-task-set.json"], before_set)
     write_model(paths["private/after-task-set.json"], after_set)
     write_model(paths["private/before-result.json"], before)
@@ -672,14 +672,8 @@ def test_cross_version_claim_requires_a_bound_bridge(
         bridge=bound("private/bridge.json"),
     )
     evidence = candidate_evidence().model_copy(update={"cross_version_claims": [claim]})
-    original = calibration._resolve_bound
-    monkeypatch.setattr(
-        calibration,
-        "_resolve_bound",
-        lambda root, item: paths[item.path] if item.path in paths else original(root, item),
-    )
 
-    report = audit_release(write_evidence(tmp_path, evidence), ROOT)
+    report = audit_release(write_evidence(tmp_path, evidence), project)
 
     assert gate_status(report, ReleaseGate.CROSS_VERSION_DISCIPLINE) == GateStatus.PASSED
 
@@ -692,7 +686,7 @@ def test_cross_version_claim_requires_a_bound_bridge(
                 tmp_path,
                 evidence.model_copy(update={"cross_version_claims": [changed_claim]}),
             ),
-            ROOT,
+            project,
         )
 
 
