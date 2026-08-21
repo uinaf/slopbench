@@ -3,7 +3,8 @@
 ## Start and verify
 
 - Install with `uv sync --locked --all-groups`.
-- Run the repository gate with `make verify`.
+- Run changed verification lanes with `make verify`.
+- Run the forced full repository gate with `make verify-full` before handoff.
 - Run the Docker-backed deterministic proof with `make tracer`.
 - Run the Docker-backed attack proof with `make hardening`.
 
@@ -25,7 +26,7 @@ After changing any file below `tasks/<name>/`:
 1. Format the changed files.
 2. Run `uv run slopbench task seal tasks/<name>`.
 3. Update every bound run manifest with the new contract hash and task digest.
-4. Run `make verify` and the relevant Harbor proof.
+4. Run `make verify-full` and the relevant Harbor proof.
 
 Update the agent-rule coverage manifest whenever a task, gate, or sanitized source rule changes.
 Increment its version and source revision when the source guidance changes.

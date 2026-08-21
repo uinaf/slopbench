@@ -6,7 +6,7 @@ Install the pinned Python environment and run the repository gate:
 
 ```sh
 uv sync --locked --all-groups
-make verify
+make verify-full
 ```
 
 This validates code, schemas, task seals, utility run manifests, profiles, the generated task set,

@@ -25,9 +25,11 @@ uv sync --locked --all-groups
 make verify
 ```
 
-`make verify` checks formatting, lint, strict types, branch-aware coverage, task seals, run
-manifests, profiles, reference configurations, generated task-set and release evidence, the
-readiness report, and schema drift. It does not require Docker.
+`make verify` fingerprints repository inputs, then runs only stale verification lanes in parallel.
+`make verify-full` forces every lane and is the pre-handoff and CI gate. Both check formatting,
+lint, strict types, branch-aware coverage, task seals, run manifests, profiles, reference
+configurations, generated task-set and release evidence, the readiness report, and schema drift.
+Neither requires Docker.
 
 ## Run the deterministic proofs
 
@@ -83,7 +85,7 @@ make task-set profiles reference-configurations release-candidate
 
 ## Contributing and security
 
-Run `make verify` before opening a pull request and follow the uinaf organization
+Run `make verify-full` before opening a pull request and follow the uinaf organization
 [contribution guidance](https://github.com/uinaf/.github/blob/main/CONTRIBUTING.md). Report
 suspected vulnerabilities privately according to the uinaf
 [security policy](https://github.com/uinaf/.github/blob/main/SECURITY.md).
